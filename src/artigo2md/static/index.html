@@ -127,7 +127,9 @@ async function info(){
   $('#enginesSummary').textContent = `Motores · ${on} de ${rows.length} instalados`;
   try { if (localStorage.getItem('a2m-engines-closed') === '1') $('#enginesBox').open = false; } catch {}
   $('#enginesBox').ontoggle = () => { try { localStorage.setItem('a2m-engines-closed', $('#enginesBox').open ? '0' : '1'); } catch {} };
-  $('#foot').textContent = 'artigo2md ' + j.version;
+  const c = j.converter, mins = Math.round(c.idle_timeout / 60);
+  $('#foot').textContent = `artigo2md ${j.version} · conversor ${c.loaded ? 'carregado na memória' : 'descarregado (RAM livre)'}` +
+    (c.idle_timeout > 0 ? ` · libera a RAM após ${mins >= 1 ? mins + ' min' : Math.round(c.idle_timeout) + ' s'} sem uso` : '');
   for (const e of rows) {
     const opt = $(`#engine option[value=${e.id}]`);
     if (opt) { opt.disabled = !e.installed; if (!e.installed) opt.textContent = e.name + ' (não instalado)'; }
@@ -188,7 +190,9 @@ async function refresh(){
   render();
   clearTimeout(timer);
   if (jobs.some(j => j.status === 'running' || j.status === 'queued')) timer = setTimeout(refresh, 1500);
+  else info();
 }
+setInterval(() => { if (!document.hidden) info(); }, 30000);  // mantém o rodapé em dia
 
 async function view(id){
   const j = jobs.find(x => x.id === id);

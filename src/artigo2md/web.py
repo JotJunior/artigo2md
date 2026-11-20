@@ -1,6 +1,11 @@
-"""Interface web local (FastAPI). Uma conversão por vez — os modelos são pesados."""
+"""Interface web local (FastAPI). Uma conversão por vez — os modelos são pesados.
+
+As conversões rodam num processo auxiliar (worker.py) que se encerra sozinho quando fica
+ocioso, devolvendo ao sistema a memória dos modelos.
+"""
 from __future__ import annotations
 
+import atexit
 import io
 import json
 import queue
@@ -16,7 +21,8 @@ from fastapi.responses import FileResponse, PlainTextResponse, StreamingResponse
 
 from . import __version__
 from .engines import available_engines, engine_table
-from .router import ENGINES, convert
+from .router import ENGINES
+from .worker import ConversionWorker
 
 STATIC = Path(__file__).parent / "static"
 SAFE_NAME = re.compile(r"[^\w.\- ]+", re.U)
@@ -28,7 +34,8 @@ def _safe_stem(filename: str) -> str:
 
 
 class JobStore:
-    def __init__(self, root: Path):
+    def __init__(self, root: Path, converter: ConversionWorker):
+        self.converter = converter
         self.root = root
         self.root.mkdir(parents=True, exist_ok=True)
         self.lock = threading.Lock()
@@ -84,16 +91,16 @@ class JobStore:
             d = self.root / job_id
             self.update(job_id, status="running", stage="Iniciando", started_at=time.time())
             try:
-                result = convert(
+                result = self.converter.convert(
                     d / "source.pdf", engine=job["engine_requested"],
                     progress=lambda msg: self.update(job_id, stage=msg),
                 )
-                (d / "result.md").write_text(result.markdown, encoding="utf-8")
-                report = result.report()
+                (d / "result.md").write_text(result["markdown"], encoding="utf-8")
+                report = result["report"]
                 last_q = next((a["quality"] for a in reversed(report["attempts"]) if a["quality"]), None)
                 self.update(
-                    job_id, status="done", stage=f"Concluído com {result.engine}",
-                    engine=result.engine, analysis=report["analysis"],
+                    job_id, status="done", stage=f"Concluído com {result['engine']}",
+                    engine=result["engine"], analysis=report["analysis"],
                     attempts=report["attempts"], quality=last_q, finished_at=time.time(),
                 )
             except Exception as exc:
@@ -117,10 +124,13 @@ class JobStore:
         (self.root / job_id).rmdir()
 
 
-def create_app(data_dir: Path) -> FastAPI:
-    store = JobStore(data_dir / "jobs")
+def create_app(data_dir: Path, idle_timeout: float = 300) -> FastAPI:
+    converter = ConversionWorker(idle_timeout=idle_timeout)
+    atexit.register(converter.shutdown)
+    store = JobStore(data_dir / "jobs", converter)
     app = FastAPI(title="artigo2md", version=__version__)
     app.state.store = store
+    app.state.converter = converter
 
     @app.get("/")
     def index():
@@ -129,7 +139,8 @@ def create_app(data_dir: Path) -> FastAPI:
     @app.get("/api/info")
     def info():
         return {"version": __version__, "engines": available_engines(), "engine_table": engine_table(),
-                "choices": list(ENGINES)}
+                "choices": list(ENGINES),
+                "converter": {"loaded": converter.alive, "idle_timeout": converter.idle_timeout}}
 
     @app.post("/api/jobs")
     async def create_jobs(files: list[UploadFile] = File(...), engine: str = Form("auto")):

@@ -71,7 +71,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
                   file=sys.stderr)
             return 1
 
-    app = create_app(Path(args.data_dir).expanduser())
+    app = create_app(Path(args.data_dir).expanduser(), idle_timeout=args.idle_timeout)
     url = f"http://{'localhost' if args.host in ('127.0.0.1', '0.0.0.0') else args.host}:{args.port}"
     print(f"artigo2md {__version__} — interface em {url}")
     if args.open:
@@ -119,6 +119,9 @@ def main(argv: list[str] | None = None) -> int:
     s.add_argument("--port", type=int, default=8777)
     s.add_argument("--data-dir", default="~/artigo2md-dados", help="onde ficam uploads e resultados")
     s.add_argument("--open", action="store_true", help="abre o navegador automaticamente")
+    s.add_argument("--idle-timeout", type=float, default=300, metavar="SEG",
+                   help="encerra o conversor após SEG segundos sem uso, liberando a RAM dos "
+                        "modelos (padrão: 300; 0 = nunca)")
     s.set_defaults(func=cmd_serve)
 
     d = sub.add_parser("doctor", help="verifica a instalação e os motores disponíveis")
