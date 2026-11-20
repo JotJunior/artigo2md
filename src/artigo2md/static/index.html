@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>artigo2md</title>
+<style>
+:root{--bg:#f6f5f2;--panel:#fff;--line:#e2dfd8;--text:#1d1c1a;--muted:#6d6a63;--accent:#2f6f5e;--accent-soft:#e3efea;--err:#b3412f;--warn:#a26b12}
+@media (prefers-color-scheme:dark){:root{--bg:#141413;--panel:#1d1d1b;--line:#2f2e2b;--text:#ece9e2;--muted:#9a968d;--accent:#6cc0a6;--accent-soft:#1f302b;--err:#ef8a77;--warn:#e0b05a}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+main{max-width:920px;margin:0 auto;padding:32px 16px 64px}
+h1{font-size:26px;margin:0 0 4px;letter-spacing:-.01em}
+.sub{color:var(--muted);margin:0 0 24px}
+details.engines{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin-bottom:20px;font-size:14px}
+details.engines summary{cursor:pointer;padding:10px 14px;color:var(--muted);list-style:none}
+details.engines summary::-webkit-details-marker{display:none}
+details.engines summary::before{content:"▸ ";color:var(--muted)}
+details.engines[open] summary::before{content:"▾ "}
+.tbl-wrap{overflow-x:auto;border-top:1px solid var(--line)}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{text-align:left;padding:8px 14px;border-bottom:1px solid var(--line);vertical-align:top}
+tr:last-child td{border-bottom:0}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:600}
+td.eng{font-weight:600;white-space:nowrap}
+.lic{font-size:12px;border:1px solid var(--line);border-radius:6px;padding:1px 6px;white-space:nowrap}
+.lic.agpl{color:var(--warn);border-color:currentColor}
+.st{white-space:nowrap}.st.ok{color:var(--accent)}.st.off{color:var(--muted)}
+code{font:12px ui-monospace,SFMono-Regular,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:5px;padding:1px 5px;white-space:nowrap}
+.tbl-note{padding:8px 14px 12px;color:var(--muted);font-size:13px;margin:0}
+.drop{border:2px dashed var(--line);border-radius:14px;background:var(--panel);padding:36px 20px;text-align:center;transition:.15s}
+.drop.over{border-color:var(--accent);background:var(--accent-soft)}
+.drop p{margin:6px 0;color:var(--muted)}
+.drop strong{color:var(--text);font-size:17px}
+.row{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;align-items:center}
+button,select{font:inherit;border-radius:9px;border:1px solid var(--line);background:var(--panel);color:var(--text);padding:7px 14px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+.bar{display:flex;justify-content:space-between;align-items:center;margin:28px 0 10px;gap:10px;flex-wrap:wrap}
+.bar h2{font-size:17px;margin:0}
+.job{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:8px}
+.job-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.name{font-weight:600;word-break:break-word}
+.meta{font-size:13px;color:var(--muted);margin-top:2px}
+.actions{display:flex;gap:6px;flex-shrink:0}
+.actions button{padding:4px 10px;font-size:13px}
+.status{font-size:13px;margin-top:6px}
+.status.done{color:var(--accent)}.status.error{color:var(--err)}.status.running{color:var(--warn)}
+.issues{font-size:13px;color:var(--warn);margin:4px 0 0;padding-left:18px}
+.spin{display:inline-block;width:10px;height:10px;border:2px solid currentColor;border-right-color:transparent;border-radius:50%;animation:s .8s linear infinite;margin-right:6px;vertical-align:-1px}
+@keyframes s{to{transform:rotate(360deg)}}
+.empty{color:var(--muted);text-align:center;padding:20px}
+dialog{width:min(900px,94vw);max-height:88vh;border:1px solid var(--line);border-radius:14px;background:var(--panel);color:var(--text);padding:0}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+.dlg-head{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid var(--line);gap:10px}
+.dlg-head span{font-weight:600;word-break:break-word}
+pre{margin:0;padding:16px;overflow:auto;max-height:calc(88vh - 60px);white-space:pre-wrap;word-break:break-word;font:13px/1.5 ui-monospace,SFMono-Regular,Menlo,monospace}
+footer{margin-top:40px;font-size:13px;color:var(--muted);text-align:center}
+</style>
+</head>
+<body>
+<main>
+  <h1>artigo2md</h1>
+  <p class="sub">PDF → Markdown no seu computador. Nada é enviado para a internet.</p>
+  <details class="engines" id="enginesBox" open>
+    <summary id="enginesSummary">Motores</summary>
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Motor</th><th>Licença</th><th>Papel</th><th>Peso</th><th>Status</th></tr></thead>
+        <tbody id="engines"></tbody>
+      </table>
+    </div>
+    <p class="tbl-note">No modo automático: Docling → pymupdf4llm → MinerU → MarkItDown, parando no primeiro resultado com nota ≥ 65/100 (MinerU vem primeiro em documentos cheios de fórmulas). Os motores AGPL são opcionais, por isso o projeto continua MIT.</p>
+  </details>
+
+  <div class="drop" id="drop">
+    <strong>Arraste PDFs ou pastas aqui</strong>
+    <p>ou escolha abaixo · cada arquivo é inspecionado e vai para o motor mais adequado</p>
+    <div class="row">
+      <button id="pickFiles">Escolher PDFs</button>
+      <button id="pickDir">Escolher pasta</button>
+      <label>Motor:
+        <select id="engine">
+          <option value="auto">Automático (recomendado)</option>
+          <option value="docling">Docling</option>
+          <option value="pymupdf">pymupdf4llm</option>
+          <option value="mineru">MinerU</option>
+          <option value="markitdown">MarkItDown</option>
+        </select>
+      </label>
+    </div>
+    <input type="file" id="files" accept="application/pdf,.pdf" multiple hidden>
+    <input type="file" id="dir" webkitdirectory multiple hidden>
+  </div>
+
+  <div class="bar">
+    <h2>Conversões</h2>
+    <button id="zip" disabled>Baixar todos (.zip)</button>
+  </div>
+  <div id="jobs"><div class="empty">Nenhuma conversão ainda.</div></div>
+  <footer id="foot"></footer>
+</main>
+
+<dialog id="dlg">
+  <div class="dlg-head"><span id="dlgTitle"></span><div class="actions"><button id="dlgCopy">Copiar</button><button id="dlgClose">Fechar</button></div></div>
+  <pre id="dlgBody"></pre>
+</dialog>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const size = b => b > 1048576 ? (b/1048576).toFixed(1)+' MB' : Math.max(1, Math.round(b/1024))+' KB';
+let jobs = [], timer = null;
+
+async function info(){
+  const r = await fetch('/api/info'); const j = await r.json();
+  const rows = j.engine_table;
+  $('#engines').innerHTML = rows.map(e => `<tr>
+    <td class="eng">${esc(e.name)}</td>
+    <td><span class="lic ${e.license.startsWith('AGPL') ? 'agpl' : ''}">${esc(e.license)}</span></td>
+    <td>${esc(e.role)}</td>
+    <td>${esc(e.weight)}</td>
+    <td class="st ${e.installed ? 'ok' : 'off'}">${e.installed ? '● instalado' :
+        e.required ? '○ ausente — rode <code>uv sync</code>' :
+        e.detail ? `⚠ ${esc(e.detail)}` : `○ opcional<br><code>${esc(e.install)}</code>`}</td></tr>`).join('');
+  const on = rows.filter(e => e.installed).length;
+  $('#enginesSummary').textContent = `Motores · ${on} de ${rows.length} instalados`;
+  try { if (localStorage.getItem('a2m-engines-closed') === '1') $('#enginesBox').open = false; } catch {}
+  $('#enginesBox').ontoggle = () => { try { localStorage.setItem('a2m-engines-closed', $('#enginesBox').open ? '0' : '1'); } catch {} };
+  $('#foot').textContent = 'artigo2md ' + j.version;
+  for (const e of rows) {
+    const opt = $(`#engine option[value=${e.id}]`);
+    if (opt) { opt.disabled = !e.installed; if (!e.installed) opt.textContent = e.name + ' (não instalado)'; }
+  }
+}
+
+async function upload(fileList){
+  const pdfs = [...fileList].filter(f => f.name.toLowerCase().endsWith('.pdf'));
+  if (!pdfs.length) return alert('Nenhum PDF encontrado.');
+  for (let i = 0; i < pdfs.length; i += 10) {           // lotes de 10 por requisição
+    const fd = new FormData();
+    pdfs.slice(i, i+10).forEach(f => fd.append('files', f, f.name));
+    fd.append('engine', $('#engine').value);
+    const r = await fetch('/api/jobs', {method:'POST', body:fd});
+    if (!r.ok) alert('Falha no envio: ' + (await r.text()));
+  }
+  refresh();
+}
+
+async function filesFromDrop(items){
+  const out = [];
+  async function walk(entry){
+    if (entry.isFile) out.push(await new Promise(res => entry.file(res)));
+    else if (entry.isDirectory){
+      const reader = entry.createReader();
+      let batch;
+      do { batch = await new Promise(res => reader.readEntries(res)); for (const e of batch) await walk(e); } while (batch.length);
+    }
+  }
+  await Promise.all([...items].map(it => it.webkitGetAsEntry?.()).filter(Boolean).map(walk));
+  return out;
+}
+
+function render(){
+  const box = $('#jobs');
+  $('#zip').disabled = !jobs.some(j => j.status === 'done');
+  if (!jobs.length){ box.innerHTML = '<div class="empty">Nenhuma conversão ainda.</div>'; return; }
+  box.innerHTML = jobs.map(j => {
+    const a = j.analysis, q = j.quality;
+    const meta = [size(j.size), a && `${a.pages} pág.`, a && a.scanned_pages && `${a.scanned_pages} escaneadas`,
+                  q && `qualidade ${Math.round(q.score)}/100`, q && q.tables_found && `${q.tables_found} tabelas`,
+                  j.finished_at && j.started_at && `${Math.round(j.finished_at - j.started_at)} s`].filter(Boolean).join(' · ');
+    const st = j.status === 'running' ? `<span class="spin"></span>${esc(j.stage)}` :
+               j.status === 'queued' ? 'Na fila' : j.status === 'error' ? 'Erro: ' + esc(j.error) : esc(j.stage);
+    const issues = (q?.issues || []).map(i => `<li>${esc(i)}</li>`).join('');
+    const done = j.status === 'done', busy = j.status === 'running' || j.status === 'queued';
+    return `<div class="job"><div class="job-top"><div><div class="name">${esc(j.filename)}</div><div class="meta">${meta}</div></div>
+      <div class="actions">${done ? `<button data-view="${j.id}">Ver</button><a href="/api/jobs/${j.id}/markdown?download=1"><button>.md</button></a>` : ''}
+      ${busy ? '' : `<button data-del="${j.id}" title="Remover">×</button>`}</div></div>
+      <div class="status ${j.status}">${st}</div>${issues ? `<ul class="issues">${issues}</ul>` : ''}</div>`;
+  }).join('');
+  box.querySelectorAll('[data-view]').forEach(b => b.onclick = () => view(b.dataset.view));
+  box.querySelectorAll('[data-del]').forEach(b => b.onclick = async () => { await fetch('/api/jobs/' + b.dataset.del, {method:'DELETE'}); refresh(); });
+}
+
+async function refresh(){
+  jobs = await (await fetch('/api/jobs')).json();
+  render();
+  clearTimeout(timer);
+  if (jobs.some(j => j.status === 'running' || j.status === 'queued')) timer = setTimeout(refresh, 1500);
+}
+
+async function view(id){
+  const j = jobs.find(x => x.id === id);
+  $('#dlgTitle').textContent = j.stem + '.md';
+  $('#dlgBody').textContent = 'Carregando…';
+  $('#dlg').showModal();
+  $('#dlgBody').textContent = await (await fetch(`/api/jobs/${id}/markdown`)).text();
+}
+
+$('#pickFiles').onclick = () => $('#files').click();
+$('#pickDir').onclick = () => $('#dir').click();
+$('#files').onchange = e => { upload(e.target.files); e.target.value = ''; };
+$('#dir').onchange = e => { upload(e.target.files); e.target.value = ''; };
+$('#zip').onclick = () => { location.href = '/api/download.zip?ids=' + jobs.filter(j => j.status === 'done').map(j => j.id).join(','); };
+$('#dlgClose').onclick = () => $('#dlg').close();
+$('#dlgCopy').onclick = () => navigator.clipboard.writeText($('#dlgBody').textContent);
+const drop = $('#drop');
+drop.ondragover = e => { e.preventDefault(); drop.classList.add('over'); };
+drop.ondragleave = () => drop.classList.remove('over');
+drop.ondrop = async e => { e.preventDefault(); drop.classList.remove('over'); upload(await filesFromDrop(e.dataTransfer.items)); };
+
+info(); refresh();
+</script>
+</body>
+</html>
