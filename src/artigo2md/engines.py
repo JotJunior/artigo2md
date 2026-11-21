@@ -38,6 +38,14 @@ class EngineUnavailable(RuntimeError):
     pass
 
 
+def install_hint(engine_id: str) -> str:
+    """Comando que instala o motor: o da ficha, para os opcionais; `uv sync`, para os incluídos."""
+    for info in ENGINE_INFO:
+        if info["id"] == engine_id:
+            return info["install"] or "uv sync"
+    raise ValueError(f"Motor desconhecido: {engine_id}")
+
+
 # ── Docling ──────────────────────────────────────────────────────────────────
 _docling_lock = threading.Lock()
 _docling_cache: dict[bool, object] = {}
@@ -90,7 +98,13 @@ def _ocr_options():
 
 
 def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
-    result = _docling_converter(ocr).convert(str(path))
+    try:
+        converter = _docling_converter(ocr)
+    except ImportError as exc:
+        raise EngineUnavailable(
+            f"Docling não está instalado. Rode: {install_hint('docling')}"
+        ) from exc
+    result = converter.convert(str(path))
     doc = result.document
     return EngineOutput(
         engine="docling" + ("+ocr" if ocr else ""),
@@ -102,7 +116,12 @@ def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
 
 # ── MarkItDown ───────────────────────────────────────────────────────────────
 def run_markitdown(path: Path) -> EngineOutput:
-    from markitdown import MarkItDown
+    try:
+        from markitdown import MarkItDown
+    except ImportError as exc:
+        raise EngineUnavailable(
+            f"MarkItDown não está instalado. Rode: {install_hint('markitdown')}"
+        ) from exc
 
     text = MarkItDown(enable_plugins=False).convert(str(path)).text_content
     return EngineOutput(engine="markitdown", markdown=text or "")
@@ -122,7 +141,7 @@ def run_pymupdf(path: Path) -> EngineOutput:
         import pymupdf4llm
     except ImportError as exc:
         raise EngineUnavailable(
-            "pymupdf4llm não está instalado (opcional). Rode: uv sync --extra pymupdf"
+            f"pymupdf4llm não está instalado (opcional). Rode: {install_hint('pymupdf')}"
         ) from exc
     return EngineOutput(engine="pymupdf", markdown=pymupdf4llm.to_markdown(str(path)))
 
@@ -170,7 +189,9 @@ def mineru_available() -> bool:
 def run_mineru(path: Path, timeout: int = 1800) -> EngineOutput:
     ok, detail = mineru_status()
     if not ok:
-        raise EngineUnavailable(f"MinerU indisponível ({detail}). Veja o README.")
+        # O detalhe de versão incompatível já traz o comando; nos outros casos, vem da ficha.
+        hint = "" if "instale" in detail else f" Instale com: {install_hint('mineru')}."
+        raise EngineUnavailable(f"MinerU indisponível ({detail}).{hint} Veja o README.")
     env = dict(os.environ, MINERU_TELEMETRY_DISABLED="1")  # nada sai da máquina
     with tempfile.TemporaryDirectory(prefix="artigo2md-mineru-") as tmp:
         proc = subprocess.run(

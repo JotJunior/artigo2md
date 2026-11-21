@@ -15,9 +15,9 @@
 
 - [x] CHK005 - As respostas de erro estão especificadas com o código de cada caso? [Clareza, Spec §FR-003, Spec §FR-007, Spec §FR-008, Spec §FR-010] {auto} — 400, 404 e 409 com a condição de cada um (fonte: `docs/specs/web-interface/spec.md`)
 - [x] CHK006 - O limite do nome do arquivo de saída está quantificado? [Clareza, Spec §FR-013] {auto} — 150 caracteres (fonte: `docs/specs/web-interface/spec.md`)
-- [ ] CHK007 - O conjunto de caracteres permitido no nome de saída está enumerado? [Ambiguity, Spec §FR-013] {auto} — o requisito diz "conjunto permitido" sem listá-lo (fonte: `docs/specs/web-interface/spec.md`)
-- [ ] CHK008 - Está definido o que é a "assinatura de PDF" usada para recusar arquivos? [Ambiguity, Spec §FR-004] {auto} — o termo aparece sem definição (fonte: `docs/specs/web-interface/spec.md`)
-- [ ] CHK009 - Os valores aceitos para o motor no envio estão enumerados? [Ambiguity, Spec §FR-003] {auto} — FR-003 cita só o padrão auto (fonte: `docs/specs/web-interface/spec.md`)
+- [x] CHK007 - O conjunto de caracteres permitido no nome de saída está enumerado? [Clareza, Spec §FR-013] {auto} — resolvido em 2026-11-21: FR-013 enumera o conjunto permitido (fonte: `docs/specs/web-interface/spec.md`)
+- [x] CHK008 - Está definido o que é a "assinatura de PDF" usada para recusar arquivos? [Clareza, Spec §FR-004] {auto} — resolvido em 2026-11-21: FR-004 define a assinatura de PDF (fonte: `docs/specs/web-interface/spec.md`)
+- [x] CHK009 - Os valores aceitos para o motor no envio estão enumerados? [Clareza, Spec §FR-003] {auto} — resolvido em 2026-11-21: FR-003 enumera os valores aceitos (fonte: `docs/specs/web-interface/spec.md`)
 
 ## Consistencia de Requisitos
 
@@ -31,11 +31,11 @@
 ## Cobertura de Cenarios
 
 - [x] CHK013 - Cada requisito funcional é citado em ao menos um cenário ou edge case? [Cobertura, Spec §Acceptance Scenarios] {auto} — gate requirement-coverage: requirements=14, covered=14, errors=0
-- [ ] CHK014 - Cada requisito funcional tem teste existente como origem de um cenário? [Gap, Spec §FR-011, Spec §FR-012, Spec §FR-013, Spec §FR-014] {auto} — esses requisitos só aparecem em cenários ou edge cases pendentes (fonte: `docs/specs/web-interface/spec.md`)
+- [x] CHK014 - Cada requisito funcional tem teste existente como origem de um cenário? [Cobertura, Spec §Acceptance Scenarios] {auto} — resolvido em 2026-11-21: todos os requisitos citam testes (fonte: `docs/specs/web-interface/spec.md`)
 
 ## Requisitos Nao-Funcionais
 
-- [ ] CHK015 - Está definido um tamanho máximo para a fila de conversão? [Gap, Spec §FR-005] {auto} — FR-005 só define uma conversão por vez (fonte: `docs/specs/web-interface/spec.md`)
+- [x] CHK015 - Está definido um tamanho máximo para a fila de conversão? [Completude, Spec §FR-005] {auto} — resolvido em 2026-11-21: decidido que a fila não tem tamanho máximo (informado pelo operador)
 - [x] CHK016 - A ausência de autenticação é aceitável para o uso em rede previsto pelo produto? [Risco, Spec §FR-014] {humano} — aceito para uso local, decidido na clarificação (informado pelo operador)
 
 ## Notes

@@ -21,10 +21,10 @@ Escopo: fechar a lacuna de FR-017 (instrução de instalação quando o motor pe
 
 Ref: checklists/requirements.md CHK003, CHK007, CHK008, CHK015; research.md Decisions 6 e 7
 
-- [ ] 1.1.1 Registrar na spec o que significa "o PDF tiver texto" em FR-002, a partir de `src/artigo2md/router.py` (CHK007)
-- [ ] 1.1.2 Registrar na spec a regra de desempate entre resultados com a mesma nota, a partir de `src/artigo2md/router.py` (CHK008)
-- [ ] 1.1.3 Obter do operador a decisão sobre limite de tempo por motor e por conversão e registrá-la na spec (CHK003, CHK015)
-- [ ] 1.1.4 Atualizar o checklist com os itens resolvidos
+- [x] 1.1.1 Registrar na spec o que significa "o PDF tiver texto" em FR-002, a partir de `src/artigo2md/router.py` (CHK007)
+- [x] 1.1.2 Registrar na spec a regra de desempate entre resultados com a mesma nota, a partir de `src/artigo2md/router.py` (CHK008)
+- [x] 1.1.3 Obter do operador a decisão sobre limite de tempo por motor e por conversão e registrá-la na spec (CHK003, CHK015) <!-- 2026-11-21: manter como está; só o MinerU tem limite de tempo -->
+- [x] 1.1.4 Atualizar o checklist com os itens resolvidos
 
 ---
 
@@ -34,13 +34,13 @@ Ref: checklists/requirements.md CHK003, CHK007, CHK008, CHK015; research.md Deci
 
 Ref: spec.md FR-017; research.md Decisions 1 e 2; quickstart.md Scenario 2
 
-- [ ] 2.1.1 Escrever os testes, inicialmente falhando para MinerU, Docling e MarkItDown, de que a conversão com motor pedido e ausente falha com a instrução de instalação desse motor
-- [ ] 2.1.2 Escrever o teste de que, com motor pedido e ausente, nenhum outro motor é tentado
-- [ ] 2.1.3 Implementar em `src/artigo2md/engines.py` a sinalização uniforme de motor indisponível, inclusive para os motores obrigatórios
-- [ ] 2.1.4 Implementar em `src/artigo2md/router.py` a instrução de instalação tirada da ficha dos motores quando o motor foi pedido explicitamente
-- [ ] 2.1.5 Conferir por teste que o modo automático não muda: motor ausente conta como tentativa com erro e o próximo é tentado
-- [ ] 2.1.6 Atualizar a spec: FR-017 passa a citar a fonte no código e nos testes
-- [ ] 2.1.7 Rodar `uv run pytest` e confirmar a suíte verde
+- [x] 2.1.1 Escrever os testes, inicialmente falhando para MinerU, Docling e MarkItDown, de que a conversão com motor pedido e ausente falha com a instrução de instalação desse motor
+- [x] 2.1.2 Escrever o teste de que, com motor pedido e ausente, nenhum outro motor é tentado
+- [x] 2.1.3 Implementar em `src/artigo2md/engines.py` a sinalização uniforme de motor indisponível, inclusive para os motores obrigatórios
+- [x] 2.1.4 Implementar em `src/artigo2md/router.py` a instrução de instalação tirada da ficha dos motores quando o motor foi pedido explicitamente <!-- 2026-11-21: não foi preciso alterar o roteador; a instrução vem dos adaptadores e o roteador já a repassa -->
+- [x] 2.1.5 Conferir por teste que o modo automático não muda: motor ausente conta como tentativa com erro e o próximo é tentado
+- [x] 2.1.6 Atualizar a spec: FR-017 passa a citar a fonte no código e nos testes
+- [x] 2.1.7 Rodar `uv run pytest` e confirmar a suíte verde
 
 ---
 
@@ -50,33 +50,33 @@ Ref: spec.md FR-017; research.md Decisions 1 e 2; quickstart.md Scenario 2
 
 Ref: spec.md FR-007, FR-008; research.md Decision 3; quickstart.md Scenario 3
 
-- [ ] 3.1.1 Escrever o teste do desconto por Markdown com menos de 100 caracteres por página (FR-007)
-- [ ] 3.1.2 Escrever o teste do desconto por saída com menos da metade do texto nativo (FR-008)
-- [ ] 3.1.3 Escrever o teste da combinação dos descontos com a nota de aceite (FR-007, FR-008, FR-009)
+- [x] 3.1.1 Escrever o teste do desconto por Markdown com menos de 100 caracteres por página (FR-007)
+- [x] 3.1.2 Escrever o teste do desconto por saída com menos da metade do texto nativo (FR-008)
+- [x] 3.1.3 Escrever o teste da combinação dos descontos com a nota de aceite (FR-007, FR-008, FR-009)
 
 ### 3.2 Falhas do roteador `[A]`
 
 Ref: spec.md FR-012, FR-013; research.md Decision 4; quickstart.md Scenarios 4 e 5
 
-- [ ] 3.2.1 Escrever o teste da recusa de motor fora da lista, com os motores aceitos na mensagem (FR-012)
-- [ ] 3.2.2 Escrever o teste de que a falha de todos os motores gera uma mensagem que reúne o erro de cada tentativa (FR-013)
-- [ ] 3.2.3 Escrever o teste de que a recusa de motor inválido acontece antes da inspeção do PDF (FR-012)
+- [x] 3.2.1 Escrever o teste da recusa de motor fora da lista, com os motores aceitos na mensagem (FR-012)
+- [x] 3.2.2 Escrever o teste de que a falha de todos os motores gera uma mensagem que reúne o erro de cada tentativa (FR-013)
+- [x] 3.2.3 Escrever o teste de que a recusa de motor inválido acontece antes da inspeção do PDF (FR-012)
 
 ### 3.3 OCR e avisos de progresso `[M]`
 
 Ref: spec.md FR-014, FR-015; research.md Decision 5; quickstart.md Scenario 6
 
-- [ ] 3.3.1 Escrever o teste de que o Docling recebe OCR ligado para PDF com páginas escaneadas, com o adaptador simulado (FR-014)
-- [ ] 3.3.2 Escrever o teste de que o Docling recebe OCR desligado para PDF só com texto (FR-014)
-- [ ] 3.3.3 Escrever o teste dos avisos de progresso: inspeção, motor em uso e reprovação na avaliação (FR-015)
+- [x] 3.3.1 Escrever o teste de que o Docling recebe OCR ligado para PDF com páginas escaneadas, com o adaptador simulado (FR-014)
+- [x] 3.3.2 Escrever o teste de que o Docling recebe OCR desligado para PDF só com texto (FR-014)
+- [x] 3.3.3 Escrever o teste dos avisos de progresso: inspeção, motor em uso e reprovação na avaliação (FR-015)
 
 ### 3.4 Fechamento `[M]`
 
 Ref: spec.md SC-001; checklists/requirements.md CHK014
 
-- [ ] 3.4.1 Substituir na spec os cenários e edge cases pendentes pelas fontes dos testes
-- [ ] 3.4.2 Atualizar o checklist: CHK014 resolvido com as fontes dos testes
-- [ ] 3.4.3 Rodar `uv run pytest`, o gate de cobertura de requisitos e o lint de origem sobre a spec
+- [x] 3.4.1 Substituir na spec os cenários e edge cases pendentes pelas fontes dos testes
+- [x] 3.4.2 Atualizar o checklist: CHK014 resolvido com as fontes dos testes
+- [x] 3.4.3 Rodar `uv run pytest`, o gate de cobertura de requisitos e o lint de origem sobre a spec
 
 ---
 

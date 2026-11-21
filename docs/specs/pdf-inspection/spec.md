@@ -38,7 +38,7 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 
 - Quando o arquivo não é um PDF válido ou está protegido por senha, a inspeção falha com mensagem clara em português, sem acionar os motores (informado pelo operador) (fonte: `tests/test_core.py:22`) (fonte: `tests/test_core.py:28`) (fonte: `tests/test_core.py:44`) (cobre FR-007)
 - Quando a biblioteca de leitura devolve um erro sem código conhecido, a inspeção falha com uma mensagem genérica em português que inclui o texto original (fonte: `tests/test_core.py:34`) (cobre FR-007)
-- Quando um PDF protegido por senha é enviado pela interface web, o job termina em erro com a mesma mensagem em português (fonte: `tests/test_web.py:49`) (cobre FR-007)
+- Quando um PDF protegido por senha é enviado pela interface web, o job termina em erro com a mesma mensagem em português (fonte: `tests/test_web.py:56`) (cobre FR-007)
 - Com a criação de sockets bloqueada, a inspeção termina normalmente; o teste cobre conexões abertas pelo Python, não acesso à rede por código nativo (fonte: `tests/test_core.py:149`) (fonte: `tests/test_core.py:142`) (cobre FR-008)
 
 ## Requirements

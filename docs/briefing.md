@@ -34,7 +34,7 @@ Capacidades já presentes no projeto:
 2. Escolha automática do motor, avaliação de qualidade e fallback para o próximo motor, mantendo o resultado de maior nota (fonte: `README.md:72`) (fonte: `tests/test_core.py:116`)
 3. Quatro motores: Docling e MarkItDown incluídos; pymupdf4llm e MinerU 3.x opcionais (fonte: `README.md:13`) (fonte: `tests/test_core.py:75`)
 4. Linha de comando com os subcomandos convert, serve e doctor (fonte: `CLAUDE.md:10`) (fonte: `README.md:61`)
-5. Interface web: envio de PDFs, fila, visualização do Markdown e download de um arquivo .md ou de todos em .zip (fonte: `README.md:55`) (fonte: `tests/test_web.py:20`)
+5. Interface web: envio de PDFs, fila, visualização do Markdown e download de um arquivo .md ou de todos em .zip (fonte: `README.md:55`) (fonte: `tests/test_web.py:27`)
 
 ### Pos-MVP (Desejavel)
 

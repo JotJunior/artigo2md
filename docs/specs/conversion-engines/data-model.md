@@ -8,14 +8,14 @@ Resultado devolvido por um adaptador de motor. (fonte: `src/artigo2md/engines.py
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
-| engine | string | | Identificador do motor que produziu a saída; o Docling com OCR acrescenta um sufixo (fonte: `src/artigo2md/engines.py:96`) |
+| engine | string | | Identificador do motor que produziu a saída; o Docling com OCR acrescenta um sufixo (fonte: `src/artigo2md/engines.py:110`) |
 | markdown | string | | Markdown produzido |
 | tables | int ou nulo | padrão nulo | Tabelas estruturadas pelo motor; nulo quando o motor não informa |
 | extra | dict | padrão vazio | Dados adicionais do motor |
 
 ## Entity: ficha de motor
 
-Registro descritivo de cada motor, mostrado na interface e no diagnóstico. (fonte: `src/artigo2md/engines.py:203`)
+Registro descritivo de cada motor, mostrado na interface e no diagnóstico. (fonte: `src/artigo2md/engines.py:224`)
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
@@ -26,8 +26,8 @@ Registro descritivo de cada motor, mostrado na interface e no diagnóstico. (fon
 | role | string | | Papel do motor |
 | weight | string | | Peso de instalação |
 | install | string ou nulo | nulo nos obrigatórios | Instrução de instalação dos opcionais |
-| installed | bool | acrescentado na consulta | Estado de instalação na máquina (fonte: `src/artigo2md/engines.py:221`) |
-| detail | string ou nulo | acrescentado na consulta | Detalhe quando o MinerU está instalado em versão incompatível (fonte: `src/artigo2md/engines.py:223`) |
+| installed | bool | acrescentado na consulta | Estado de instalação na máquina (fonte: `src/artigo2md/engines.py:242`) |
+| detail | string ou nulo | acrescentado na consulta | Detalhe quando o MinerU está instalado em versão incompatível (fonte: `src/artigo2md/engines.py:244`) |
 
 ### Relationships
 

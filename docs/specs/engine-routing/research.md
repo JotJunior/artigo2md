@@ -7,7 +7,7 @@ e FR-017, exigidos por SC-001.
 
 ## Decision 1: FR-017 hoje só é atendido para um dos motores
 
-**Decision**: `[PROPOSTA — a validar na implementacao]` quando o motor pedido explicitamente não está instalado, a mensagem de falha passa a trazer a instrução de instalação tirada da ficha dos motores; para motor obrigatório, que não tem instrução na ficha, a orientação é a mesma que o diagnóstico já dá.
+**Decision**: Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:41`): quando o motor pedido explicitamente não está instalado, a mensagem de falha passa a trazer a instrução de instalação tirada da ficha dos motores; para motor obrigatório, que não tem instrução na ficha, a orientação é a mesma que o diagnóstico já dá.
 **Rationale**: Observado em 2026-11-21, convertendo um PDF de teste com o motor pedido e a ausência de cada motor simulada:
 
 | Motor pedido e ausente | Mensagem de falha observada | Traz instrução de instalação? |
@@ -16,14 +16,14 @@ e FR-017, exigidos por SC-001.
 | mineru | `Nenhum motor conseguiu converter a.pdf. mineru: MinerU indisponível (não instalado). Veja o README.` | não, só remete ao README |
 | docling | `Nenhum motor conseguiu converter a.pdf. docling: No module named 'docling.datamodel'; 'docling' is not a package` | não, e a mensagem do motor está em inglês |
 
-Nos três casos a conversão falha sem trocar para o modo automático, como FR-017 pede (fonte: `src/artigo2md/router.py:90`). O que falta é a instrução para MinerU e para os motores obrigatórios. A ficha dos motores já guarda a instrução dos opcionais (fonte: `src/artigo2md/engines.py:203`) e o diagnóstico já orienta sobre os obrigatórios (fonte: `src/artigo2md/cli.py:134`).
+Nos três casos a conversão falha sem trocar para o modo automático, como FR-017 pede (fonte: `src/artigo2md/router.py:90`). O que falta é a instrução para MinerU e para os motores obrigatórios. A ficha dos motores já guarda a instrução dos opcionais (fonte: `src/artigo2md/engines.py:224`) e o diagnóstico já orienta sobre os obrigatórios (fonte: `src/artigo2md/cli.py:134`).
 **Alternatives considered**: Ajustar o texto de FR-017 para "instrução ou referência ao README" (rebaixa uma decisão já tomada pelo operador); deixar cada adaptador com sua própria mensagem (três redações para manter e nenhuma garantia para motor novo).
 
 **Nota de veracidade**: ao propor FR-017 na clarificação de 2026-11-20, a opção recomendada descreveu o comportamento atual como "a mensagem diz como instalar o motor". A sondagem acima mostra que isso só era verdade para o pymupdf4llm.
 
 ## Decision 2: Onde montar a instrução
 
-**Decision**: `[PROPOSTA — a validar na implementacao]` os adaptadores sinalizam motor indisponível de forma uniforme e o roteador acrescenta a instrução a partir da ficha quando o motor foi pedido explicitamente.
+**Decision**: Os adaptadores sinalizam motor indisponível de forma uniforme e já incluem a instrução tirada da ficha. Na implementação (2026-11-21) o roteador não precisou mudar: ele já repassa o erro do motor na mensagem de falha, então a proposta original de acrescentar a instrução no roteador foi dispensada.
 **Rationale**: O roteador é quem sabe se o motor foi pedido ou escolhido pelo plano automático (fonte: `src/artigo2md/router.py:88`); a ficha é a única fonte das instruções. No modo automático nada muda: o motor ausente continua contando como tentativa com erro e o próximo é tentado (fonte: `src/artigo2md/router.py:137`).
 **Alternatives considered**: Colocar a instrução dentro de cada adaptador (duplicaria a ficha); tratar na linha de comando e na interface web (dois lugares, e a regra pertence ao roteamento).
 
@@ -53,6 +53,6 @@ Nos três casos a conversão falha sem trocar para o modo automático, como FR-0
 
 ## Decision 7: Limite de tempo por motor e por conversão
 
-**Decision**: Fica como decisão do operador, no backlog.
-**Rationale**: Só o MinerU tem limite de tempo hoje (fonte: `src/artigo2md/engines.py:170`); não há medição que sustente um valor para os demais motores nem para a conversão inteira (itens CHK003 e CHK015 do checklist).
+**Decision**: Manter como está, decidido em 2026-11-21 (informado pelo operador): sem limite de tempo para os demais motores e para a conversão inteira.
+**Rationale**: Só o MinerU tem limite de tempo hoje (fonte: `src/artigo2md/engines.py:189`); não há medição que sustente um valor para os demais motores nem para a conversão inteira (itens CHK003 e CHK015 do checklist).
 **Alternatives considered**: Propor um valor neste plano (seria número sem lastro).

@@ -8,15 +8,15 @@
 
 - [x] CHK001 - Cada requisito funcional cita a origem? [Completude, Spec §Functional Requirements] {auto} — FR-001 a FR-017 têm origem citada (fonte: `docs/specs/engine-routing/spec.md`)
 - [x] CHK002 - Está definido o comportamento quando o motor solicitado explicitamente não está instalado? [Completude, Spec §FR-017] {auto} — definido na clarificação como FR-017: falha com instrução de instalação (fonte: `docs/specs/engine-routing/spec.md`)
-- [ ] CHK003 - Está definido um limite de tempo por motor ou por conversão? [Gap] {auto} — a spec não traz requisito de tempo limite
+- [x] CHK003 - Está definido um limite de tempo por motor ou por conversão? [Completude, Spec §Clarifications] {auto} — resolvido em 2026-11-21: decidido manter como está, só o MinerU tem limite de tempo (informado pelo operador)
 
 ## Clareza de Requisitos
 
 - [x] CHK004 - A nota de aceite está quantificada? [Clareza, Spec §FR-009] {auto} — pelo menos 65 (fonte: `docs/specs/engine-routing/spec.md`)
 - [x] CHK005 - Os descontos da nota estão quantificados com a condição de cada um? [Clareza, Spec §FR-006, Spec §FR-007, Spec §FR-008] {auto} — 45, 35 e 20, cada um com sua condição (fonte: `docs/specs/engine-routing/spec.md`)
 - [x] CHK006 - O limiar que põe o MinerU em primeiro está quantificado? [Clareza, Spec §FR-003] {auto} — pontuação de fórmula de pelo menos 12 (fonte: `docs/specs/engine-routing/spec.md`)
-- [ ] CHK007 - Está definido o que significa "o PDF tiver texto" em FR-002? [Ambiguity, Spec §FR-002] {auto} — a relação com "totalmente escaneado" de FR-004 fica implícita (fonte: `docs/specs/engine-routing/spec.md`)
-- [ ] CHK008 - Está definido o desempate entre resultados com a mesma nota? [Ambiguity, Spec §FR-011] {auto} — FR-011 só diz "o de maior nota" (fonte: `docs/specs/engine-routing/spec.md`)
+- [x] CHK007 - Está definido o que significa "o PDF tiver texto" em FR-002? [Clareza, Spec §FR-002] {auto} — resolvido em 2026-11-21: FR-002 define ter texto como não estar totalmente escaneado (fonte: `docs/specs/engine-routing/spec.md`)
+- [x] CHK008 - Está definido o desempate entre resultados com a mesma nota? [Clareza, Spec §FR-011] {auto} — resolvido em 2026-11-21: em caso de empate fica o primeiro resultado obtido (fonte: `docs/specs/engine-routing/spec.md`)
 
 ## Consistencia de Requisitos
 
@@ -31,11 +31,11 @@
 ## Cobertura de Cenarios
 
 - [x] CHK013 - Cada requisito funcional é citado em ao menos um cenário ou edge case? [Cobertura, Spec §Acceptance Scenarios] {auto} — gate requirement-coverage: requirements=17, covered=17, errors=0
-- [ ] CHK014 - Cada requisito funcional tem teste existente como origem de um cenário? [Gap, Spec §FR-007, Spec §FR-008, Spec §FR-012, Spec §FR-013, Spec §FR-014, Spec §FR-015, Spec §FR-017] {auto} — esses requisitos só aparecem em cenários ou edge cases pendentes (fonte: `docs/specs/engine-routing/spec.md`)
+- [x] CHK014 - Cada requisito funcional tem teste existente como origem de um cenário? [Cobertura, Spec §Acceptance Scenarios] {auto} — resolvido em 2026-11-21: todos os requisitos citam testes (fonte: `docs/specs/engine-routing/spec.md`)
 
 ## Requisitos Nao-Funcionais
 
-- [ ] CHK015 - Há requisito de tempo total de conversão quando vários motores são tentados? [Gap] {auto} — a spec não traz requisito de desempenho
+- [x] CHK015 - Há requisito de tempo total de conversão quando vários motores são tentados? [Completude, Spec §Clarifications] {auto} — resolvido em 2026-11-21: decidido não ter limite de tempo por conversão (informado pelo operador)
 
 ## Dependencias e Premissas
 
