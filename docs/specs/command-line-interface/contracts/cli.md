@@ -54,6 +54,7 @@ Abre a interface web. (fonte: `src/artigo2md/cli.py:151`)
 | `--port` | inteiro | `8777` | Porta (fonte: `src/artigo2md/cli.py:153`) |
 | `--data-dir` | caminho | pasta `artigo2md-dados` no diretório do usuário | Onde ficam envios e resultados (fonte: `src/artigo2md/cli.py:154`) |
 | `--open` | flag | desligada | Abre o navegador automaticamente (fonte: `src/artigo2md/cli.py:155`) |
+| `--idle-timeout` | segundos | `300` | Encerra o conversor depois desse tempo sem uso, liberando a memória dos modelos; zero significa nunca (fonte: `src/artigo2md/cli.py:156`) |
 
 Com host fora de 127.0.0.1, localhost e ::1, o serve escreve na saída de erro um aviso de que a interface não tem senha e fica acessível a outras máquinas da rede, e segue normalmente (fonte: `src/artigo2md/cli.py:108`).
 
@@ -66,7 +67,7 @@ Com host fora de 127.0.0.1, localhost e ::1, o serve escreve na saída de erro u
 
 ## `artigo2md doctor`
 
-Verifica a instalação e os motores disponíveis. (fonte: `src/artigo2md/cli.py:158`)
+Verifica a instalação e os motores disponíveis. (fonte: `src/artigo2md/cli.py:161`)
 
 ### Saída
 

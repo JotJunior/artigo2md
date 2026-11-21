@@ -10,6 +10,7 @@ Os motores AGPL nunca são dependência obrigatória: assim o projeto continua M
 """
 from __future__ import annotations
 
+import importlib.util
 import os
 import re
 import shutil
@@ -128,12 +129,16 @@ def run_markitdown(path: Path) -> EngineOutput:
 
 
 # ── pymupdf4llm (opcional, AGPL) ─────────────────────────────────────────────
-def pymupdf_available() -> bool:
+def _installed(module: str) -> bool:
+    """Verifica se o pacote existe SEM importá-lo (importar carrega centenas de MB)."""
     try:
-        import pymupdf4llm  # noqa: F401
-        return True
+        return importlib.util.find_spec(module) is not None
     except Exception:
         return False
+
+
+def pymupdf_available() -> bool:
+    return _installed("pymupdf4llm")
 
 
 def run_pymupdf(path: Path) -> EngineOutput:
@@ -205,16 +210,9 @@ def run_mineru(path: Path, timeout: int = 1800) -> EngineOutput:
 
 
 def available_engines() -> dict[str, bool]:
-    def importable(mod: str) -> bool:
-        try:
-            __import__(mod)
-            return True
-        except Exception:
-            return False
-
     return {
-        "docling": importable("docling"),
-        "markitdown": importable("markitdown"),
+        "docling": _installed("docling"),
+        "markitdown": _installed("markitdown"),
         "pymupdf": pymupdf_available(),
         "mineru": mineru_available(),
     }

@@ -24,7 +24,7 @@ que faltam para FR-004, FR-007 e FR-008, exigidos por SC-001.
 ## Decision 2: Onde traduzir o erro
 
 **Decision**: Na própria inspeção (`src/artigo2md/pdfscan.py`), na abertura do documento dentro de `analyze`.
-**Rationale**: O roteador chama a inspeção antes do laço de motores (fonte: `src/artigo2md/router.py:128`), então uma falha levantada ali já impede o acionamento dos motores, como pede o edge case da spec. A linha de comando e o trabalhador da interface web já capturam qualquer exceção da conversão e mostram o texto dela (fonte: `src/artigo2md/cli.py:74`) (fonte: `src/artigo2md/web.py:99`), portanto não precisam mudar.
+**Rationale**: O roteador chama a inspeção antes do laço de motores (fonte: `src/artigo2md/router.py:128`), então uma falha levantada ali já impede o acionamento dos motores, como pede o edge case da spec. A linha de comando e o trabalhador da interface web já capturam qualquer exceção da conversão e mostram o texto dela (fonte: `src/artigo2md/cli.py:74`) (fonte: `src/artigo2md/web.py:106`), portanto não precisam mudar.
 **Alternatives considered**: Tratar no roteador (duplicaria o conhecimento sobre o pypdfium2 fora do módulo que o usa); tratar em cada ponto de entrada (três lugares para manter).
 
 ## Decision 3: Forma do erro de domínio
@@ -36,7 +36,7 @@ que faltam para FR-004, FR-007 e FR-008, exigidos por SC-001.
 ## Decision 4: Arquivo inexistente
 
 **Decision**: Fora do escopo de FR-007; o comportamento atual é mantido.
-**Rationale**: O requisito fala de PDF inválido ou protegido. A linha de comando já ignora entrada que não existe (fonte: `src/artigo2md/cli.py:29`) e a interface web grava o arquivo antes de converter (fonte: `src/artigo2md/web.py:66`).
+**Rationale**: O requisito fala de PDF inválido ou protegido. A linha de comando já ignora entrada que não existe (fonte: `src/artigo2md/cli.py:29`) e a interface web grava o arquivo antes de converter (fonte: `src/artigo2md/web.py:73`).
 **Alternatives considered**: Incluir o caso no mesmo erro de domínio (ampliaria o requisito sem pedido do operador).
 
 ## Decision 5: Como testar que a inspeção não acessa a rede (FR-008)

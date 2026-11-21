@@ -16,13 +16,13 @@ Nenhuma mudança de código de produção está prevista.
 ## Technical Context
 
 **Language/Version**: Python >= 3.10 (fonte: `pyproject.toml:7`); o ambiente criado pelo `uv sync` em 2026-11-20 usa Python 3.12
-**Primary Dependencies**: FastAPI, uvicorn e python-multipart (fonte: `pyproject.toml:12`); página estática sem etapa de build (fonte: `src/artigo2md/web.py:21`)
-**Storage**: arquivos — uma pasta por job no diretório de dados, com o PDF de origem, os metadados e o Markdown (fonte: `src/artigo2md/web.py:62`)
+**Primary Dependencies**: FastAPI, uvicorn e python-multipart (fonte: `pyproject.toml:12`); página estática sem etapa de build (fonte: `src/artigo2md/web.py:27`)
+**Storage**: arquivos — uma pasta por job no diretório de dados, com o PDF de origem, os metadados e o Markdown (fonte: `src/artigo2md/web.py:69`)
 **Testing**: pytest com o cliente de teste do FastAPI (fonte: `tests/test_web.py:11`)
 **Target Platform**: execução local; o README declara teste em macOS com Apple Silicon e Linux (fonte: `README.md:35`)
 **Project Type**: web-service local com página estática
 **Performance Goals**: N/A — a spec não define requisito de desempenho
-**Constraints**: processamento 100% local e mensagens ao usuário em português (fonte: `docs/constitution.md`); uma conversão por vez (fonte: `src/artigo2md/web.py:78`)
+**Constraints**: processamento 100% local e mensagens ao usuário em português (fonte: `docs/constitution.md`); uma conversão por vez (fonte: `src/artigo2md/web.py:85`)
 **Scale/Scope**: `tests/test_web.py`; nenhum arquivo de código de produção
 
 ## Constitution Check
@@ -70,11 +70,11 @@ tests/test_web.py                   # ALTERA: testes de FR-007 a FR-013
 
 | Camada | Case style | Validacao | Fonte da verdade |
 |--------|------------|-----------|------------------|
-| Arquivo de metadados do job | snake_case | nenhuma além da leitura do JSON | (fonte: `src/artigo2md/web.py:67`) |
-| API payload (response) | snake_case, o mesmo dicionário do job | nenhuma; a API devolve o dicionário como está | (fonte: `src/artigo2md/web.py:151`) |
-| API payload (request) | campos de formulário `files` e `engine` | motor conferido contra a lista aceita; conteúdo conferido pela assinatura de PDF | (fonte: `src/artigo2md/web.py:134`) |
-| Página estática | lê os mesmos nomes de campo da API | nenhuma | (fonte: `src/artigo2md/static/index.html:187`) |
-| URL path params | identificador do job | 404 quando não existe | (fonte: `src/artigo2md/web.py:106`) |
+| Arquivo de metadados do job | snake_case | nenhuma além da leitura do JSON | (fonte: `src/artigo2md/web.py:74`) |
+| API payload (response) | snake_case, o mesmo dicionário do job | nenhuma; a API devolve o dicionário como está | (fonte: `src/artigo2md/web.py:162`) |
+| API payload (request) | campos de formulário `files` e `engine` | motor conferido contra a lista aceita; conteúdo conferido pela assinatura de PDF | (fonte: `src/artigo2md/web.py:145`) |
+| Página estática | lê os mesmos nomes de campo da API | nenhuma | (fonte: `src/artigo2md/static/index.html:189`) |
+| URL path params | identificador do job | 404 quando não existe | (fonte: `src/artigo2md/web.py:113`) |
 
 **Mapper layer**: não há. O dicionário do job é gravado, devolvido pela API e lido pela página com os mesmos nomes.
 

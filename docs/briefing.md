@@ -31,9 +31,9 @@
 Capacidades já presentes no projeto:
 
 1. Inspeção do PDF antes da conversão: páginas escaneadas, tabelas e fórmulas (fonte: `README.md:6`) (fonte: `tests/test_core.py:9`)
-2. Escolha automática do motor, avaliação de qualidade e fallback para o próximo motor, mantendo o resultado de maior nota (fonte: `README.md:72`) (fonte: `tests/test_core.py:116`)
+2. Escolha automática do motor, avaliação de qualidade e fallback para o próximo motor, mantendo o resultado de maior nota (fonte: `README.md:79`) (fonte: `tests/test_core.py:116`)
 3. Quatro motores: Docling e MarkItDown incluídos; pymupdf4llm e MinerU 3.x opcionais (fonte: `README.md:13`) (fonte: `tests/test_core.py:75`)
-4. Linha de comando com os subcomandos convert, serve e doctor (fonte: `CLAUDE.md:10`) (fonte: `README.md:61`)
+4. Linha de comando com os subcomandos convert, serve e doctor (fonte: `CLAUDE.md:10`) (fonte: `README.md:68`)
 5. Interface web: envio de PDFs, fila, visualização do Markdown e download de um arquivo .md ou de todos em .zip (fonte: `README.md:55`) (fonte: `tests/test_web.py:27`)
 
 ### Pos-MVP (Desejavel)
@@ -43,7 +43,7 @@ Capacidades já presentes no projeto:
 ### Fora de Escopo
 
 - Fora de escopo ainda não declarado (informado pelo operador)
-- O README registra que o artigo2md recusa o MinerU 4.x (fonte: `README.md:101`)
+- O README registra que o artigo2md recusa o MinerU 4.x (fonte: `README.md:108`)
 
 ## 4. Prioridades e Trade-offs
 
@@ -51,7 +51,7 @@ Capacidades já presentes no projeto:
 
 **Decisoes explicitas**:
 - Segundo o README, os motores AGPL são opcionais, nunca dependência obrigatória, e por isso o projeto continua MIT (fonte: `README.md:20`)
-- Segundo o CLAUDE.md, a inspeção usa pypdfium2 e não PyMuPDF por causa da licença (fonte: `CLAUDE.md:34`)
+- Segundo o CLAUDE.md, a inspeção usa pypdfium2 e não PyMuPDF por causa da licença (fonte: `CLAUDE.md:36`)
 - A interface web processa uma conversão por vez (fonte: `CLAUDE.md:11`)
 
 ## 5. Restricoes
@@ -61,7 +61,7 @@ Capacidades já presentes no projeto:
 | Prazo | flexivel — sem prazo fixo (informado pelo operador) | Projeto open source comunitário (informado pelo operador) |
 | Equipe | Mantenedor + colaboradores voluntários (informado pelo operador) | O LICENSE cita "e colaboradores" (fonte: `LICENSE:3`) |
 | Budget | Sem orçamento (informado pelo operador) | O README afirma que não há custo por página (fonte: `README.md:4`) |
-| Tecnica | Processamento 100% local, sem envio de documentos a serviços externos; dependências obrigatórias só com licença permissiva (MIT/Apache/BSD) (informado pelo operador) | O CLAUDE.md descreve as mesmas regras (fonte: `CLAUDE.md:32`); Python >= 3.10 (fonte: `pyproject.toml:7`) |
+| Tecnica | Processamento 100% local, sem envio de documentos a serviços externos; dependências obrigatórias só com licença permissiva (MIT/Apache/BSD) (informado pelo operador) | O CLAUDE.md descreve as mesmas regras (fonte: `CLAUDE.md:34`); Python >= 3.10 (fonte: `pyproject.toml:7`) |
 
 ## 6. Stack Tecnica
 
@@ -80,7 +80,7 @@ Capacidades já presentes no projeto:
 - A suíte de testes passa antes de qualquer commit (informado pelo operador)
 - Mensagens ao usuário em português (informado pelo operador)
 - O teste real com Docling é opcional, habilitado pela variável de ambiente ARTIGO2MD_SLOW (fonte: `tests/test_core.py:129`)
-- Cada conversão recebe uma nota de qualidade; segundo o README, abaixo de 65/100 o próximo motor é tentado (fonte: `README.md:76`)
+- Cada conversão recebe uma nota de qualidade; segundo o README, abaixo de 65/100 o próximo motor é tentado (fonte: `README.md:83`)
 
 **Compliance**: nenhum especifico (informado pelo operador)
 
@@ -91,7 +91,7 @@ Capacidades já presentes no projeto:
 **12 meses**: Mesma direção de crescimento em features; sem meta distinta informada (informado pelo operador)
 
 **Riscos conhecidos**:
-- Mudanças nos motores de terceiros: versões novas podem quebrar a conversão ou mudar licença/telemetria (informado pelo operador). O README registra que o MinerU 4.x é recusado (fonte: `README.md:101`) e que o MinerU 3.4.5 usa o pacote six sem declará-lo (fonte: `README.md:102`)
+- Mudanças nos motores de terceiros: versões novas podem quebrar a conversão ou mudar licença/telemetria (informado pelo operador). O README registra que o MinerU 4.x é recusado (fonte: `README.md:108`) e que o MinerU 3.4.5 usa o pacote six sem declará-lo (fonte: `README.md:109`)
 - Peso dos modelos: downloads de vários GB e tempo de conversão podem afastar usuários (informado pelo operador). O README cita cerca de 3 GB livres para os modelos do Docling (fonte: `README.md:34`)
 - Sem autenticação: exposição indevida da interface web na rede (informado pelo operador). O README afirma que não há senha (fonte: `README.md:59`)
 

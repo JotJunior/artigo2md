@@ -200,10 +200,11 @@ def serve_env(monkeypatch):
 
     from artigo2md import web
 
-    seen = {"apps": [], "runs": [], "opened": []}
+    seen = {"apps": [], "idle_timeouts": [], "runs": [], "opened": []}
 
-    def _create_app(data_dir):
+    def _create_app(data_dir, idle_timeout=None):
         seen["apps"].append(data_dir)
+        seen["idle_timeouts"].append(idle_timeout)
         return object()
 
     def _run(app, **kwargs):
@@ -254,6 +255,7 @@ def test_serve_defaults_to_local_host_and_default_port(run_cli, serve_env, port_
     assert code == 0
     assert port_is_free == [("127.0.0.1", 8777)]
     assert serve_env["apps"] == [Path("~/artigo2md-dados").expanduser()]
+    assert serve_env["idle_timeouts"] == [300]  # padrão: descarrega o conversor após 5 minutos ocioso
     assert serve_env["runs"] == [{"host": "127.0.0.1", "port": 8777, "log_level": "warning"}]
     assert "interface em http://localhost:8777" in out
     assert serve_env["opened"] == []
@@ -262,10 +264,13 @@ def test_serve_defaults_to_local_host_and_default_port(run_cli, serve_env, port_
 def test_serve_open_and_data_dir_options(run_cli, serve_env, port_is_free, tmp_path):
     data_dir = tmp_path / "dados"
 
-    code, _out, _err = run_cli("serve", "--open", "--data-dir", data_dir, "--port", "9001")
+    code, _out, _err = run_cli(
+        "serve", "--open", "--data-dir", data_dir, "--port", "9001", "--idle-timeout", "0"
+    )
 
     assert code == 0
     assert serve_env["apps"] == [data_dir]
+    assert serve_env["idle_timeouts"] == [0]
     assert serve_env["runs"][0]["port"] == 9001
     assert serve_env["opened"] == ["http://localhost:9001"]
 

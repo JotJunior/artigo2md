@@ -9,6 +9,8 @@ opcionalmente, MinerU). Código em `src/artigo2md/`:
 - `router.py` — plano de motores, avaliação de qualidade e fallback.
 - `cli.py` — `artigo2md convert | serve | doctor`.
 - `web.py` + `static/index.html` — interface web (FastAPI, uma conversão por vez).
+- `worker.py` — processo auxiliar de conversão que se encerra após `--idle-timeout` s ocioso
+  (devolve a RAM dos modelos). Nunca importe docling/pymupdf4llm no processo principal.
 
 ## Quando o usuário pedir para instalar
 

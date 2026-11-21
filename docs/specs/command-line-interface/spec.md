@@ -49,6 +49,7 @@ Pelo comando artigo2md, a pessoa converte arquivos ou pastas de PDFs em Markdown
 - Um PDF passado diretamente continua na raiz da pasta de saída (fonte: `tests/test_cli.py:353`) (cobre FR-014)
 - Quando entradas diferentes da mesma execução apontam para o mesmo caminho de saída, o convert não converte nada, lista as entradas em conflito e explica como resolver; o mesmo arquivo passado duas vezes não conta como conflito (fonte: `tests/test_cli.py:387`) (fonte: `tests/test_cli.py:402`) (fonte: `tests/test_cli.py:413`) (cobre FR-016)
 - Com host que não é o local, o serve avisa que a interface não tem senha e fica visível na rede; com host local não há aviso (fonte: `tests/test_cli.py:424`) (fonte: `tests/test_cli.py:434`) (cobre FR-015)
+- O serve repassa à interface o tempo ocioso padrão de 300 segundos e o valor informado na opção (fonte: `tests/test_cli.py:252`) (fonte: `tests/test_cli.py:264`) (cobre FR-017)
 
 ## Requirements
 
@@ -70,6 +71,7 @@ Pelo comando artigo2md, a pessoa converte arquivos ou pastas de PDFs em Markdown
 - **FR-014**: Quando PDFs de mesmo nome estão em subpastas diferentes de uma pasta de entrada, o convert converte todos e grava as saídas em caminhos distintos, repetindo na pasta de saída a estrutura de subpastas da pasta de entrada, sem pular nem sobrescrever por coincidência de nome; um PDF passado diretamente vai para a raiz da pasta de saída. (informado pelo operador) (fonte: `src/artigo2md/cli.py:28`)
 - **FR-015**: Quando o serve é iniciado com host que não é o local, o sistema avisa que a interface não tem senha e fica acessível a outras máquinas da rede, e segue normalmente. (informado pelo operador) (fonte: `src/artigo2md/cli.py:108`)
 - **FR-016**: Quando entradas diferentes da mesma execução apontam para o mesmo caminho de saída, o convert não converte nada, lista as entradas em conflito, explica como resolver e termina com código 1. (informado pelo operador) (fonte: `src/artigo2md/cli.py:53`)
+- **FR-017**: A opção --idle-timeout do serve define depois de quantos segundos sem uso o conversor da interface é encerrado, com padrão de 300 e zero para nunca encerrar. (fonte: `src/artigo2md/cli.py:156`)
 
 ### Inferido (nao confirmado)
 

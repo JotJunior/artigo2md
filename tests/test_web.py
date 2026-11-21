@@ -12,6 +12,7 @@ from fastapi.testclient import TestClient
 
 from artigo2md import router, web
 from artigo2md.web import create_app
+from artigo2md.worker import ConversionWorker
 
 
 def _wait(client, job_id, timeout=60):
@@ -66,18 +67,22 @@ def test_password_protected_pdf_job_ends_with_clear_error(tmp_path, protected_pd
 
 
 # ── conversão simulada ───────────────────────────────────────────────────────
-def _simulated_result(path):
+def _simulated_result(path) -> dict:
+    """Resposta no formato que o processo auxiliar de conversão devolve à interface."""
     quality = router.Quality(score=100.0, accepted=True, tables_found=0, tables_expected=0, chars_per_page=0.0)
-    return router.ConversionResult(
+    result = router.ConversionResult(
         source=str(path), markdown="# simulado\n", engine="simulado",
         analysis={"pages": 1}, attempts=[router.Attempt("simulado", 0.0, quality)],
     )
+    return {"markdown": result.markdown, "engine": result.engine, "report": result.report()}
 
 
 @pytest.fixture
 def fast_convert(monkeypatch):
-    """Troca a conversão da interface web por uma simulação imediata."""
-    monkeypatch.setattr(web, "convert", lambda path, engine="auto", progress=None: _simulated_result(path))
+    """Troca a conversão do processo auxiliar por uma simulação imediata, sem criar processo."""
+    monkeypatch.setattr(
+        ConversionWorker, "convert", lambda self, path, engine, progress: _simulated_result(path)
+    )
 
 
 @pytest.fixture
@@ -85,14 +90,13 @@ def held_convert(monkeypatch):
     """Conversão simulada que avisa uma etapa e fica parada até o teste liberar."""
     started, release = threading.Event(), threading.Event()
 
-    def _convert(path, engine="auto", progress=None):
-        if progress:
-            progress("Etapa simulada")
+    def _convert(self, path, engine, progress):
+        progress("Etapa simulada")
         started.set()
         release.wait(timeout=30)
         return _simulated_result(path)
 
-    monkeypatch.setattr(web, "convert", _convert)
+    monkeypatch.setattr(ConversionWorker, "convert", _convert)
     yield SimpleNamespace(started=started, release=release)
     release.set()  # nunca deixa o trabalhador preso depois do teste
 
@@ -189,7 +193,8 @@ def test_api_roundtrip_matches_contract_and_page_fields(tmp_path, article_pdf):
     job = _wait(client, created["id"])
     listed = client.get("/api/jobs").json()
 
-    assert set(info) == {"version", "engines", "engine_table", "choices"}
+    assert set(info) == {"version", "engines", "engine_table", "choices", "converter"}
+    assert set(info["converter"]) == {"loaded", "idle_timeout"}
     assert info["choices"] == ["auto", "docling", "pymupdf", "mineru", "markitdown"]
     assert set(created) == {"id", "filename", "stem", "size", "engine_requested", "status", "stage", "created_at"}
     assert set(job) == set(created) | {"started_at", "finished_at", "engine", "analysis", "attempts", "quality"}
@@ -201,3 +206,29 @@ def test_api_roundtrip_matches_contract_and_page_fields(tmp_path, article_pdf):
     page = (Path(web.__file__).parent / "static" / "index.html").read_text(encoding="utf-8")
     fields_read_by_page = set(re.findall(r"\bj\.([a-z_]+)\b", page))
     assert fields_read_by_page <= set(job) | set(info) | {"error"}  # "error" só existe em job com erro
+
+
+def test_converter_process_unloads_when_idle(tmp_path, article_pdf):
+    client = TestClient(create_app(tmp_path / "dados", idle_timeout=1))
+    assert client.get("/api/info").json()["converter"]["loaded"] is False
+    created = client.post("/api/jobs", files=[("files", ("a.pdf", article_pdf.read_bytes()))],
+                          data={"engine": "markitdown"}).json()
+    assert _wait(client, created[0]["id"])["status"] == "done"
+    assert client.get("/api/info").json()["converter"]["loaded"] is True
+    end = time.time() + 10
+    while time.time() < end and client.get("/api/info").json()["converter"]["loaded"]:
+        time.sleep(0.3)
+    assert client.get("/api/info").json()["converter"]["loaded"] is False
+    # e volta a funcionar depois de descarregado
+    again = client.post("/api/jobs", files=[("files", ("b.pdf", article_pdf.read_bytes()))],
+                        data={"engine": "markitdown"}).json()
+    assert _wait(client, again[0]["id"])["status"] == "done"
+
+
+def test_info_does_not_import_heavy_engines(tmp_path):
+    import sys
+
+    for mod in ("docling", "pymupdf4llm"):
+        sys.modules.pop(mod, None)
+    TestClient(create_app(tmp_path / "dados")).get("/api/info")
+    assert "docling" not in sys.modules and "pymupdf4llm" not in sys.modules

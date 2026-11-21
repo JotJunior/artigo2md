@@ -10,13 +10,13 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 
 ## Decision 1: Docling — serviços remotos
 
-**Decision**: Declarar explicitamente, nas opções de pipeline que o adaptador monta, que serviços remotos ficam desligados, em vez de depender do valor padrão. Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:68`); o teste real do Docling continuou passando depois da mudança.
+**Decision**: Declarar explicitamente, nas opções de pipeline que o adaptador monta, que serviços remotos ficam desligados, em vez de depender do valor padrão. Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:69`); o teste real do Docling continuou passando depois da mudança.
 **Rationale**: No docling 2.151.1, a opção `enable_remote_services` das opções de pipeline tem padrão falso e a descrição diz que ela permite chamar APIs externas durante o processamento (arquivo `docling/datamodel/pipeline_options.py` do pacote). Antes desta mudança, o adaptador criava as opções sem tocar nesse campo e valia o padrão. Como versões antigas do Docling podem não ter o campo, a atribuição só acontece quando ele existe. Fixar o valor protege contra mudança de padrão em versão futura, risco registrado no briefing.
 **Alternatives considered**: Manter o padrão implícito (fica sem garantia quando o Docling mudar); fixar a versão do Docling (o `pyproject.toml` aceita a partir da 2.40 e não há pedido para restringir).
 
 ## Decision 2: Docling — download de modelos e telemetria do Hugging Face Hub
 
-**Decision**: Definir a variável de ambiente `HF_HUB_DISABLE_TELEMETRY` no processo antes de qualquer import do Docling; manter o download de modelos na primeira conversão como está. Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:26`).
+**Decision**: Definir a variável de ambiente `HF_HUB_DISABLE_TELEMETRY` no processo antes de qualquer import do Docling; manter o download de modelos na primeira conversão como está. Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:27`).
 **Rationale**: O docling 2.151.1 baixa modelos com `snapshot_download` do huggingface_hub (arquivo `docling/models/utils/hf_model_download.py` do pacote). O huggingface_hub 1.33.0 lê `HF_HUB_DISABLE_TELEMETRY` (ou `DISABLE_TELEMETRY`) e `HF_HUB_OFFLINE` no carregamento do módulo de constantes (arquivo `huggingface_hub/constants.py` do pacote), por isso a variável precisa estar definida antes do import. O download de modelos traz dados para a máquina e não envia o documento; o README já o descreve (fonte: `README.md:34`).
 **Alternatives considered**: Forçar modo offline com `HF_HUB_OFFLINE` (quebraria a primeira conversão, que precisa baixar os modelos); não tratar a telemetria do hub (FR-013 pede desativar quando há a opção).
 
@@ -25,7 +25,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 ## Decision 3: MarkItDown — conversores em nuvem
 
 **Decision**: Manter a chamada atual, sem endpoint de nuvem, e cobrir com teste.
-**Rationale**: No markitdown 0.1.9, os conversores Document Intelligence e Content Understanding só são registrados quando o chamador passa o respectivo endpoint (arquivo `markitdown/_markitdown.py` do pacote). O adaptador instancia o MarkItDown só com plugins desligados, sem endpoint nem cliente de LLM (fonte: `src/artigo2md/engines.py:126`).
+**Rationale**: No markitdown 0.1.9, os conversores Document Intelligence e Content Understanding só são registrados quando o chamador passa o respectivo endpoint (arquivo `markitdown/_markitdown.py` do pacote). O adaptador instancia o MarkItDown só com plugins desligados, sem endpoint nem cliente de LLM (fonte: `src/artigo2md/engines.py:127`).
 **Alternatives considered**: Nenhuma mudança de código é necessária; a alternativa seria não testar, o que descumpre SC-001.
 
 ## Decision 4: pymupdf4llm — acesso à rede
@@ -37,7 +37,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 ## Decision 5: MinerU — telemetria
 
 **Decision**: Sem mudança de código; cobrir com teste.
-**Rationale**: O adaptador já executa o MinerU com a variável `MINERU_TELEMETRY_DISABLED` definida (fonte: `src/artigo2md/engines.py:195`).
+**Rationale**: O adaptador já executa o MinerU com a variável `MINERU_TELEMETRY_DISABLED` definida (fonte: `src/artigo2md/engines.py:200`).
 **Alternatives considered**: —
 
 ## Decision 6: Como testar FR-013
@@ -53,7 +53,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 ## Decision 7: Como testar o MinerU sem instalá-lo (FR-006 a FR-009)
 
 **Decision**: Substituir, nos testes, a localização do executável e a execução do subprocesso, simulando as saídas de versão e de conversão; limpar o cache de verificação de versão entre os testes.
-**Rationale**: O MinerU é opcional e pesado (fonte: `README.md:18`); o adaptador concentra a interação em duas chamadas de subprocesso (fonte: `src/artigo2md/engines.py:169`) (fonte: `src/artigo2md/engines.py:197`) e guarda o resultado da verificação em cache por executável (fonte: `src/artigo2md/engines.py:157`).
+**Rationale**: O MinerU é opcional e pesado (fonte: `README.md:18`); o adaptador concentra a interação em duas chamadas de subprocesso (fonte: `src/artigo2md/engines.py:174`) (fonte: `src/artigo2md/engines.py:202`) e guarda o resultado da verificação em cache por executável (fonte: `src/artigo2md/engines.py:162`).
 **Alternatives considered**: Exigir o MinerU instalado para testar (contraria a instrução do projeto de não instalá-lo sem pedido).
 
 ## Decision 8: Como testar pymupdf4llm ausente, OCR e reuso do conversor (FR-005, FR-002, FR-012)

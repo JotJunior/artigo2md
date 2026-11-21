@@ -7,7 +7,7 @@ e FR-017, exigidos por SC-001.
 
 ## Decision 1: FR-017 hoje só é atendido para um dos motores
 
-**Decision**: Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:41`): quando o motor pedido explicitamente não está instalado, a mensagem de falha passa a trazer a instrução de instalação tirada da ficha dos motores; para motor obrigatório, que não tem instrução na ficha, a orientação é a mesma que o diagnóstico já dá.
+**Decision**: Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:42`): quando o motor pedido explicitamente não está instalado, a mensagem de falha passa a trazer a instrução de instalação tirada da ficha dos motores; para motor obrigatório, que não tem instrução na ficha, a orientação é a mesma que o diagnóstico já dá.
 **Rationale**: Observado em 2026-11-21, convertendo um PDF de teste com o motor pedido e a ausência de cada motor simulada:
 
 | Motor pedido e ausente | Mensagem de falha observada | Traz instrução de instalação? |
@@ -16,7 +16,7 @@ e FR-017, exigidos por SC-001.
 | mineru | `Nenhum motor conseguiu converter a.pdf. mineru: MinerU indisponível (não instalado). Veja o README.` | não, só remete ao README |
 | docling | `Nenhum motor conseguiu converter a.pdf. docling: No module named 'docling.datamodel'; 'docling' is not a package` | não, e a mensagem do motor está em inglês |
 
-Nos três casos a conversão falha sem trocar para o modo automático, como FR-017 pede (fonte: `src/artigo2md/router.py:90`). O que falta é a instrução para MinerU e para os motores obrigatórios. A ficha dos motores já guarda a instrução dos opcionais (fonte: `src/artigo2md/engines.py:224`) e o diagnóstico já orienta sobre os obrigatórios (fonte: `src/artigo2md/cli.py:134`).
+Nos três casos a conversão falha sem trocar para o modo automático, como FR-017 pede (fonte: `src/artigo2md/router.py:90`). O que falta é a instrução para MinerU e para os motores obrigatórios. A ficha dos motores já guarda a instrução dos opcionais (fonte: `src/artigo2md/engines.py:222`) e o diagnóstico já orienta sobre os obrigatórios (fonte: `src/artigo2md/cli.py:134`).
 **Alternatives considered**: Ajustar o texto de FR-017 para "instrução ou referência ao README" (rebaixa uma decisão já tomada pelo operador); deixar cada adaptador com sua própria mensagem (três redações para manter e nenhuma garantia para motor novo).
 
 **Nota de veracidade**: ao propor FR-017 na clarificação de 2026-11-20, a opção recomendada descreveu o comportamento atual como "a mensagem diz como instalar o motor". A sondagem acima mostra que isso só era verdade para o pymupdf4llm.
@@ -54,5 +54,5 @@ Nos três casos a conversão falha sem trocar para o modo automático, como FR-0
 ## Decision 7: Limite de tempo por motor e por conversão
 
 **Decision**: Manter como está, decidido em 2026-11-21 (informado pelo operador): sem limite de tempo para os demais motores e para a conversão inteira.
-**Rationale**: Só o MinerU tem limite de tempo hoje (fonte: `src/artigo2md/engines.py:189`); não há medição que sustente um valor para os demais motores nem para a conversão inteira (itens CHK003 e CHK015 do checklist).
+**Rationale**: Só o MinerU tem limite de tempo hoje (fonte: `src/artigo2md/engines.py:194`); não há medição que sustente um valor para os demais motores nem para a conversão inteira (itens CHK003 e CHK015 do checklist).
 **Alternatives considered**: Propor um valor neste plano (seria número sem lastro).

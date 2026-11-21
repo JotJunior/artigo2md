@@ -58,6 +58,13 @@ Markdown, baixe um `.md` ou todos num `.zip`. Os arquivos ficam em `~/artigo2md-
 Para acessar de outra máquina da sua rede (ex.: um servidor em casa via Tailscale):
 `uv run artigo2md serve --host 0.0.0.0`. Não há senha — não exponha à internet aberta.
 
+**Memória.** Os modelos ocupam de 1 a 2 GB de RAM depois de carregados (o MinerU, mais ~2 GB
+enquanto converte). Por isso as conversões rodam num processo auxiliar que **se encerra
+sozinho após 5 minutos sem uso**: em lote ele fica carregado e rápido; parado, a interface
+volta a ocupar ~40 MB. Ajuste com `--idle-timeout SEGUNDOS` (`0` = nunca descarregar, bom
+para quem converte o dia todo numa máquina com RAM de sobra). O rodapé da interface mostra
+se o conversor está carregado.
+
 **Linha de comando:**
 
 ```bash
