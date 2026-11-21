@@ -1047,7 +1047,7 @@ em { font-style: italic; }
 <section class="slide slide--constitution" id="slide-4" data-index="4" data-type="constitution" data-title="No que acreditamos">
 <div class="slide__frame">
 <header class="slide__header">
-<p class="eyebrow">Constitui&ccedil;&atilde;o &middot; <span class="nocase">v1.0.0</span></p>
+<p class="eyebrow">Constitui&ccedil;&atilde;o &middot; <span class="nocase">v1.0.1</span></p>
 <h2 class="slide__title">No que acreditamos</h2>
 </header>
 <div class="slide__body">
@@ -1086,7 +1086,7 @@ em { font-style: italic; }
 </div>
 <div class="metrics metrics--2">
 <div class="metric"><span class="metric__value">5</span><span class="metric__label">Princípios</span></div>
-<div class="metric"><span class="metric__value">1.0.0</span><span class="metric__label">Versão</span></div>
+<div class="metric"><span class="metric__value">1.0.1</span><span class="metric__label">Versão</span></div>
 </div>
 </div>
 <footer class="slide__footer"><span class="slide__footer-label">Fonte</span><span class="src" title="docs/constitution.md">Constitui&ccedil;&atilde;o</span></footer>
@@ -1101,7 +1101,7 @@ em { font-style: italic; }
 </header>
 <div class="slide__body">
 <div class="lead">
-<p>O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. Todos esses planos foram executados e conferidos contra o combinado.</p>
+<p>O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. Esses planos foram executados e conferidos contra o combinado, e a conferência mais recente abriu um item novo de privacidade.</p>
 </div>
 </div>
 </div>
@@ -1157,11 +1157,11 @@ em { font-style: italic; }
 <footer class="slide__footer"><span class="slide__footer-label">Fonte</span><span class="src" title="docs/specs/command-line-interface/spec.md; docs/specs/command-line-interface/research.md">Converter pastas inteiras com um comando</span></footer>
 </div>
 </section>
-<section class="slide slide--spec stage-implemented" id="slide-7" data-index="7" data-type="spec" data-title="Vários conversores, um só compromisso" data-key="conversion-engines" data-stage="implemented">
+<section class="slide slide--spec stage-in-progress" id="slide-7" data-index="7" data-type="spec" data-title="Vários conversores, um só compromisso" data-key="conversion-engines" data-stage="in-progress">
 <div class="slide__frame">
 <header class="slide__header">
 <p class="eyebrow">Do retrato à entrega</p>
-<span class="badge badge--implemented">Implementada</span>
+<span class="badge badge--in-progress">Em andamento</span>
 <h2 class="slide__title">Vários conversores, um só compromisso</h2>
 </header>
 <div class="slide__body">
@@ -1187,21 +1187,21 @@ em { font-style: italic; }
 <span class="card__index">03</span>
 <h3 class="card__title">Como foi enriquecida</h3>
 <div class="card__body">
-<p>As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente. Também confirmaram que baixar os modelos na primeira conversão continua permitido: isso traz dados para a máquina, não envia o documento.</p>
+<p>As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente. Baixar os modelos na primeira conversão continua permitido: isso traz dados para a máquina, não envia o documento. Uma verificação em execução real mostrou, porém, que o conversor principal consulta a central de modelos mesmo com tudo já baixado, e evitar esse contato virou requisito.</p>
 </div>
 </article>
 <article class="card">
 <span class="card__index">04</span>
 <h3 class="card__title">Como foi implementada</h3>
 <div class="card__body">
-<p>Entregue e conferida contra o combinado: os recursos remotos do conversor principal ficam desligados de forma declarada, a coleta de dados de uso é desativada e cada conversor tem a sua verificação automática. A conversão real foi executada depois da mudança e continuou funcionando. Segue em aberto uma prova direta de que a conversão principal não envia conteúdo.</p>
+<p>Quase tudo entregue: os recursos remotos do conversor principal ficam desligados de forma declarada, a coleta de dados de uso é desativada e cada conversor tem a sua verificação automática. Com a rede bloqueada, a conversão real funciona normalmente. Falta a tarefa aberta pela última conferência: evitar a consulta à central de modelos quando eles já estão baixados.</p>
 </div>
 </article>
 </div>
 <div class="metrics metrics--3">
-<div class="metric"><span class="metric__value">27<span class="metric__of">/27</span></span><span class="metric__label">Tarefas entregues</span></div>
-<div class="metric"><span class="metric__value">6</span><span class="metric__label">Dúvidas esclarecidas</span></div>
-<div class="metric"><span class="metric__value">convergida</span><span class="metric__label">Revisão final</span></div>
+<div class="metric"><span class="metric__value">27<span class="metric__of">/28</span></span><span class="metric__label">Tarefas entregues</span></div>
+<div class="metric"><span class="metric__value">7</span><span class="metric__label">Dúvidas esclarecidas</span></div>
+<div class="metric"><span class="metric__value">com pend&ecirc;ncias</span><span class="metric__label">Revisão final</span></div>
 </div>
 <div class="tags"><span class="tags__label">Por tr&aacute;s</span><span class="tag">Docling</span><span class="tag">MarkItDown</span><span class="tag">MinerU</span></div>
 </div>
@@ -1331,7 +1331,7 @@ em { font-style: italic; }
 <span class="card__index">02</span>
 <h3 class="card__title">Como foi pensada</h3>
 <div class="card__body">
-<p>As conversões acontecem uma por vez, porque os conversores são pesados. Cada pedido guarda o documento original, o andamento e o resultado, e um pedido interrompido por reinício fica sinalizado em vez de sumir.</p>
+<p>As conversões acontecem uma por vez, porque os conversores são pesados, e o conversor fica num processo à parte que se encerra quando está ocioso, devolvendo a memória ao computador. Cada pedido guarda o documento original, o andamento e o resultado, e um pedido interrompido por reinício fica sinalizado em vez de sumir.</p>
 </div>
 </article>
 <article class="card">
@@ -1345,7 +1345,7 @@ em { font-style: italic; }
 <span class="card__index">04</span>
 <h3 class="card__title">Como foi implementada</h3>
 <div class="card__body">
-<p>Conferida contra o combinado, sem mudança de comportamento: os casos de erro ganharam verificação automática e um teste confirma que a página e o serviço local usam os mesmos nomes para cada informação.</p>
+<p>Conferida contra o combinado: os casos de erro ganharam verificação automática, inclusive a queda inesperada do conversor, e um teste confirma que a página e o serviço local usam os mesmos nomes para cada informação.</p>
 </div>
 </article>
 </div>
@@ -1369,7 +1369,7 @@ em { font-style: italic; }
 <p>O produto veio primeiro. A documentação de cada peça chegou depois e, logo em seguida, as melhorias planejadas foram entregues e conferidas, peça por peça.</p>
 </div>
 <ol class="timeline">
-<li class="timeline__group"><span class="timeline__date">Em andamento</span><ul class="timeline__specs"><li class="stage-implemented">Converter pastas inteiras com um comando</li><li class="stage-implemented">Vários conversores, um só compromisso</li><li class="stage-implemented">O conversor certo para cada documento</li><li class="stage-implemented">Entender o documento antes de converter</li><li class="stage-implemented">Arrastar, acompanhar e baixar</li></ul></li>
+<li class="timeline__group"><span class="timeline__date">Em andamento</span><ul class="timeline__specs"><li class="stage-implemented">Converter pastas inteiras com um comando</li><li class="stage-in-progress">Vários conversores, um só compromisso</li><li class="stage-implemented">O conversor certo para cada documento</li><li class="stage-implemented">Entender o documento antes de converter</li><li class="stage-implemented">Arrastar, acompanhar e baixar</li></ul></li>
 </ol>
 </div>
 </div>
@@ -1383,8 +1383,8 @@ em { font-style: italic; }
 <div class="slide__body">
 <div class="metrics metrics--4">
 <div class="metric"><span class="metric__value">5</span><span class="metric__label">Capacidades documentadas</span></div>
-<div class="metric"><span class="metric__value">124<span class="metric__of">/124</span></span><span class="metric__label">Tarefas entregues</span></div>
-<div class="metric"><span class="metric__value">30</span><span class="metric__label">Dúvidas esclarecidas</span></div>
+<div class="metric"><span class="metric__value">124<span class="metric__of">/125</span></span><span class="metric__label">Tarefas entregues</span></div>
+<div class="metric"><span class="metric__value">31</span><span class="metric__label">Dúvidas esclarecidas</span></div>
 <div class="metric"><span class="metric__value">5</span><span class="metric__label">Princípios</span></div>
 </div>
 </div>
@@ -1398,7 +1398,7 @@ em { font-style: italic; }
 </header>
 <div class="slide__body">
 <div class="lead">
-<p>O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. A base para isso está pronta: o que foi planejado até aqui está entregue e conferido. Fica em aberto uma prova direta de que a conversão principal não envia conteúdo.</p>
+<p>O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. A base para isso está pronta: quase tudo o que foi planejado está entregue e conferido. Falta evitar que o conversor principal consulte a central de modelos quando tudo já está baixado.</p>
 <blockquote class="pull"><p>Qualidade e robustez em primeiro lugar.</p></blockquote>
 </div>
 </div>

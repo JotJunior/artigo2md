@@ -65,3 +65,17 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 
 **Rationale**: São os três requisitos restantes sem teste. Medido em 2026-11-21 com o docling 2.151.1: criar o conversor levou poucos segundos e não inicializou nenhum pipeline, então os testes ficaram no grupo rápido.
 **Alternatives considered**: Deixar FR-002 e FR-012 só no teste lento (demora e não roda por padrão).
+
+## Decision 9: Contato do Docling com o hub de modelos mesmo com cache
+
+**Decision**: Usar o modo offline do hub quando os modelos já estão em cache, mantendo o download na primeira conversão (informado pelo operador), decidido em 2026-11-21. O desenho fica para um plano próprio: é preciso detectar o cache antes de o hub ser importado e ter um caminho para quando faltar algum modelo.
+**Rationale**: Observado em 2026-11-21 com o docling 2.151.1 e o huggingface-hub 1.33.0, convertendo um artigo de teste com os modelos em cache e a criação de sockets interceptada:
+
+| Situação | Conversão | Tentativas de conexão |
+|----------|-----------|-----------------------|
+| rede bloqueada, configuração padrão | funciona, com texto e tabela corretos | 8 para huggingface.co na porta 443, disparadas pelo hub a pedido do Docling, mais 1 sondagem local de IPv6 sem destino |
+| rede bloqueada, com `HF_HUB_OFFLINE` definida | funciona, com texto e tabela corretos | só a sondagem local de IPv6 |
+
+A conversão não depende de rede e o documento não é enviado, mas o contato com o hub acontece a cada primeira conversão do processo. Isso corrige a justificativa dada na Decision 2: o modo offline só quebra a conversão quando não há cache.
+**Alternatives considered**: Documentar o contato e manter (deixa um acesso externo evitável); definir o modo offline sempre (quebra a primeira conversão, que precisa baixar os modelos).
+

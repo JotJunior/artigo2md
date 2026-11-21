@@ -1,10 +1,21 @@
+<!--
+Sync Impact Report
+- Version: 1.0.0 → 1.0.1
+- Principios modificados: nenhum (texto normativo inalterado)
+- Secoes adicionadas: nenhuma
+- Secoes removidas: nenhuma
+- Correcao: tres citacoes de origem, nos principios I, III e IV, passam a apontar para o arquivo CLAUDE.md sem numero de linha, porque as linhas citadas mudaram quando o arquivo cresceu
+- Artefatos que precisam atualizacao: nenhum
+- TODOs pendentes: nenhum
+- Origem: emenda confirmada pelo operador em 2026-11-21
+-->
 # artigo2md Constitution
 
 ## Core Principles
 
 ### I. Processamento 100% Local
 
-O artigo2md converte os documentos no computador do próprio usuário; o README afirma que nada é enviado para a internet (fonte: `README.md:4`) e o CLAUDE.md descreve essa promessa do projeto (fonte: `CLAUDE.md:32`). Princípio ratificado (informado pelo operador).
+O artigo2md converte os documentos no computador do próprio usuário; o README afirma que nada é enviado para a internet (fonte: `README.md:4`) e o CLAUDE.md descreve essa promessa do projeto (fonte: `CLAUDE.md`). Princípio ratificado (informado pelo operador).
 
 **MUST:**
 
@@ -24,7 +35,7 @@ O projeto é MIT (fonte: `pyproject.toml:6`) e, segundo o README, os motores AGP
 
 ### III. Mensagens ao Usuário em Português
 
-O CLAUDE.md descreve essa regra do projeto (fonte: `CLAUDE.md:35`). Princípio ratificado (informado pelo operador).
+O CLAUDE.md descreve essa regra do projeto (fonte: `CLAUDE.md`). Princípio ratificado (informado pelo operador).
 
 **MUST:**
 
@@ -32,7 +43,7 @@ O CLAUDE.md descreve essa regra do projeto (fonte: `CLAUDE.md:35`). Princípio r
 
 ### IV. Testes Antes do Commit
 
-O CLAUDE.md descreve essa regra do projeto (fonte: `CLAUDE.md:36`). Princípio ratificado (informado pelo operador).
+O CLAUDE.md descreve essa regra do projeto (fonte: `CLAUDE.md`). Princípio ratificado (informado pelo operador).
 
 **MUST:**
 
@@ -58,4 +69,4 @@ Princípio-base proposto pelo cstk e ratificado (informado pelo operador).
 - Versionamento semântico: MAJOR para remoção ou redefinição incompatível de princípio; MINOR para novo princípio ou expansão material de seção; PATCH para clarificações de texto.
 - Exceção a um princípio exige decisão registrada do stakeholder de decisão antes da mudança.
 
-**Version**: 1.0.0 | **Ratified**: 2026-11-20 | **Last Amended**: 2026-11-20
+**Version**: 1.0.1 | **Ratified**: 2026-11-20 | **Last Amended**: 2026-11-21

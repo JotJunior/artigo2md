@@ -18,7 +18,7 @@ Nenhuma mudança de código de produção está prevista.
 **Language/Version**: Python >= 3.10 (fonte: `pyproject.toml:7`); o ambiente criado pelo `uv sync` em 2026-11-20 usa Python 3.12
 **Primary Dependencies**: FastAPI, uvicorn e python-multipart (fonte: `pyproject.toml:12`); página estática sem etapa de build (fonte: `src/artigo2md/web.py:27`)
 **Storage**: arquivos — uma pasta por job no diretório de dados, com o PDF de origem, os metadados e o Markdown (fonte: `src/artigo2md/web.py:69`)
-**Testing**: pytest com o cliente de teste do FastAPI (fonte: `tests/test_web.py:11`)
+**Testing**: pytest com o cliente de teste do FastAPI (fonte: `tests/test_web.py:12`)
 **Target Platform**: execução local; o README declara teste em macOS com Apple Silicon e Linux (fonte: `README.md:35`)
 **Project Type**: web-service local com página estática
 **Performance Goals**: N/A — a spec não define requisito de desempenho

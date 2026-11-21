@@ -1,5 +1,6 @@
 import io
 import json
+import os
 import re
 import threading
 import time
@@ -10,7 +11,7 @@ from types import SimpleNamespace
 import pytest
 from fastapi.testclient import TestClient
 
-from artigo2md import router, web
+from artigo2md import router, web, worker
 from artigo2md.web import create_app
 from artigo2md.worker import ConversionWorker
 
@@ -232,3 +233,27 @@ def test_info_does_not_import_heavy_engines(tmp_path):
         sys.modules.pop(mod, None)
     TestClient(create_app(tmp_path / "dados")).get("/api/info")
     assert "docling" not in sys.modules and "pymupdf4llm" not in sys.modules
+
+
+# ── processo auxiliar que termina de forma inesperada (FR-017) ───────────────
+def _dying_child(conn) -> None:
+    """Alvo do processo auxiliar que morre ao receber o primeiro pedido de conversão."""
+    conn.recv()
+    os._exit(1)
+
+
+def test_job_fails_clearly_when_converter_process_dies(tmp_path, article_pdf, monkeypatch):
+    real_child = worker._child_main
+    client = TestClient(create_app(tmp_path / "dados"))
+
+    monkeypatch.setattr(worker, "_child_main", _dying_child)
+    failed = _wait(client, _upload(client, article_pdf)["id"])
+
+    assert failed["status"] == "error"
+    assert "O processo de conversão terminou inesperadamente" in failed["error"]
+    assert "Tente de novo ou use outro motor" in failed["error"]
+
+    # o conversor volta a funcionar na conversão seguinte
+    monkeypatch.setattr(worker, "_child_main", real_child)
+    recovered = _wait(client, _upload(client, article_pdf)["id"])
+    assert recovered["status"] == "done"

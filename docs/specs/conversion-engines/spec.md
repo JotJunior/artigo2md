@@ -21,6 +21,7 @@
 
 - Q: O que acontece quando um motor obrigatório não está instalado? → A: Manter o comportamento atual (informado pelo operador)
 - Q: O download de modelos do Docling deve ser proibido depois do cache? → A: Não, manter como está (informado pelo operador)
+- Q: O que fazer com o contato do Docling ao hub de modelos quando eles já estão em cache? → A: Usar o modo offline do hub, como requisito novo (informado pelo operador)
 
 ## User Scenarios & Testing
 
@@ -47,7 +48,8 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 - Sem o pymupdf4llm instalado, a conversão com esse motor sinaliza motor indisponível com a instrução de instalação (fonte: `tests/test_engines.py:162`) (cobre FR-005)
 - Quando o MinerU termina com erro ou não gera Markdown, a conversão falha com o final da saída do processo; com versão incompatível, nenhuma conversão é disparada (fonte: `tests/test_engines.py:139`) (fonte: `tests/test_engines.py:146`) (fonte: `tests/test_engines.py:153`) (cobre FR-009, FR-007)
 - Quando um motor obrigatório não está instalado, o diagnóstico acusa e falha, e a conversão segue para o próximo motor (fonte: `tests/test_cli.py:311`) (fonte: `tests/test_core.py:116`) (cobre FR-014)
-- [PENDENTE: qual teste comprova que a conversão real com o Docling não envia conteúdo a serviços externos (FR-013)?]
+- Com a rede bloqueada e os modelos em cache, a conversão real do Docling funciona; sem bloqueio, ela tenta conexões ao hub de modelos para conferi-los, sem enviar o documento, e com o modo offline do hub essas tentativas somem (fonte: `docs/specs/conversion-engines/research.md`) (cobre FR-013)
+- [PENDENTE: qual teste cobre o uso do modo offline do hub quando os modelos já estão em cache (FR-015)?]
 
 ## Requirements
 
@@ -67,6 +69,7 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 - **FR-012**: O conversor do Docling é criado uma vez por modo (com ou sem OCR) e reutilizado. (fonte: `src/artigo2md/engines.py:73`)
 - **FR-013**: Nenhum motor envia o documento ou conteúdo dele a serviços externos, e a telemetria é desativada sempre que o motor oferece essa opção: os serviços remotos do Docling ficam desligados de forma explícita e a telemetria do hub de modelos é desativada no processo; o download de modelos do Docling na primeira conversão continua permitido. (informado pelo operador) (fonte: `src/artigo2md/engines.py:69`) (fonte: `src/artigo2md/engines.py:27`)
 - **FR-014**: Quando um motor obrigatório não está instalado, o diagnóstico o mostra como ausente e termina com código 1, e na conversão ele conta como tentativa com erro e o próximo motor é tentado. (informado pelo operador) (fonte: `src/artigo2md/cli.py:133`) (fonte: `src/artigo2md/router.py:137`)
+- **FR-015**: Quando os modelos do Docling já estão em cache, o sistema usa o modo offline do hub de modelos, de forma que a conversão não contata o hub; sem cache, o download na primeira conversão continua permitido. Requisito definido em 2026-11-21, ainda não observado no código. (informado pelo operador)
 
 ### Inferido (nao confirmado)
 

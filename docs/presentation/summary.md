@@ -26,7 +26,7 @@ Examinar cada PDF, encaminhar ao conversor mais adequado, avaliar o resultado e 
 
 <!-- slide: highlights -->
 ## O que já está de pé
-Um produto que funciona, com cada peça documentada e todas as melhorias planejadas entregues e conferidas.
+Um produto que funciona, com cada peça documentada e as melhorias planejadas entregues e conferidas, restando um item de privacidade.
 ### Privacidade por construção
 Nenhum documento sai do computador. A regra vale para todos os conversores e tem verificação automática.
 ### Qualidade conferida
@@ -42,6 +42,6 @@ Pelo navegador ou por um comando, para um documento ou para pastas inteiras, man
 
 <!-- slide: closing -->
 ## Para onde vamos
-O que foi planejado está entregue e conferido. O próximo passo é crescer: novos formatos, novos conversores e mais recursos de qualidade.
+Falta um item: evitar que o conversor principal consulte a central de modelos quando tudo já está baixado. Depois, crescer: novos formatos, novos conversores e mais recursos de qualidade.
 > Qualidade e robustez em primeiro lugar.
 @source docs/briefing.md

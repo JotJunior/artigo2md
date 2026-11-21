@@ -125,3 +125,24 @@ A fase 2 depende da decisão 1.1.5 da fase 1 (acesso à rede para modelos). A fa
 | Instalação do MinerU | Testar com o MinerU real instalado | O projeto orienta a não instalá-lo sem pedido; os testes usam simulação (research.md, Decision 7) |
 | Modo offline do hub | Proibir download de modelos | Depende da decisão do operador na tarefa 1.1.5; não é requisito hoje |
 | Suporte ao MinerU 4.x | Aceitar a linha 4.x | Política de só 3.x mantida na clarificação |
+
+## FASE 4 - Convergência
+
+> Fase gerada automaticamente pela skill `converge` (reconciliação
+> spec-vs-código). Cada tarefa abaixo corresponde a um achado (`Gap`)
+> entre o que `spec.md`/`plan.md`/`tasks.md` descreveram e o estado
+> presente do código. Tarefas sem o prefixo `[Revisar]` são acionáveis
+> (`missing`/`partial`/`contradicts`); tarefas com `[Revisar]` são item de
+> revisão (`unrequested`, FR-013) — nunca "implementar", o código já
+> existe. Append-only: esta fase nunca reescreve fases/tarefas anteriores
+> do arquivo (FR-009).
+
+### 4.1 Modo offline do hub com os modelos em cache `[C]`
+
+Ref: FR-015 · tipo: `partial` · severidade: `HIGH`
+
+A spec pede que, com os modelos do Docling já em cache, o sistema use o modo offline do hub de modelos e a conversão não contate o hub, mantendo o download na primeira conversão. O código presente em `src/artigo2md/engines.py` desativa a telemetria do hub e desliga os serviços remotos do Docling, mas não define o modo offline: em 2026-11-21 a conversão real fez 8 tentativas de conexão ao hub mesmo com cache (research.md, Decision 9). O desenho precisa de plano próprio: detectar o cache antes de o hub ser importado e ter um caminho para quando faltar algum modelo.
+
+- [ ] 4.1.1 Implementar em `src/artigo2md/engines.py` o modo offline do hub quando os modelos já estão em cache, conforme FR-015, com teste da conversão real sem tentativas de conexão ao hub e teste da primeira conversão sem cache
+
+<!-- converge-key: f1355f15dd5c -->

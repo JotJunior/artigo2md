@@ -56,7 +56,7 @@ Nenhum documento do projeto contém dado inventado. Sem fonte rastreável, o tra
 
 <!-- slide: chapter -->
 ## Do retrato à entrega
-O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. Todos esses planos foram executados e conferidos contra o combinado.
+O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. Esses planos foram executados e conferidos contra o combinado, e a conferência mais recente abriu um item novo de privacidade.
 
 <!-- slide: spec key=command-line-interface -->
 ## Converter pastas inteiras com um comando
@@ -84,9 +84,9 @@ O produto reúne conversores com talentos diferentes: um principal para páginas
 ### Como foi pensada
 A garantia de privacidade estava declarada para apenas um dos conversores. A decisão foi estendê-la a todos: recursos remotos desligados de forma explícita e coleta de dados de uso desativada sempre que o conversor oferece essa opção.
 ### Como foi enriquecida
-As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente. Também confirmaram que baixar os modelos na primeira conversão continua permitido: isso traz dados para a máquina, não envia o documento.
+As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente. Baixar os modelos na primeira conversão continua permitido: isso traz dados para a máquina, não envia o documento. Uma verificação em execução real mostrou, porém, que o conversor principal consulta a central de modelos mesmo com tudo já baixado, e evitar esse contato virou requisito.
 ### Como foi implementada
-Entregue e conferida contra o combinado: os recursos remotos do conversor principal ficam desligados de forma declarada, a coleta de dados de uso é desativada e cada conversor tem a sua verificação automática. A conversão real foi executada depois da mudança e continuou funcionando. Segue em aberto uma prova direta de que a conversão principal não envia conteúdo.
+Quase tudo entregue: os recursos remotos do conversor principal ficam desligados de forma declarada, a coleta de dados de uso é desativada e cada conversor tem a sua verificação automática. Com a rede bloqueada, a conversão real funciona normalmente. Falta a tarefa aberta pela última conferência: evitar a consulta à central de modelos quando eles já estão baixados.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
 @metric Revisão final | converge
@@ -136,11 +136,11 @@ Converter documentos fica tão simples quanto usar uma página no navegador, sem
 ### O que é
 Uma página local onde a pessoa envia um ou mais PDFs, acompanha a fila de conversão, lê o resultado e baixa um arquivo ou todos de uma vez. O que não interessa mais pode ser apagado.
 ### Como foi pensada
-As conversões acontecem uma por vez, porque os conversores são pesados. Cada pedido guarda o documento original, o andamento e o resultado, e um pedido interrompido por reinício fica sinalizado em vez de sumir.
+As conversões acontecem uma por vez, porque os conversores são pesados, e o conversor fica num processo à parte que se encerra quando está ocioso, devolvendo a memória ao computador. Cada pedido guarda o documento original, o andamento e o resultado, e um pedido interrompido por reinício fica sinalizado em vez de sumir.
 ### Como foi enriquecida
 As perguntas fecharam decisões de uso: a página não pede senha e atende só o próprio computador por padrão, não há limite de envio nem de fila e os arquivos ficam guardados até a pessoa apagar.
 ### Como foi implementada
-Conferida contra o combinado, sem mudança de comportamento: os casos de erro ganharam verificação automática e um teste confirma que a página e o serviço local usam os mesmos nomes para cada informação.
+Conferida contra o combinado: os casos de erro ganharam verificação automática, inclusive a queda inesperada do conversor, e um teste confirma que a página e o serviço local usam os mesmos nomes para cada informação.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
 @metric Revisão final | converge
@@ -162,7 +162,7 @@ O produto veio primeiro. A documentação de cada peça chegou depois e, logo em
 
 <!-- slide: closing -->
 ## O que vem a seguir
-O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. A base para isso está pronta: o que foi planejado até aqui está entregue e conferido. Fica em aberto uma prova direta de que a conversão principal não envia conteúdo.
+O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. A base para isso está pronta: quase tudo o que foi planejado está entregue e conferido. Falta evitar que o conversor principal consulte a central de modelos quando tudo já está baixado.
 > Qualidade e robustez em primeiro lugar.
 @source docs/briefing.md
 @source docs/specs/conversion-engines/spec.md
