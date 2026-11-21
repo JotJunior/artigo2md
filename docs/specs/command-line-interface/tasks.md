@@ -35,9 +35,9 @@ Ref: checklists/requirements.md CHK004, CHK008, CHK009; research.md Decision 2 (
 
 Ref: research.md Decisions 4 e 5; quickstart.md Scenario 1
 
-- [ ] 2.1.1 Criar `tests/test_cli.py` com um auxiliar que chama a função de entrada com a lista de argumentos e captura saída e código de retorno
-- [ ] 2.1.2 Criar a fixture que substitui a função de conversão por uma simulação rápida
-- [ ] 2.1.3 Escrever o teste de ponta a ponta do convert com o motor markitdown sobre a fixture de artigo (FR-001, FR-004, FR-006)
+- [x] 2.1.1 Criar `tests/test_cli.py` com um auxiliar que chama a função de entrada com a lista de argumentos e captura saída e código de retorno
+- [x] 2.1.2 Criar a fixture que substitui a função de conversão por uma simulação rápida
+- [x] 2.1.3 Escrever o teste de ponta a ponta do convert com o motor markitdown sobre a fixture de artigo (FR-001, FR-004, FR-006)
 
 ### 2.2 Testes do convert `[A]`
 

@@ -35,19 +35,19 @@ Ref: checklists/requirements.md CHK006, CHK007, CHK013, CHK014
 
 Ref: spec.md FR-007; research.md Decisions 1 a 3 e 7; quickstart.md Scenarios 3 e 4
 
-- [ ] 2.1.1 Criar em `tests/conftest.py` as fixtures de arquivo que não é PDF e de PDF protegido por senha
-- [ ] 2.1.2 Escrever os testes, inicialmente falhando, do erro de domínio com mensagem em português para cada um dos dois casos
-- [ ] 2.1.3 Implementar em `src/artigo2md/pdfscan.py` o erro de domínio e a captura da exceção do pypdfium2 na abertura do documento
-- [ ] 2.1.4 Tratar código de erro ausente ou desconhecido com a mensagem genérica (risco de versão do pypdfium2, research.md Decision 1)
-- [ ] 2.1.5 Escrever o teste de que a conversão pelo roteador de um PDF inválido não aciona nenhum motor
-- [ ] 2.1.6 Rodar `uv run pytest` e confirmar a suíte verde
+- [x] 2.1.1 Criar em `tests/conftest.py` as fixtures de arquivo que não é PDF e de PDF protegido por senha
+- [x] 2.1.2 Escrever os testes, inicialmente falhando, do erro de domínio com mensagem em português para cada um dos dois casos
+- [x] 2.1.3 Implementar em `src/artigo2md/pdfscan.py` o erro de domínio e a captura da exceção do pypdfium2 na abertura do documento
+- [x] 2.1.4 Tratar código de erro ausente ou desconhecido com a mensagem genérica (risco de versão do pypdfium2, research.md Decision 1)
+- [x] 2.1.5 Escrever o teste de que a conversão pelo roteador de um PDF inválido não aciona nenhum motor
+- [x] 2.1.6 Rodar `uv run pytest` e confirmar a suíte verde <!-- 2026-11-20: 22 passed, 1 skipped -->
 
 ### 2.2 Efeito nos pontos de entrada `[M]`
 
 Ref: research.md Decision 2
 
 - [ ] 2.2.1 Escrever o teste de que um job da interface web com PDF protegido por senha termina em erro com a mensagem em português
-- [ ] 2.2.2 Conferir que o convert da linha de comando mostra a mensagem em português para PDF inválido (teste na feature command-line-interface ou verificação manual registrada)
+- [x] 2.2.2 Conferir que o convert da linha de comando mostra a mensagem em português para PDF inválido (teste na feature command-line-interface ou verificação manual registrada) <!-- verificação manual em 2026-11-20: o convert mostrou "não é um PDF válido" e "está protegido por senha" e terminou com código 1 -->
 - [ ] 2.2.3 Atualizar a spec: retirar de FR-007 a nota de requisito ainda não observado e citar a fonte no código e no teste
 
 ---

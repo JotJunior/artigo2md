@@ -2,7 +2,7 @@ import os
 
 import pytest
 
-from artigo2md import engines, router
+from artigo2md import engines, pdfscan, router
 from artigo2md.pdfscan import Analysis, analyze
 
 
@@ -17,6 +17,36 @@ def test_analyze_detects_text_and_tables(article_pdf):
 def test_analyze_blank_is_scanned(blank_pdf):
     a = analyze(blank_pdf)
     assert a.fully_scanned and a.needs_ocr
+
+
+def test_analyze_rejects_file_that_is_not_a_pdf(not_a_pdf):
+    with pytest.raises(pdfscan.InvalidPdfError, match="não é um PDF válido") as info:
+        analyze(not_a_pdf)
+    assert not_a_pdf.name in str(info.value)
+
+
+def test_analyze_rejects_password_protected_pdf(protected_pdf):
+    with pytest.raises(pdfscan.InvalidPdfError, match="protegido por senha") as info:
+        analyze(protected_pdf)
+    assert protected_pdf.name in str(info.value)
+
+
+def test_analyze_unknown_pdfium_error_gets_generic_message(article_pdf, monkeypatch):
+    def boom(*_a, **_k):
+        raise pdfscan.pdfium.PdfiumError("falha simulada")  # sem código de erro
+
+    monkeypatch.setattr(pdfscan.pdfium, "PdfDocument", boom)
+    with pytest.raises(pdfscan.InvalidPdfError, match="Não foi possível abrir") as info:
+        analyze(article_pdf)
+    assert "falha simulada" in str(info.value)
+
+
+def test_convert_invalid_pdf_does_not_run_any_engine(not_a_pdf, monkeypatch):
+    started = []
+    monkeypatch.setattr(router, "_run", lambda name, *_a, **_k: started.append(name))
+    with pytest.raises(pdfscan.InvalidPdfError):
+        router.convert(not_a_pdf)
+    assert started == []
 
 
 def test_plan_skips_non_ocr_engines_for_scanned(monkeypatch):
