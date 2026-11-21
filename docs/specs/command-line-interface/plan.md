@@ -56,12 +56,10 @@ docs/specs/command-line-interface/
 ### Source Code (repository root)
 
 ```
-src/artigo2md/
-└── cli.py           # ALTERA: caminho de saída espelhando subpastas e tratamento de colisão entre entradas (FR-014)
-tests/
-├── conftest.py      # sem alteração prevista: a fixture de artigo existente é reaproveitada
-└── test_cli.py      # NOVO: testes de FR-001 a FR-014
-README.md            # ALTERA: descrição do layout de saída na conversão de pasta
+src/artigo2md/cli.py    # ALTERADO: saída espelhando subpastas (FR-014), aviso de host na rede (FR-015) e recusa de colisão entre entradas (FR-016)
+tests/test_cli.py       # NOVO: testes de FR-001 a FR-016
+tests/conftest.py       # sem alteração para esta feature: a fixture de artigo existente é reaproveitada
+README.md               # ALTERADO: descrição do layout de saída na conversão de pasta
 ```
 
 **Structure Decision**: Manter a estrutura atual e acrescentar um arquivo de testes para a linha de comando, seguindo o padrão de um arquivo por área que já existe em `tests` (fonte: `tests/test_web.py:1`).

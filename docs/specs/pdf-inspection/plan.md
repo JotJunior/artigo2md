@@ -57,14 +57,13 @@ Sem `contracts/`: a inspeção não expõe interface externa própria (é chamad
 ### Source Code (repository root)
 
 ```
-src/artigo2md/
-├── pdfscan.py       # ALTERA: erro de domínio na abertura do PDF (FR-007)
-├── router.py        # sem alteração: já inspeciona antes do laço de motores
-├── cli.py           # sem alteração: já mostra o texto da exceção
-└── web.py           # sem alteração: já grava o texto da exceção no job
-tests/
-├── conftest.py      # ALTERA: fixtures de PDF protegido por senha e de PDF com termo de fórmula
-└── test_core.py     # ALTERA: testes de FR-004, FR-007 e FR-008
+src/artigo2md/pdfscan.py    # ALTERADO: erro de domínio na abertura do PDF (FR-007)
+src/artigo2md/router.py     # sem alteração: já inspeciona antes do laço de motores
+src/artigo2md/cli.py        # sem alteração para esta feature: já mostra o texto da exceção
+src/artigo2md/web.py        # sem alteração: já grava o texto da exceção no job
+tests/conftest.py           # ALTERADO: fixtures de PDF protegido por senha, de PDF com termo de fórmula e de bloqueio de rede
+tests/test_core.py          # ALTERADO: testes de FR-004, FR-007 e FR-008
+tests/test_web.py           # ALTERADO: teste do job com PDF protegido por senha (FR-007)
 ```
 
 **Structure Decision**: Manter a estrutura atual. A mudança fica contida no módulo de inspeção e nos testes; nenhum arquivo novo de código.

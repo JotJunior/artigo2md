@@ -62,7 +62,7 @@ A partir da inspeção do PDF, o artigo2md monta a ordem de motores a tentar, co
 - **FR-014**: O Docling é chamado com OCR ligado quando a análise indica páginas escaneadas. (fonte: `src/artigo2md/router.py:108`)
 - **FR-015**: O sistema informa o progresso (inspeção, motor em uso, reprovação na avaliação) por uma função de aviso opcional. (fonte: `src/artigo2md/router.py:126`)
 - **FR-016**: O resultado traz o Markdown, o motor usado, a análise do PDF e a lista de tentativas com tempo, qualidade ou erro. (fonte: `src/artigo2md/router.py:41`)
-- **FR-017**: Quando o motor solicitado explicitamente não está instalado, a conversão falha com a instrução de instalação desse motor e o sistema não troca para o modo automático. (informado pelo operador) (fonte: `src/artigo2md/router.py:148`)
+- **FR-017**: Quando o motor solicitado explicitamente não está instalado, a conversão falha com a instrução de instalação desse motor e o sistema não troca para o modo automático; observado em 2026-11-21: a instrução só aparece para o pymupdf4llm, e completar os demais motores está no backlog desta feature. (informado pelo operador) (fonte: `src/artigo2md/router.py:148`) (fonte: `docs/specs/engine-routing/research.md`)
 
 ### Inferido (nao confirmado)
 

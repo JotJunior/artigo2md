@@ -3,7 +3,7 @@ title: artigo2md
 subtitle: Seus PDFs viram texto limpo, sem sair do seu computador
 project: artigo2md
 lang: pt-BR
-generated: 2026-11-20
+generated: 2026-11-21
 vocabulary: PDF, Markdown
 ---
 
@@ -26,13 +26,13 @@ Examinar cada PDF, encaminhar ao conversor mais adequado, avaliar o resultado e 
 
 <!-- slide: highlights -->
 ## O que já está de pé
-Um produto que funciona, agora com cada peça documentada, questionada e com plano para as lacunas.
+Um produto que funciona, com cada peça documentada e a maior parte das melhorias planejadas já entregue e conferida.
 ### Privacidade por construção
-Nenhum documento sai do computador. A regra passou a valer como exigência para todos os conversores.
+Nenhum documento sai do computador. A regra vale para todos os conversores e tem verificação automática.
 ### Qualidade conferida
-Cada documento é examinado, encaminhado ao conversor mais adequado e avaliado. Resultado fraco aciona nova tentativa.
+Cada documento é examinado, encaminhado ao conversor mais adequado e avaliado. Resultado fraco aciona nova tentativa, e arquivo problemático recebe aviso claro.
 ### Simples de usar
-Pelo navegador ou por um comando, para um documento ou para pastas inteiras.
+Pelo navegador ou por um comando, para um documento ou para pastas inteiras, mantendo a organização de pastas de quem usa.
 @metric Capacidades documentadas | specs
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
@@ -42,7 +42,6 @@ Pelo navegador ou por um comando, para um documento ou para pastas inteiras.
 
 <!-- slide: closing -->
 ## Para onde vamos
-Primeiro, fechar as lacunas já mapeadas, para que cada comportamento tenha a sua verificação automática. Depois, crescer: novos formatos, novos conversores e mais recursos de qualidade.
+Primeiro, concluir o que ainda está em andamento, para que cada comportamento tenha a sua verificação automática. Depois, crescer: novos formatos, novos conversores e mais recursos de qualidade.
 > Qualidade e robustez em primeiro lugar.
-@metric Em construção | specs-active
 @source docs/briefing.md

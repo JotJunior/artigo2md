@@ -3,7 +3,7 @@ title: artigo2md
 subtitle: Seus PDFs viram texto limpo, sem sair do seu computador
 project: artigo2md
 lang: pt-BR
-generated: 2026-11-20
+generated: 2026-11-21
 vocabulary: PDF, Markdown
 ---
 
@@ -55,8 +55,8 @@ Nenhum documento do projeto contém dado inventado. Sem fonte rastreável, o tra
 @source docs/constitution.md
 
 <!-- slide: chapter -->
-## Em construção
-O produto já existia e funcionava. Agora cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano.
+## Do retrato à entrega
+O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. A maior parte desses planos já foi executada e conferida contra o combinado.
 
 <!-- slide: spec key=command-line-interface -->
 ## Converter pastas inteiras com um comando
@@ -66,11 +66,12 @@ Um comando único para converter arquivos ou pastas inteiras, abrir a página de
 ### Como foi pensada
 O ponto frágil estava nos documentos de mesmo nome guardados em pastas diferentes: um deles ficava de fora. A escolha foi fazer a saída repetir a organização de pastas da entrada, um resultado que se mantém estável a cada nova execução.
 ### Como foi enriquecida
-As perguntas de refinamento definiram a prioridade, confirmaram que pular um documento já convertido não é erro e fixaram a meta: cada comportamento com a sua verificação automática.
+As perguntas definiram a prioridade, confirmaram que pular um documento já convertido não é erro e fecharam cuidados novos: avisar quando a página de uso fica visível para outras máquinas e recusar, com orientação, pedidos em que documentos diferentes disputariam o mesmo arquivo de saída.
 ### Como foi implementada
-A capacidade já existe no produto. A melhoria para documentos de mesmo nome e as verificações automáticas estão planejadas e em andamento, ainda sem tarefas concluídas.
+Entregue e conferida contra o combinado: a saída repete a organização de pastas da entrada, os avisos novos estão em uso e cada comportamento do comando tem a sua verificação automática.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
+@metric Revisão final | converge
 @tag Linha de comando
 @source docs/specs/command-line-interface/spec.md
 @source docs/specs/command-line-interface/research.md
@@ -83,11 +84,12 @@ O produto reúne conversores com talentos diferentes: um principal para páginas
 ### Como foi pensada
 A garantia de privacidade estava declarada para apenas um dos conversores. A decisão foi estendê-la a todos: recursos remotos desligados de forma explícita e coleta de dados de uso desativada sempre que o conversor oferece essa opção.
 ### Como foi enriquecida
-As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente.
+As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente. Também confirmaram que baixar os modelos na primeira conversão continua permitido: isso traz dados para a máquina, não envia o documento.
 ### Como foi implementada
-Os conversores já funcionam no produto. O reforço de privacidade e as verificações automáticas que faltam estão planejados e em andamento, ainda sem tarefas concluídas.
+Entregue e conferida contra o combinado: os recursos remotos do conversor principal ficam desligados de forma declarada, a coleta de dados de uso é desativada e cada conversor tem a sua verificação automática. A conversão real foi executada depois da mudança e continuou funcionando. Segue em aberto uma prova direta de que a conversão principal não envia conteúdo.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
+@metric Revisão final | converge
 @tag Docling
 @tag MarkItDown
 @tag MinerU
@@ -102,12 +104,13 @@ Depois de examinar o documento, o produto monta a ordem de conversores a tentar,
 ### Como foi pensada
 A nota cai quando o documento cita tabelas e nenhuma aparece no resultado, quando o texto sai curto demais ou quando boa parte do conteúdo original se perde. É a resposta direta ao problema que deu origem ao projeto.
 ### Como foi enriquecida
-As perguntas ratificaram os critérios da nota como a definição de conversão aceitável. Também fixaram o que acontece quando alguém pede um conversor que não está instalado: o produto explica como instalar, sem trocar a escolha da pessoa.
+As perguntas ratificaram os critérios da nota como a definição de conversão aceitável e fixaram o que acontece quando alguém pede um conversor que não está instalado: o produto explica como instalar, sem trocar a escolha da pessoa. Uma verificação prática mostrou que essa orientação só aparecia para um dos conversores, e completar os demais entrou no plano.
 ### Como foi implementada
-A capacidade já existe no produto e está especificada a partir do comportamento observado. O plano para completar as verificações automáticas ainda não foi feito.
+A capacidade já existe no produto. Completar a orientação de instalação para todos os conversores e as verificações automáticas que faltam está planejado e em andamento, ainda sem tarefas concluídas.
+@metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
-@metric Estágio | stage
 @source docs/specs/engine-routing/spec.md
+@source docs/specs/engine-routing/research.md
 
 <!-- slide: spec key=pdf-inspection -->
 ## Entender o documento antes de converter
@@ -117,11 +120,12 @@ Um exame rápido que identifica páginas com texto, páginas digitalizadas que e
 ### Como foi pensada
 Arquivos danificados ou protegidos por senha produziam um aviso técnico em inglês. A decisão foi interromper cedo, com uma mensagem clara em português, antes de acionar conversores pesados. O comportamento foi observado em execução real antes da escolha.
 ### Como foi enriquecida
-As perguntas transformaram duas lacunas em garantias: a falha clara para arquivo inválido ou protegido e a exigência de que o exame aconteça sem nenhum acesso à rede.
+As perguntas transformaram lacunas em garantias: a falha clara para arquivo inválido ou protegido e a exigência de que o exame aconteça sem acesso à rede. Também registraram que não há meta de tempo para o exame e que decidir por palavras do texto é um risco aceito, já que um resultado fraco aciona nova tentativa.
 ### Como foi implementada
-O exame já existe no produto. A mensagem clara para arquivos problemáticos e as verificações que faltam estão planejadas e em andamento, ainda sem tarefas concluídas.
+Entregue e conferida contra o combinado: arquivos danificados ou protegidos por senha recebem uma mensagem clara em português antes de qualquer conversor ser acionado, e cada comportamento do exame tem a sua verificação automática.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
+@metric Revisão final | converge
 @source docs/specs/pdf-inspection/spec.md
 @source docs/specs/pdf-inspection/research.md
 
@@ -135,15 +139,16 @@ As conversões acontecem uma por vez, porque os conversores são pesados. Cada p
 ### Como foi enriquecida
 As perguntas fecharam decisões de uso: a página não pede senha e atende só o próprio computador por padrão, não há limite de envio e os arquivos ficam guardados até a pessoa apagar.
 ### Como foi implementada
-A página já existe no produto e está especificada a partir do comportamento observado, com a estrutura dos dados documentada. O plano para completar as verificações automáticas ainda não foi feito.
+A página já existe no produto e nenhuma mudança de comportamento está prevista. As verificações automáticas dos casos de erro e a conferência do combinado entre a página e o serviço local estão planejadas e em andamento, ainda sem tarefas concluídas.
+@metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
-@metric Estágio | stage
 @source docs/specs/web-interface/spec.md
+@source docs/specs/web-interface/research.md
 @source docs/specs/web-interface/data-model.md
 
 <!-- slide: timeline -->
 ## A jornada
-O produto veio primeiro. A documentação de cada peça chegou depois, de uma vez, para sustentar os próximos passos.
+O produto veio primeiro. A documentação de cada peça chegou depois e, logo em seguida, as melhorias planejadas começaram a ser entregues e conferidas.
 @timeline
 
 <!-- slide: numbers -->
@@ -155,7 +160,7 @@ O produto veio primeiro. A documentação de cada peça chegou depois, de uma ve
 
 <!-- slide: closing -->
 ## O que vem a seguir
-O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. Antes disso, o compromisso assumido é fechar as lacunas já mapeadas, para que cada comportamento do produto tenha a sua verificação automática.
+O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. Antes disso, o compromisso assumido é concluir o que ainda está em andamento, para que cada comportamento do produto tenha a sua verificação automática.
 > Qualidade e robustez em primeiro lugar.
 @source docs/briefing.md
 
