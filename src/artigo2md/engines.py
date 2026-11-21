@@ -106,17 +106,30 @@ def _ocr_options():
     return po.EasyOcrOptions(lang=["pt", "en"])
 
 
+def _docling_ok(result) -> bool:
+    status = getattr(result.status, "value", str(result.status))
+    return str(status).lower() == "success"
+
+
 def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
     cpu = False
     try:
-        result = _docling_converter(ocr).convert(str(path))
+        result = _docling_converter(ocr).convert(str(path), raises_on_error=False)
+        # O Docling engole a falta de memória da GPU página a página e devolve um
+        # resultado parcial (sem tabelas, com texto faltando). Parcial → refaz na CPU.
+        retry = not _docling_ok(result)
     except Exception as exc:
         if not is_gpu_oom(exc):
             raise
-        # A placa está cheia (outro programa usando a GPU): refaz no processador.
+        result, retry = None, True
+    if retry:
         release_gpu_memory()
-        cpu = True
-        result = _docling_converter(ocr, cpu=True).convert(str(path))
+        cpu_result = _docling_converter(ocr, cpu=True).convert(str(path), raises_on_error=False)
+        # Se os dois saírem parciais (PDF com páginas defeituosas), fica o de mais texto.
+        if (result is None or _docling_ok(cpu_result)
+                or len(cpu_result.document.export_to_markdown())
+                >= len(result.document.export_to_markdown())):
+            result, cpu = cpu_result, True
     doc = result.document
     return EngineOutput(
         engine="docling" + ("+ocr" if ocr else "") + ("+cpu" if cpu else ""),

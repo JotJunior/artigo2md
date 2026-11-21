@@ -154,3 +154,40 @@ def test_mineru_other_errors_do_not_retry(article_pdf, monkeypatch):
     with pytest.raises(RuntimeError, match="PDF inválido"):
         engines.run_mineru(article_pdf)
     assert calls == [1]
+
+
+def test_docling_partial_result_is_redone_on_cpu(article_pdf, monkeypatch):
+    """O Docling engole a falta de memória da GPU e devolve PARTIAL_SUCCESS → refaz na CPU."""
+    import types
+
+    def fake_result(status, md):
+        doc = types.SimpleNamespace(export_to_markdown=lambda: md, tables=[1] * len(md))
+        return types.SimpleNamespace(status=types.SimpleNamespace(value=status), document=doc)
+
+    used = []
+
+    def fake_converter(ocr, cpu=False):
+        used.append(cpu)
+        res = fake_result("success", "# completo") if cpu else fake_result("partial_success", "#")
+        return types.SimpleNamespace(convert=lambda path, raises_on_error=True: res)
+
+    monkeypatch.setattr(engines, "_docling_converter", fake_converter)
+    out = engines.run_docling(article_pdf)
+    assert used == [False, True]
+    assert out.engine == "docling+cpu" and out.markdown == "# completo"
+
+
+def test_docling_success_does_not_retry(article_pdf, monkeypatch):
+    import types
+
+    used = []
+    doc = types.SimpleNamespace(export_to_markdown=lambda: "# ok", tables=[])
+    res = types.SimpleNamespace(status=types.SimpleNamespace(value="success"), document=doc)
+
+    def fake_converter(ocr, cpu=False):
+        used.append(cpu)
+        return types.SimpleNamespace(convert=lambda path, raises_on_error=True: res)
+
+    monkeypatch.setattr(engines, "_docling_converter", fake_converter)
+    assert engines.run_docling(article_pdf).engine == "docling"
+    assert used == [False]
