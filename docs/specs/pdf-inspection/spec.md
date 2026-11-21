@@ -8,9 +8,18 @@
 **Created**: 2026-11-20
 **Status**: Draft
 
+## Clarifications
+
+### Session 2026-11-20
+
+- Q: Qual a prioridade da User Story 1? → A: P1 (informado pelo operador)
+- Q: O que a inspeção faz com PDF inválido ou protegido por senha? → A: Falha com mensagem clara (informado pelo operador)
+- Q: O processamento sem rede da inspeção vira requisito? → A: Sim, promovido a requisito (informado pelo operador)
+- Q: Qual a meta mensurável da capacidade? → A: Cobertura por testes automatizados (informado pelo operador)
+
 ## User Scenarios & Testing
 
-### User Story 1 - Inspecionar o PDF antes de converter (Priority: [PENDENTE: qual a prioridade desta capacidade?])
+### User Story 1 - Inspecionar o PDF antes de converter (Priority: P1) (informado pelo operador)
 
 Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e resume o documento: quantas páginas têm texto, quantas parecem escaneadas, quantas citam tabelas e quantos indícios de fórmula e de artigo científico aparecem. Esse resumo orienta a escolha do motor.
 
@@ -22,7 +31,8 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 
 ### Edge Cases
 
-- [PENDENTE: o que acontece quando o arquivo não é um PDF válido ou está protegido por senha (FR-001)?]
+- Quando o arquivo não é um PDF válido ou está protegido por senha, a inspeção falha com mensagem clara em português, sem acionar os motores (informado pelo operador) (cobre FR-007)
+- [PENDENTE: qual teste comprova que a inspeção não acessa a rede (FR-008)?]
 
 ## Requirements
 
@@ -34,10 +44,12 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 - **FR-004**: O sistema soma indícios de fórmula: símbolos matemáticos e os termos "equation" e "equação". (fonte: `src/artigo2md/pdfscan.py:19`)
 - **FR-005**: O sistema soma ocorrências de termos típicos de artigo científico, em inglês e português, numa pontuação de artigo. (fonte: `src/artigo2md/pdfscan.py:13`)
 - **FR-006**: O sistema marca o PDF como totalmente escaneado quando todas as páginas são escaneadas e como necessitando de OCR quando ao menos uma é. (fonte: `src/artigo2md/pdfscan.py:45`)
+- **FR-007**: O sistema falha com mensagem clara em português quando o arquivo não é um PDF válido ou está protegido por senha; requisito definido na clarificação, ainda não observado no código. (informado pelo operador)
+- **FR-008**: O sistema inspeciona apenas o arquivo local e não acessa a rede durante a inspeção. (informado pelo operador) (fonte: `src/artigo2md/pdfscan.py:3`)
 
 ### Inferido (nao confirmado)
 
-- **INF-001**: A inspeção parece não depender de rede; o módulo importa apenas pypdfium2 para ler o arquivo local.
+- Nenhuma inferência em aberto: a antiga INF-001 foi promovida a FR-008 na clarificação.
 
 ### Key Entities
 
@@ -48,7 +60,7 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 
 ### Measurable Outcomes
 
-- **SC-001**: [PENDENTE: qual a meta mensuravel, com fonte, para esta capacidade?]
+- **SC-001**: Todo requisito funcional desta spec tem ao menos um teste automatizado que passa. (informado pelo operador)
 
 ## Delta Requirements
 

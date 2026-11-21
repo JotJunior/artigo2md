@@ -8,9 +8,19 @@
 **Created**: 2026-11-20
 **Status**: Draft
 
+## Clarifications
+
+### Session 2026-11-20
+
+- Q: Qual a prioridade da User Story 1? → A: P1 (informado pelo operador)
+- Q: O que o convert faz com PDFs de mesmo nome em pastas diferentes? → A: Converte os dois, nomes distintos (informado pelo operador)
+- Q: Qual o código de saída quando todos os PDFs são pulados? → A: Código 0 (informado pelo operador)
+- Q: Qual a meta mensurável da capacidade? → A: Cobertura por testes automatizados (informado pelo operador)
+- Q: Como as saídas de PDFs homônimos ficam distintas (FR-014)? → A: Espelhar subpastas da entrada (informado pelo operador)
+
 ## User Scenarios & Testing
 
-### User Story 1 - Converter, servir e diagnosticar pela linha de comando (Priority: [PENDENTE: qual a prioridade desta capacidade?])
+### User Story 1 - Converter, servir e diagnosticar pela linha de comando (Priority: P1) (informado pelo operador)
 
 Pelo comando artigo2md, a pessoa converte arquivos ou pastas de PDFs em Markdown, sobe a interface web local e verifica a instalação e os motores disponíveis.
 
@@ -25,6 +35,7 @@ Pelo comando artigo2md, a pessoa converte arquivos ou pastas de PDFs em Markdown
 
 - [PENDENTE: qual teste cobre a entrada ignorada e a execução sem nenhum PDF (FR-002, FR-003)?]
 - [PENDENTE: qual teste cobre a falha em um PDF sem interromper os demais (FR-008) e a opção de versão (FR-013)?]
+- [PENDENTE: qual teste cobre a conversão de PDFs de mesmo nome em pastas diferentes (FR-014)?]
 
 ## Requirements
 
@@ -34,7 +45,7 @@ Pelo comando artigo2md, a pessoa converte arquivos ou pastas de PDFs em Markdown
 - **FR-002**: A entrada que não é PDF ou não existe é ignorada com aviso na saída de erro. (fonte: `src/artigo2md/cli.py:22`)
 - **FR-003**: Sem nenhum PDF encontrado, o convert avisa e termina com código 1. (fonte: `src/artigo2md/cli.py:30`)
 - **FR-004**: O convert grava um arquivo Markdown por PDF na pasta de saída, que por padrão é a pasta markdown do diretório atual. (fonte: `src/artigo2md/cli.py:111`)
-- **FR-005**: O convert pula o PDF cujo Markdown já existe, salvo com a opção --overwrite. (fonte: `src/artigo2md/cli.py:38`)
+- **FR-005**: O convert pula o PDF cujo Markdown já existe, salvo com a opção --overwrite; pular não é erro, e o convert termina com código 0 mesmo quando todos são pulados (informado pelo operador). (fonte: `src/artigo2md/cli.py:38`)
 - **FR-006**: A opção --engine escolhe entre auto, docling, pymupdf, mineru e markitdown, com auto como padrão. (fonte: `src/artigo2md/cli.py:112`)
 - **FR-007**: A opção --report grava também um relatório JSON por arquivo convertido. (fonte: `src/artigo2md/cli.py:49`)
 - **FR-008**: A falha em um PDF não interrompe os demais; ao final o convert mostra a contagem de sucessos e erros e termina com código 1 se houve falha. (fonte: `src/artigo2md/cli.py:44`)
@@ -43,16 +54,17 @@ Pelo comando artigo2md, a pessoa converte arquivos ou pastas de PDFs em Markdown
 - **FR-011**: A opção --open abre o navegador e a opção --data-dir define onde ficam os envios e os resultados. (fonte: `src/artigo2md/cli.py:120`)
 - **FR-012**: O subcomando doctor lista cada motor com licença e situação e termina com código 0 quando os motores obrigatórios estão instalados, ou 1 caso contrário. (fonte: `src/artigo2md/cli.py:86`)
 - **FR-013**: A opção --version mostra a versão do artigo2md. (fonte: `src/artigo2md/cli.py:106`)
+- **FR-014**: Quando PDFs de entrada têm o mesmo nome em pastas diferentes, o convert converte todos e grava as saídas em caminhos distintos, repetindo na pasta de saída a estrutura de subpastas da pasta de entrada, sem pular nem sobrescrever por coincidência de nome; requisito definido na clarificação, ainda não observado no código. (informado pelo operador)
 
 ### Inferido (nao confirmado)
 
-- **INF-001**: Dois PDFs com o mesmo nome em pastas diferentes parecem gerar o mesmo arquivo de saída, já que o nome do Markdown vem só do nome do PDF.
+- Nenhuma inferência em aberto: a antiga INF-001 virou o requisito FR-014 na clarificação.
 
 ## Success Criteria
 
 ### Measurable Outcomes
 
-- **SC-001**: [PENDENTE: qual a meta mensuravel, com fonte, para esta capacidade?]
+- **SC-001**: Todo requisito funcional desta spec tem ao menos um teste automatizado que passa. (informado pelo operador)
 
 ## Delta Requirements
 

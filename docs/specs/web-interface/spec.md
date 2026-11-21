@@ -8,9 +8,19 @@
 **Created**: 2026-11-20
 **Status**: Draft
 
+## Clarifications
+
+### Session 2026-11-20
+
+- Q: Qual a prioridade da User Story 1? → A: P1 (informado pelo operador)
+- Q: Qual o requisito de controle de acesso da interface? → A: Sem senha, uso local por padrão (informado pelo operador)
+- Q: Há limite de tamanho ou de quantidade de arquivos por envio? → A: Sem limite (informado pelo operador)
+- Q: Qual a retenção dos arquivos no diretório de dados? → A: Só remoção manual (informado pelo operador)
+- Q: Qual a meta mensurável da capacidade? → A: Cobertura por testes automatizados (informado pelo operador)
+
 ## User Scenarios & Testing
 
-### User Story 1 - Enviar PDFs, acompanhar a fila e baixar o Markdown (Priority: [PENDENTE: qual a prioridade desta capacidade?])
+### User Story 1 - Enviar PDFs, acompanhar a fila e baixar o Markdown (Priority: P1) (informado pelo operador)
 
 Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada conversão na fila, lê o Markdown resultante, baixa um arquivo ou todos num zip e apaga o que não quer mais.
 
@@ -28,6 +38,7 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 - [PENDENTE: qual teste cobre o 404 de job inexistente (FR-007) e o 409 ao apagar job em andamento (FR-010)?]
 - [PENDENTE: qual teste cobre o 409 de Markdown ainda não convertido (FR-008) e os nomes repetidos no zip (FR-009)?]
 - [PENDENTE: qual teste cobre o registro de progresso (FR-012) e a sanitização do nome de saída (FR-013)?]
+- [PENDENTE: qual teste cobre o acesso sem autenticação e a escuta local por padrão (FR-014)?]
 
 ## Requirements
 
@@ -35,10 +46,10 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 
 - **FR-001**: O sistema serve a página estática da interface em GET /. (fonte: `src/artigo2md/web.py:125`)
 - **FR-002**: O sistema devolve em GET /api/info a versão, os motores disponíveis, a ficha dos motores e as opções de motor. (fonte: `src/artigo2md/web.py:129`)
-- **FR-003**: O sistema recebe em POST /api/jobs um ou mais arquivos e o motor desejado (padrão auto) e responde 400 para motor inválido. (fonte: `src/artigo2md/web.py:134`)
+- **FR-003**: O sistema recebe em POST /api/jobs um ou mais arquivos e o motor desejado (padrão auto) e responde 400 para motor inválido; a interface não impõe limite de tamanho nem de quantidade de arquivos por envio (informado pelo operador). (fonte: `src/artigo2md/web.py:134`)
 - **FR-004**: O arquivo cujo conteúdo não começa com a assinatura de PDF volta como erro, sem criar job. (fonte: `src/artigo2md/web.py:141`)
 - **FR-005**: Os jobs entram numa fila e são convertidos um por vez por um trabalhador em segundo plano. (fonte: `src/artigo2md/web.py:78`)
-- **FR-006**: Cada job guarda, numa pasta própria do diretório de dados, o PDF de origem, os metadados e o Markdown resultante. (fonte: `src/artigo2md/web.py:62`)
+- **FR-006**: Cada job guarda, numa pasta própria do diretório de dados, o PDF de origem, os metadados e o Markdown resultante; os arquivos permanecem até a pessoa apagar o job, sem limpeza automática (informado pelo operador). (fonte: `src/artigo2md/web.py:62`)
 - **FR-007**: O sistema lista os jobs do mais recente ao mais antigo em GET /api/jobs e devolve um job em GET /api/jobs/{job_id}, com 404 quando não existe. (fonte: `src/artigo2md/web.py:147`)
 - **FR-008**: O sistema devolve o Markdown de um job concluído em GET /api/jobs/{job_id}/markdown, como texto ou como download, e responde 409 quando ainda não foi convertido. (fonte: `src/artigo2md/web.py:160`)
 - **FR-009**: O sistema devolve em GET /api/download.zip um zip com os Markdown dos jobs concluídos (todos ou os identificadores pedidos), diferenciando nomes repetidos. (fonte: `src/artigo2md/web.py:171`)
@@ -46,10 +57,11 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 - **FR-011**: Ao iniciar, o sistema recarrega os jobs gravados e marca como erro por interrupção os que estavam em fila ou em andamento. (fonte: `src/artigo2md/web.py:46`)
 - **FR-012**: O progresso da conversão é gravado na etapa do job. (fonte: `src/artigo2md/web.py:89`)
 - **FR-013**: O nome do arquivo de saída é derivado do nome enviado, com caracteres fora do conjunto permitido substituídos e limite de 150 caracteres. (fonte: `src/artigo2md/web.py:25`)
+- **FR-014**: A interface não exige autenticação e o servidor escuta apenas na própria máquina por padrão; a exposição na rede depende de escolha explícita de quem inicia o servidor. (informado pelo operador) (fonte: `src/artigo2md/cli.py:118`)
 
 ### Inferido (nao confirmado)
 
-- **INF-001**: A interface parece não ter autenticação; nenhuma verificação de credencial aparece nas rotas lidas.
+- Nenhuma inferência em aberto: a antiga INF-001 foi promovida a FR-014 na clarificação.
 
 ### Key Entities
 
@@ -59,7 +71,7 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 
 ### Measurable Outcomes
 
-- **SC-001**: [PENDENTE: qual a meta mensuravel, com fonte, para esta capacidade?]
+- **SC-001**: Todo requisito funcional desta spec tem ao menos um teste automatizado que passa. (informado pelo operador)
 
 ## Delta Requirements
 

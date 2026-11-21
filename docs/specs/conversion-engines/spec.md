@@ -8,9 +8,18 @@
 **Created**: 2026-11-20
 **Status**: Draft
 
+## Clarifications
+
+### Session 2026-11-20
+
+- Q: Qual a prioridade da User Story 1? → A: P1 (informado pelo operador)
+- Q: Qual requisito de rede e telemetria vale para os motores além do MinerU? → A: Exigir de todos os motores (informado pelo operador)
+- Q: A política de aceitar o MinerU só na linha 3.x (FR-007) continua valendo? → A: Sim, só 3.x (informado pelo operador)
+- Q: Qual a meta mensurável da capacidade? → A: Cobertura por testes automatizados (informado pelo operador)
+
 ## User Scenarios & Testing
 
-### User Story 1 - Converter com cada motor e saber quais estão disponíveis (Priority: [PENDENTE: qual a prioridade desta capacidade?])
+### User Story 1 - Converter com cada motor e saber quais estão disponíveis (Priority: P1) (informado pelo operador)
 
 O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown, pymupdf4llm e MinerU), detecta quais estão instalados e mantém uma ficha de cada um, usada na interface e no diagnóstico.
 
@@ -26,6 +35,7 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 ### Edge Cases
 
 - [PENDENTE: qual teste cobre o erro de motor indisponível quando o pymupdf4llm não está instalado (FR-005)?]
+- [PENDENTE: qual teste ou verificação comprova que Docling, MarkItDown e pymupdf4llm não enviam conteúdo nem telemetria (FR-013)?]
 
 ## Requirements
 
@@ -43,6 +53,7 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 - **FR-010**: O sistema informa quais dos quatro motores estão disponíveis na máquina. (fonte: `src/artigo2md/engines.py:172`)
 - **FR-011**: O sistema mantém a ficha de cada motor (identificador, nome, licença, obrigatoriedade, papel, peso, instalação) com o estado de instalação e o detalhe de versão incompatível do MinerU. (fonte: `src/artigo2md/engines.py:205`)
 - **FR-012**: O conversor do Docling é criado uma vez por modo (com ou sem OCR) e reutilizado. (fonte: `src/artigo2md/engines.py:41`)
+- **FR-013**: Nenhum motor envia o documento ou conteúdo dele a serviços externos, e a telemetria é desativada sempre que o motor oferece essa opção; requisito definido na clarificação, hoje observado no código apenas para o MinerU. (informado pelo operador)
 
 ### Inferido (nao confirmado)
 
@@ -56,7 +67,7 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 
 ### Measurable Outcomes
 
-- **SC-001**: [PENDENTE: qual a meta mensuravel, com fonte, para esta capacidade?]
+- **SC-001**: Todo requisito funcional desta spec tem ao menos um teste automatizado que passa. (informado pelo operador)
 
 ## Delta Requirements
 

@@ -8,9 +8,18 @@
 **Created**: 2026-11-20
 **Status**: Draft
 
+## Clarifications
+
+### Session 2026-11-20
+
+- Q: Qual a prioridade da User Story 1? → A: P1 (informado pelo operador)
+- Q: O que acontece quando o motor pedido explicitamente não está instalado? → A: Falha com instrução de instalação (informado pelo operador)
+- Q: Os descontos da nota e o corte de aceite (FR-006 a FR-009) refletem uma conversão aceitável? → A: Sim, manter os valores (informado pelo operador)
+- Q: Qual a meta mensurável da capacidade? → A: Cobertura por testes automatizados (informado pelo operador)
+
 ## User Scenarios & Testing
 
-### User Story 1 - Converter com escolha automática de motor e fallback (Priority: [PENDENTE: qual a prioridade desta capacidade?])
+### User Story 1 - Converter com escolha automática de motor e fallback (Priority: P1) (informado pelo operador)
 
 A partir da inspeção do PDF, o artigo2md monta a ordem de motores a tentar, converte, dá uma nota de qualidade ao resultado e, quando a nota não é aceita ou o motor falha, tenta o próximo, ficando com o resultado de maior nota.
 
@@ -31,6 +40,7 @@ A partir da inspeção do PDF, o artigo2md monta a ordem de motores a tentar, co
 
 - [PENDENTE: qual teste cobre a recusa de motor fora da lista no roteador (FR-012)?]
 - [PENDENTE: qual teste cobre a falha quando nenhum motor produz saída (FR-013)?]
+- [PENDENTE: qual teste cobre a falha com instrução de instalação quando o motor pedido não está instalado (FR-017)?]
 
 ## Requirements
 
@@ -52,6 +62,7 @@ A partir da inspeção do PDF, o artigo2md monta a ordem de motores a tentar, co
 - **FR-014**: O Docling é chamado com OCR ligado quando a análise indica páginas escaneadas. (fonte: `src/artigo2md/router.py:108`)
 - **FR-015**: O sistema informa o progresso (inspeção, motor em uso, reprovação na avaliação) por uma função de aviso opcional. (fonte: `src/artigo2md/router.py:126`)
 - **FR-016**: O resultado traz o Markdown, o motor usado, a análise do PDF e a lista de tentativas com tempo, qualidade ou erro. (fonte: `src/artigo2md/router.py:41`)
+- **FR-017**: Quando o motor solicitado explicitamente não está instalado, a conversão falha com a instrução de instalação desse motor e o sistema não troca para o modo automático. (informado pelo operador) (fonte: `src/artigo2md/router.py:148`)
 
 ### Inferido (nao confirmado)
 
@@ -67,7 +78,7 @@ A partir da inspeção do PDF, o artigo2md monta a ordem de motores a tentar, co
 
 ### Measurable Outcomes
 
-- **SC-001**: [PENDENTE: qual a meta mensuravel, com fonte, para esta capacidade?]
+- **SC-001**: Todo requisito funcional desta spec tem ao menos um teste automatizado que passa. (informado pelo operador)
 
 ## Delta Requirements
 
