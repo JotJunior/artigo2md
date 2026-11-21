@@ -102,3 +102,55 @@ def test_docling_end_to_end(article_pdf):
     assert result.engine.startswith("docling")
     assert "randomized trial" in result.markdown
     assert router.count_markdown_tables(result.markdown) >= 1
+
+
+def test_is_gpu_oom():
+    assert engines.is_gpu_oom("torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 564.00 MiB")
+    assert engines.is_gpu_oom(RuntimeError("MPS backend out of memory"))
+    assert not engines.is_gpu_oom("MemoryError")
+    assert not engines.is_gpu_oom("arquivo corrompido")
+
+
+def test_mineru_retries_on_cpu_when_gpu_is_full(article_pdf, monkeypatch, tmp_path):
+    """Placa cheia (outro programa usando a GPU) → refaz com MINERU_DEVICE_MODE=cpu."""
+    import subprocess
+    import types
+    from pathlib import Path
+
+    monkeypatch.delenv("MINERU_DEVICE_MODE", raising=False)
+    monkeypatch.setattr(engines, "mineru_status", lambda: (True, "versão 3.4.5"))
+    monkeypatch.setattr(engines, "_mineru_exe", lambda: "mineru")
+    calls = []
+
+    def fake_run(cmd, env, **kw):
+        calls.append(env.get("MINERU_DEVICE_MODE"))
+        assert env["MINERU_TELEMETRY_DISABLED"] == "1"
+        if env.get("MINERU_DEVICE_MODE") != "cpu":
+            return types.SimpleNamespace(returncode=1, stdout="", stderr="CUDA out of memory.")
+        out = Path(cmd[cmd.index("-o") + 1]) / "doc" / "auto"
+        out.mkdir(parents=True)
+        (out / "doc.md").write_text("# ok", encoding="utf-8")
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    result = engines.run_mineru(article_pdf)
+    assert calls == [None, "cpu"]
+    assert result.engine == "mineru+cpu" and result.markdown == "# ok"
+
+
+def test_mineru_other_errors_do_not_retry(article_pdf, monkeypatch):
+    import subprocess
+    import types
+
+    monkeypatch.setattr(engines, "mineru_status", lambda: (True, "versão 3.4.5"))
+    monkeypatch.setattr(engines, "_mineru_exe", lambda: "mineru")
+    calls = []
+
+    def fake_run(cmd, env, **kw):
+        calls.append(1)
+        return types.SimpleNamespace(returncode=1, stdout="", stderr="PDF inválido")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="PDF inválido"):
+        engines.run_mineru(article_pdf)
+    assert calls == [1]

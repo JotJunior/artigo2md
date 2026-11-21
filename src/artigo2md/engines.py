@@ -36,14 +36,38 @@ class EngineUnavailable(RuntimeError):
 
 # ── Docling ──────────────────────────────────────────────────────────────────
 _docling_lock = threading.Lock()
-_docling_cache: dict[bool, object] = {}
+_docling_cache: dict[tuple[bool, bool], object] = {}
 
 
-def _docling_converter(ocr: bool):
-    """Cria (uma vez) o conversor; carregar os modelos é a parte cara."""
+def is_gpu_oom(exc_or_text) -> bool:
+    """Falta de memória na placa de vídeo (CUDA/MPS). Comum quando outro programa usa a GPU."""
+    text = str(exc_or_text).lower()
+    return "out of memory" in text and ("cuda" in text or "mps" in text or "gpu" in text)
+
+
+def release_gpu_memory() -> None:
+    """Descarta os modelos do Docling e devolve a memória da placa (antes do MinerU,
+    que roda em outro processo e precisa da GPU livre)."""
     with _docling_lock:
-        if ocr in _docling_cache:
-            return _docling_cache[ocr]
+        _docling_cache.clear()
+    import gc
+
+    gc.collect()
+    torch = sys.modules.get("torch")  # só se já foi carregado; nunca importar aqui
+    if torch is not None:
+        try:
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:
+            pass
+
+
+def _docling_converter(ocr: bool, cpu: bool = False):
+    """Cria (uma vez) o conversor; carregar os modelos é a parte cara."""
+    key = (ocr, cpu)
+    with _docling_lock:
+        if key in _docling_cache:
+            return _docling_cache[key]
         from docling.datamodel.base_models import InputFormat
         from docling.datamodel.pipeline_options import (
             PdfPipelineOptions,
@@ -58,10 +82,16 @@ def _docling_converter(ocr: bool):
         opts.do_ocr = ocr
         if ocr:
             opts.ocr_options = _ocr_options()
+        if cpu:
+            try:
+                from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
+            except ImportError:  # versões antigas do Docling
+                from docling.datamodel.pipeline_options import AcceleratorDevice, AcceleratorOptions
+            opts.accelerator_options = AcceleratorOptions(device=AcceleratorDevice.CPU)
         converter = DocumentConverter(
             format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
         )
-        _docling_cache[ocr] = converter
+        _docling_cache[key] = converter
         return converter
 
 
@@ -77,13 +107,22 @@ def _ocr_options():
 
 
 def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
-    result = _docling_converter(ocr).convert(str(path))
+    cpu = False
+    try:
+        result = _docling_converter(ocr).convert(str(path))
+    except Exception as exc:
+        if not is_gpu_oom(exc):
+            raise
+        # A placa está cheia (outro programa usando a GPU): refaz no processador.
+        release_gpu_memory()
+        cpu = True
+        result = _docling_converter(ocr, cpu=True).convert(str(path))
     doc = result.document
     return EngineOutput(
-        engine="docling" + ("+ocr" if ocr else ""),
+        engine="docling" + ("+ocr" if ocr else "") + ("+cpu" if cpu else ""),
         markdown=doc.export_to_markdown(),
         tables=len(doc.tables),
-        extra={"status": str(result.status)},
+        extra={"status": str(result.status), "gpu_fallback": cpu},
     )
 
 
@@ -162,16 +201,30 @@ def run_mineru(path: Path, timeout: int = 1800) -> EngineOutput:
     ok, detail = mineru_status()
     if not ok:
         raise EngineUnavailable(f"MinerU indisponível ({detail}). Veja o README.")
+    release_gpu_memory()  # o MinerU roda em outro processo e precisa da placa livre
     env = dict(os.environ, MINERU_TELEMETRY_DISABLED="1")  # nada sai da máquina
-    with tempfile.TemporaryDirectory(prefix="artigo2md-mineru-") as tmp:
-        proc = subprocess.run(
-            [_mineru_exe(), "-p", str(path), "-o", tmp],
-            capture_output=True, text=True, timeout=timeout, env=env,
-        )
-        mds = sorted(Path(tmp).rglob("*.md"), key=lambda p: p.stat().st_size, reverse=True)
-        if proc.returncode != 0 or not mds:
-            raise RuntimeError("MinerU falhou: " + (proc.stderr or proc.stdout)[-600:])
-        return EngineOutput(engine="mineru", markdown=mds[0].read_text(encoding="utf-8"))
+
+    def attempt(extra_env: dict) -> tuple[str | None, str]:
+        with tempfile.TemporaryDirectory(prefix="artigo2md-mineru-") as tmp:
+            proc = subprocess.run(
+                [_mineru_exe(), "-p", str(path), "-o", tmp],
+                capture_output=True, text=True, timeout=timeout, env=dict(env, **extra_env),
+            )
+            mds = sorted(Path(tmp).rglob("*.md"), key=lambda p: p.stat().st_size, reverse=True)
+            if proc.returncode == 0 and mds:
+                return mds[0].read_text(encoding="utf-8"), ""
+            return None, proc.stderr + proc.stdout
+
+    markdown, log = attempt({})
+    cpu = False
+    if markdown is None and is_gpu_oom(log) and "MINERU_DEVICE_MODE" not in os.environ:
+        # A placa está cheia (outro programa usando a GPU): refaz no processador.
+        cpu = True
+        markdown, log = attempt({"MINERU_DEVICE_MODE": "cpu"})
+    if markdown is None:
+        raise RuntimeError("MinerU falhou: " + log[-600:])
+    return EngineOutput(engine="mineru" + ("+cpu" if cpu else ""), markdown=markdown,
+                        extra={"gpu_fallback": cpu})
 
 
 def available_engines() -> dict[str, bool]:
