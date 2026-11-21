@@ -35,7 +35,7 @@ requisitos da linha de comando, exigidos por SC-001. Hoje nenhum teste chama a l
 ## Decision 5: Testes do convert
 
 **Decision**: Um teste de ponta a ponta com o motor markitdown sobre a fixture de artigo e, para os demais casos (pulo, sobrescrita, relatório, falha isolada, entrada ignorada, nenhum PDF, homônimos), substituir a função de conversão por uma simulação rápida.
-**Rationale**: O markitdown já é usado em teste de ponta a ponta sem baixar modelos (fonte: `tests/test_core.py:80`); os demais casos testam a lógica da linha de comando, não a conversão.
+**Rationale**: O markitdown já é usado em teste de ponta a ponta sem baixar modelos (fonte: `tests/test_core.py:110`); os demais casos testam a lógica da linha de comando, não a conversão.
 **Alternatives considered**: Usar conversão real em todos os testes (lento, sem ganho de cobertura da linha de comando).
 
 ## Decision 6: Testes do serve

@@ -43,21 +43,21 @@ Ref: research.md Decisions 4 e 5; quickstart.md Scenario 1
 
 Ref: spec.md FR-001, FR-002, FR-003, FR-005, FR-007, FR-008; quickstart.md Scenarios 2, 3, 5 e 6
 
-- [ ] 2.2.1 Escrever o teste da busca recursiva em pasta e do filtro pela extensão pdf (FR-001)
-- [ ] 2.2.2 Escrever os testes de entrada ignorada com aviso e de código 1 quando nenhum PDF é encontrado (FR-002, FR-003)
-- [ ] 2.2.3 Escrever os testes de pulo, de sobrescrita e de código 0 quando todos os PDFs são pulados (FR-005)
-- [ ] 2.2.4 Escrever o teste do relatório JSON ao lado do Markdown (FR-007)
-- [ ] 2.2.5 Escrever o teste de falha isolada em um PDF, com a contagem final e o código 1 (FR-008)
+- [x] 2.2.1 Escrever o teste da busca recursiva em pasta e do filtro pela extensão pdf (FR-001)
+- [x] 2.2.2 Escrever os testes de entrada ignorada com aviso e de código 1 quando nenhum PDF é encontrado (FR-002, FR-003)
+- [x] 2.2.3 Escrever os testes de pulo, de sobrescrita e de código 0 quando todos os PDFs são pulados (FR-005)
+- [x] 2.2.4 Escrever o teste do relatório JSON ao lado do Markdown (FR-007)
+- [x] 2.2.5 Escrever o teste de falha isolada em um PDF, com a contagem final e o código 1 (FR-008)
 
 ### 2.3 Testes de serve, doctor e versão `[M]`
 
 Ref: spec.md FR-009, FR-010, FR-011, FR-012, FR-013; research.md Decisions 6 e 7; quickstart.md Scenarios 7 e 8
 
-- [ ] 2.3.1 Escrever o teste do serve com valores padrão, com o servidor simulado: host, porta e diretório de dados (FR-009, FR-011)
-- [ ] 2.3.2 Escrever o teste da opção de abrir o navegador, com o navegador simulado (FR-011)
-- [ ] 2.3.3 Escrever o teste da porta ocupada: código 1 e sugestão de outra porta (FR-010)
-- [ ] 2.3.4 Escrever os testes do doctor com a ficha de motores simulada, com e sem motor obrigatório ausente (FR-012)
-- [ ] 2.3.5 Escrever o teste da opção de versão (FR-013)
+- [x] 2.3.1 Escrever o teste do serve com valores padrão, com o servidor simulado: host, porta e diretório de dados (FR-009, FR-011)
+- [x] 2.3.2 Escrever o teste da opção de abrir o navegador, com o navegador simulado (FR-011)
+- [x] 2.3.3 Escrever o teste da porta ocupada: código 1 e sugestão de outra porta (FR-010)
+- [x] 2.3.4 Escrever os testes do doctor com a ficha de motores simulada, com e sem motor obrigatório ausente (FR-012)
+- [x] 2.3.5 Escrever o teste da opção de versão (FR-013)
 
 ---
 

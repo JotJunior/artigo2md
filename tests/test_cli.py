@@ -3,11 +3,13 @@
 A função de entrada é chamada em processo, com a lista de argumentos, e devolve o
 código de saída (ver docs/specs/command-line-interface/research.md, Decision 4).
 """
+import json
+import socket
 from pathlib import Path
 
 import pytest
 
-from artigo2md import cli, router
+from artigo2md import __version__, cli, engines, router
 
 
 @pytest.fixture
@@ -27,12 +29,15 @@ def fake_convert(monkeypatch):
     """Troca a conversão real por uma simulação rápida e registra cada chamada.
 
     Serve aos testes que exercitam a lógica da linha de comando, não a conversão.
+    Arquivos cujo nome começa com "falha" simulam um erro de conversão.
     """
     calls: list[dict] = []
 
     def _convert(path, engine="auto", progress=None):
         path = Path(path)
         calls.append({"path": path, "engine": engine})
+        if path.stem.startswith("falha"):
+            raise RuntimeError("falha simulada")
         if progress:
             progress("Convertendo (simulado)")
         quality = router.Quality(
@@ -82,3 +87,241 @@ def test_convert_defaults_to_auto_engine(run_cli, fake_convert, article_pdf, tmp
 
     assert code == 0
     assert fake_convert[0]["engine"] == "auto"
+
+
+def _touch_pdf(path: Path) -> Path:
+    """Cria um arquivo com extensão de PDF; o conteúdo não importa com a conversão simulada."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"%PDF-1.4 simulado")
+    return path
+
+
+# ── convert ──────────────────────────────────────────────────────────────────
+def test_convert_searches_folders_recursively_for_pdfs(run_cli, fake_convert, tmp_path):
+    source = tmp_path / "entrada"
+    first = _touch_pdf(source / "a.pdf")
+    nested = _touch_pdf(source / "sub" / "fundo" / "b.PDF")
+    (source / "notas.txt").write_text("não é pdf", encoding="utf-8")
+
+    code, _out, _err = run_cli("convert", source, "-o", tmp_path / "saida")
+
+    assert code == 0
+    assert sorted(call["path"] for call in fake_convert) == sorted([first, nested])
+
+
+def test_convert_ignores_inputs_that_are_not_pdfs(run_cli, fake_convert, tmp_path):
+    valid = _touch_pdf(tmp_path / "bom.pdf")
+    text_file = tmp_path / "notas.txt"
+    text_file.write_text("não é pdf", encoding="utf-8")
+    missing = tmp_path / "sumiu.pdf"
+
+    code, _out, err = run_cli("convert", valid, text_file, missing, "-o", tmp_path / "saida")
+
+    assert code == 0
+    assert [call["path"] for call in fake_convert] == [valid]
+    assert f"ignorado (não é PDF ou não existe): {text_file}" in err
+    assert f"ignorado (não é PDF ou não existe): {missing}" in err
+
+
+def test_convert_without_any_pdf_exits_with_error(run_cli, fake_convert, tmp_path):
+    code, _out, err = run_cli("convert", tmp_path / "sumiu.pdf", "-o", tmp_path / "saida")
+
+    assert code == 1
+    assert fake_convert == []
+    assert "Nenhum PDF encontrado." in err
+    assert not (tmp_path / "saida").exists()
+
+
+def test_convert_skips_existing_output_unless_overwrite(run_cli, fake_convert, tmp_path):
+    source = _touch_pdf(tmp_path / "artigo.pdf")
+    out_dir = tmp_path / "saida"
+
+    first_code, _out, _err = run_cli("convert", source, "-o", out_dir)
+    second_code, second_out, _err = run_cli("convert", source, "-o", out_dir)
+
+    assert (first_code, second_code) == (0, 0)  # pular não é erro, nem quando todos são pulados
+    assert len(fake_convert) == 1
+    assert "já existe, pulando: artigo.md" in second_out
+
+    third_code, _out, _err = run_cli("convert", source, "-o", out_dir, "--overwrite")
+
+    assert third_code == 0
+    assert len(fake_convert) == 2
+
+
+def test_convert_report_writes_json_next_to_markdown(run_cli, fake_convert, tmp_path):
+    source = _touch_pdf(tmp_path / "artigo.pdf")
+    out_dir = tmp_path / "saida"
+
+    code, _out, _err = run_cli("convert", source, "-o", out_dir, "--report")
+
+    assert code == 0
+    report = json.loads((out_dir / "artigo.report.json").read_text(encoding="utf-8"))
+    assert report["source"] == str(source)
+    assert report["engine"] == "simulado"
+    assert report["analysis"] == {"pages": 1}
+    assert report["attempts"][0]["quality"]["score"] == 100.0
+    assert "markdown" not in report
+
+
+def test_convert_without_report_writes_no_json(run_cli, fake_convert, tmp_path):
+    source = _touch_pdf(tmp_path / "artigo.pdf")
+    out_dir = tmp_path / "saida"
+
+    run_cli("convert", source, "-o", out_dir)
+
+    assert not (out_dir / "artigo.report.json").exists()
+
+
+def test_convert_failure_in_one_pdf_does_not_stop_the_others(run_cli, fake_convert, tmp_path):
+    source = tmp_path / "entrada"
+    _touch_pdf(source / "falha-primeiro.pdf")
+    _touch_pdf(source / "ok-depois.pdf")
+    out_dir = tmp_path / "saida"
+
+    code, out, err = run_cli("convert", source, "-o", out_dir)
+
+    assert code == 1
+    assert len(fake_convert) == 2
+    assert "ERRO: falha simulada" in err
+    assert "Concluído: 1 ok, 1 com erro." in out
+    assert (out_dir / "ok-depois.md").exists()
+    assert not (out_dir / "falha-primeiro.md").exists()
+
+
+# ── serve ────────────────────────────────────────────────────────────────────
+@pytest.fixture
+def serve_env(monkeypatch):
+    """Simula servidor, aplicação web, temporizador e navegador; registra o que o serve pediu."""
+    import threading
+    import webbrowser
+
+    import uvicorn
+
+    from artigo2md import web
+
+    seen = {"apps": [], "runs": [], "opened": []}
+
+    def _create_app(data_dir):
+        seen["apps"].append(data_dir)
+        return object()
+
+    def _run(app, **kwargs):
+        seen["runs"].append(kwargs)
+
+    class _ImmediateTimer:
+        """Executa a função na hora, para o navegador simulado não ser chamado depois do teste."""
+
+        def __init__(self, _interval, function):
+            self._function = function
+
+        def start(self):
+            self._function()
+
+    monkeypatch.setattr(web, "create_app", _create_app)
+    monkeypatch.setattr(uvicorn, "run", _run)
+    monkeypatch.setattr(threading, "Timer", _ImmediateTimer)
+    monkeypatch.setattr(webbrowser, "open", lambda url: seen["opened"].append(url))
+    return seen
+
+
+@pytest.fixture
+def port_is_free(monkeypatch):
+    """Faz a sondagem de porta do serve responder "livre", sem depender do que roda na máquina."""
+    probed = []
+
+    class _FreePortProbe:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *_exc):
+            return False
+
+        def connect_ex(self, address):
+            probed.append(address)
+            return 1
+
+    monkeypatch.setattr(socket, "socket", _FreePortProbe)
+    return probed
+
+
+def test_serve_defaults_to_local_host_and_default_port(run_cli, serve_env, port_is_free):
+    code, out, _err = run_cli("serve")
+
+    assert code == 0
+    assert port_is_free == [("127.0.0.1", 8777)]
+    assert serve_env["apps"] == [Path("~/artigo2md-dados").expanduser()]
+    assert serve_env["runs"] == [{"host": "127.0.0.1", "port": 8777, "log_level": "warning"}]
+    assert "interface em http://localhost:8777" in out
+    assert serve_env["opened"] == []
+
+
+def test_serve_open_and_data_dir_options(run_cli, serve_env, port_is_free, tmp_path):
+    data_dir = tmp_path / "dados"
+
+    code, _out, _err = run_cli("serve", "--open", "--data-dir", data_dir, "--port", "9001")
+
+    assert code == 0
+    assert serve_env["apps"] == [data_dir]
+    assert serve_env["runs"][0]["port"] == 9001
+    assert serve_env["opened"] == ["http://localhost:9001"]
+
+
+def test_serve_port_in_use_exits_with_suggestion(run_cli, serve_env):
+    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as busy:
+        busy.bind(("127.0.0.1", 0))
+        busy.listen(1)
+        port = busy.getsockname()[1]
+
+        code, _out, err = run_cli("serve", "--port", port)
+
+    assert code == 1
+    assert f"A porta {port} já está em uso" in err
+    assert f"artigo2md serve --port {port + 1}" in err
+    assert serve_env["runs"] == []
+
+
+# ── doctor e versão ──────────────────────────────────────────────────────────
+def _engine_row(name, required, installed, install=None, license="MIT"):
+    return {"id": name.lower(), "name": name, "license": license, "required": required,
+            "installed": installed, "install": install, "detail": None}
+
+
+def test_doctor_reports_ready_when_required_engines_are_installed(run_cli, monkeypatch):
+    table = [
+        _engine_row("Docling", required=True, installed=True),
+        _engine_row("MinerU", required=False, installed=False, install="instale à parte",
+                    license="AGPL-3.0"),
+    ]
+    monkeypatch.setattr(engines, "engine_table", lambda: table)
+
+    code, out, _err = run_cli("doctor")
+
+    assert code == 0
+    lines = out.splitlines()
+    assert lines[0].startswith(f"artigo2md {__version__} · Python ")
+    assert lines[1].split() == ["Docling", "MIT", "ok"]
+    assert lines[2].split(maxsplit=2) == ["MinerU", "AGPL-3.0", "não instalado (opcional: instale à parte)"]
+    assert lines[-1] == "Pronto para uso."
+
+
+def test_doctor_fails_when_a_required_engine_is_missing(run_cli, monkeypatch):
+    table = [_engine_row("Docling", required=True, installed=False)]
+    monkeypatch.setattr(engines, "engine_table", lambda: table)
+
+    code, out, _err = run_cli("doctor")
+
+    assert code == 1
+    assert out.splitlines()[1].split() == ["Docling", "MIT", "AUSENTE"]
+    assert "Faltam motores obrigatórios" in out
+
+
+def test_version_option_prints_version_and_exits(capsys):
+    with pytest.raises(SystemExit) as info:
+        cli.main(["--version"])
+
+    assert info.value.code == 0
+    assert capsys.readouterr().out.strip() == __version__

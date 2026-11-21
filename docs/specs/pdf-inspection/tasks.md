@@ -46,9 +46,9 @@ Ref: spec.md FR-007; research.md Decisions 1 a 3 e 7; quickstart.md Scenarios 3 
 
 Ref: research.md Decision 2
 
-- [ ] 2.2.1 Escrever o teste de que um job da interface web com PDF protegido por senha termina em erro com a mensagem em português
+- [x] 2.2.1 Escrever o teste de que um job da interface web com PDF protegido por senha termina em erro com a mensagem em português
 - [x] 2.2.2 Conferir que o convert da linha de comando mostra a mensagem em português para PDF inválido (teste na feature command-line-interface ou verificação manual registrada) <!-- verificação manual em 2026-11-20: o convert mostrou "não é um PDF válido" e "está protegido por senha" e terminou com código 1 -->
-- [ ] 2.2.3 Atualizar a spec: retirar de FR-007 a nota de requisito ainda não observado e citar a fonte no código e no teste
+- [x] 2.2.3 Atualizar a spec: retirar de FR-007 a nota de requisito ainda não observado e citar a fonte no código e no teste
 
 ---
 

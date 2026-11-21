@@ -25,14 +25,14 @@ A partir da inspeção do PDF, o artigo2md monta a ordem de motores a tentar, co
 
 **Acceptance Scenarios**:
 
-1. **Given** um PDF totalmente escaneado, pymupdf4llm instalado e MinerU ausente, **When** o plano automático é montado, **Then** ele contém apenas docling (fonte: `tests/test_core.py:22`) (cobre FR-002, FR-004)
-2. **Given** um PDF com texto, pymupdf4llm instalado e MinerU ausente, **When** o plano automático é montado, **Then** a ordem é docling, pymupdf, markitdown; e, pedindo markitdown explicitamente, o plano contém só markitdown (fonte: `tests/test_core.py:22`) (cobre FR-001, FR-002)
-3. **Given** um PDF com texto e todos os motores disponíveis, **When** o plano automático é montado, **Then** a ordem é docling, pymupdf, mineru, markitdown (fonte: `tests/test_core.py:32`) (cobre FR-002)
-4. **Given** um PDF com texto e nenhum motor opcional, **When** o plano automático é montado, **Then** a ordem é docling, markitdown (fonte: `tests/test_core.py:39`) (cobre FR-002)
-5. **Given** um PDF com pontuação de fórmula alta e MinerU disponível, **When** o plano automático é montado, **Then** mineru é o primeiro motor (fonte: `tests/test_core.py:59`) (cobre FR-003)
-6. **Given** um Markdown com duas tabelas em pipes, um texto com duas tags de tabela HTML e um texto só com linhas horizontais, **When** as tabelas são contadas, **Then** os resultados são 2, 2 e 0 (fonte: `tests/test_core.py:65`) (cobre FR-005)
-7. **Given** uma análise que cita tabela em 1 página, **When** uma saída sem tabelas e outra com 1 tabela são avaliadas, **Then** a primeira não é aceita e a segunda é (fonte: `tests/test_core.py:73`) (cobre FR-006, FR-009)
-8. **Given** o Docling falhando com erro e nenhum motor opcional, **When** a conversão automática roda, **Then** o resultado vem do markitdown e a primeira tentativa registra o erro (fonte: `tests/test_core.py:86`) (cobre FR-010, FR-011, FR-016)
+1. **Given** um PDF totalmente escaneado, pymupdf4llm instalado e MinerU ausente, **When** o plano automático é montado, **Then** ele contém apenas docling (fonte: `tests/test_core.py:52`) (cobre FR-002, FR-004)
+2. **Given** um PDF com texto, pymupdf4llm instalado e MinerU ausente, **When** o plano automático é montado, **Then** a ordem é docling, pymupdf, markitdown; e, pedindo markitdown explicitamente, o plano contém só markitdown (fonte: `tests/test_core.py:52`) (cobre FR-001, FR-002)
+3. **Given** um PDF com texto e todos os motores disponíveis, **When** o plano automático é montado, **Then** a ordem é docling, pymupdf, mineru, markitdown (fonte: `tests/test_core.py:62`) (cobre FR-002)
+4. **Given** um PDF com texto e nenhum motor opcional, **When** o plano automático é montado, **Then** a ordem é docling, markitdown (fonte: `tests/test_core.py:69`) (cobre FR-002)
+5. **Given** um PDF com pontuação de fórmula alta e MinerU disponível, **When** o plano automático é montado, **Then** mineru é o primeiro motor (fonte: `tests/test_core.py:89`) (cobre FR-003)
+6. **Given** um Markdown com duas tabelas em pipes, um texto com duas tags de tabela HTML e um texto só com linhas horizontais, **When** as tabelas são contadas, **Then** os resultados são 2, 2 e 0 (fonte: `tests/test_core.py:95`) (cobre FR-005)
+7. **Given** uma análise que cita tabela em 1 página, **When** uma saída sem tabelas e outra com 1 tabela são avaliadas, **Then** a primeira não é aceita e a segunda é (fonte: `tests/test_core.py:103`) (cobre FR-006, FR-009)
+8. **Given** o Docling falhando com erro e nenhum motor opcional, **When** a conversão automática roda, **Then** o resultado vem do markitdown e a primeira tentativa registra o erro (fonte: `tests/test_core.py:116`) (cobre FR-010, FR-011, FR-016)
 9. **Given** uma saída muito curta ou com menos da metade do texto nativo, **When** ela é avaliada, **Then** [PENDENTE: qual teste cobre os descontos de FR-007 e FR-008?]
 10. **Given** um PDF com páginas escaneadas, **When** o Docling é chamado, **Then** [PENDENTE: qual teste cobre o OCR ligado (FR-014) e o aviso de progresso (FR-015)?]
 

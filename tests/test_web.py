@@ -44,3 +44,15 @@ def test_rejects_invalid_engine(tmp_path, article_pdf):
     r = client.post("/api/jobs", files=[("files", ("a.pdf", article_pdf.read_bytes()))],
                     data={"engine": "nada"})
     assert r.status_code == 400
+
+
+def test_password_protected_pdf_job_ends_with_clear_error(tmp_path, protected_pdf):
+    client = TestClient(create_app(tmp_path / "dados"))
+    files = [("files", ("protegido.pdf", protected_pdf.read_bytes(), "application/pdf"))]
+
+    created = client.post("/api/jobs", files=files, data={"engine": "markitdown"}).json()
+    job = _wait(client, created[0]["id"])
+
+    assert job["status"] == "error"
+    assert "protegido por senha" in job["error"]
+    assert client.get(f"/api/jobs/{job['id']}/markdown").status_code == 409

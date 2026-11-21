@@ -31,8 +31,8 @@
 Capacidades já presentes no projeto:
 
 1. Inspeção do PDF antes da conversão: páginas escaneadas, tabelas e fórmulas (fonte: `README.md:6`) (fonte: `tests/test_core.py:9`)
-2. Escolha automática do motor, avaliação de qualidade e fallback para o próximo motor, mantendo o resultado de maior nota (fonte: `README.md:72`) (fonte: `tests/test_core.py:86`)
-3. Quatro motores: Docling e MarkItDown incluídos; pymupdf4llm e MinerU 3.x opcionais (fonte: `README.md:13`) (fonte: `tests/test_core.py:45`)
+2. Escolha automática do motor, avaliação de qualidade e fallback para o próximo motor, mantendo o resultado de maior nota (fonte: `README.md:72`) (fonte: `tests/test_core.py:116`)
+3. Quatro motores: Docling e MarkItDown incluídos; pymupdf4llm e MinerU 3.x opcionais (fonte: `README.md:13`) (fonte: `tests/test_core.py:75`)
 4. Linha de comando com os subcomandos convert, serve e doctor (fonte: `CLAUDE.md:10`) (fonte: `README.md:61`)
 5. Interface web: envio de PDFs, fila, visualização do Markdown e download de um arquivo .md ou de todos em .zip (fonte: `README.md:55`) (fonte: `tests/test_web.py:20`)
 
@@ -79,7 +79,7 @@ Capacidades já presentes no projeto:
 - Testes automatizados com pytest, com a suíte no diretório tests (fonte: `pyproject.toml:34`)
 - A suíte de testes passa antes de qualquer commit (informado pelo operador)
 - Mensagens ao usuário em português (informado pelo operador)
-- O teste real com Docling é opcional, habilitado pela variável de ambiente ARTIGO2MD_SLOW (fonte: `tests/test_core.py:99`)
+- O teste real com Docling é opcional, habilitado pela variável de ambiente ARTIGO2MD_SLOW (fonte: `tests/test_core.py:129`)
 - Cada conversão recebe uma nota de qualidade; segundo o README, abaixo de 65/100 o próximo motor é tentado (fonte: `README.md:76`)
 
 **Compliance**: nenhum especifico (informado pelo operador)

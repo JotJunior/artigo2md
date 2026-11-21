@@ -31,20 +31,22 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 
 ### Edge Cases
 
-- Quando o arquivo não é um PDF válido ou está protegido por senha, a inspeção falha com mensagem clara em português, sem acionar os motores (informado pelo operador) (cobre FR-007)
+- Quando o arquivo não é um PDF válido ou está protegido por senha, a inspeção falha com mensagem clara em português, sem acionar os motores (informado pelo operador) (fonte: `tests/test_core.py:22`) (fonte: `tests/test_core.py:28`) (fonte: `tests/test_core.py:44`) (cobre FR-007)
+- Quando a biblioteca de leitura devolve um erro sem código conhecido, a inspeção falha com uma mensagem genérica em português que inclui o texto original (fonte: `tests/test_core.py:34`) (cobre FR-007)
+- Quando um PDF protegido por senha é enviado pela interface web, o job termina em erro com a mesma mensagem em português (fonte: `tests/test_web.py:49`) (cobre FR-007)
 - [PENDENTE: qual teste comprova que a inspeção não acessa a rede (FR-008)?]
 
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: O sistema lê o texto nativo de cada página do PDF com pypdfium2 e acumula o total de páginas e de caracteres. (fonte: `src/artigo2md/pdfscan.py:59`)
+- **FR-001**: O sistema lê o texto nativo de cada página do PDF com pypdfium2 e acumula o total de páginas e de caracteres. (fonte: `src/artigo2md/pdfscan.py:84`)
 - **FR-002**: O sistema trata como escaneada a página com menos de 80 caracteres de texto nativo e conta separadamente páginas com texto e páginas escaneadas. (fonte: `src/artigo2md/pdfscan.py:21`)
 - **FR-003**: O sistema conta as páginas que citam tabelas pelos termos "table", "tabela" ou "quadro" seguidos de número. (fonte: `src/artigo2md/pdfscan.py:18`)
 - **FR-004**: O sistema soma indícios de fórmula: símbolos matemáticos e os termos "equation" e "equação". (fonte: `src/artigo2md/pdfscan.py:19`)
 - **FR-005**: O sistema soma ocorrências de termos típicos de artigo científico, em inglês e português, numa pontuação de artigo. (fonte: `src/artigo2md/pdfscan.py:13`)
-- **FR-006**: O sistema marca o PDF como totalmente escaneado quando todas as páginas são escaneadas e como necessitando de OCR quando ao menos uma é. (fonte: `src/artigo2md/pdfscan.py:45`)
-- **FR-007**: O sistema falha com mensagem clara em português quando o arquivo não é um PDF válido ou está protegido por senha; requisito definido na clarificação, ainda não observado no código. (informado pelo operador)
+- **FR-006**: O sistema marca o PDF como totalmente escaneado quando todas as páginas são escaneadas e como necessitando de OCR quando ao menos uma é. (fonte: `src/artigo2md/pdfscan.py:70`)
+- **FR-007**: O sistema falha com mensagem clara em português quando o arquivo não é um PDF válido ou está protegido por senha; os demais erros de abertura recebem uma mensagem genérica em português. (informado pelo operador) (fonte: `src/artigo2md/pdfscan.py:32`)
 - **FR-008**: O sistema inspeciona apenas o arquivo local e não acessa a rede durante a inspeção. (informado pelo operador) (fonte: `src/artigo2md/pdfscan.py:3`)
 
 ### Inferido (nao confirmado)
@@ -53,8 +55,8 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 
 ### Key Entities
 
-- **Analysis**: resumo do PDF (páginas, páginas com texto, páginas escaneadas, total de caracteres, citações de tabela, pontuação de fórmula, pontuação de artigo). (fonte: `src/artigo2md/pdfscan.py:34`)
-- **PageInfo**: dados por página (número, caracteres, texto nativo, citações de tabela, indícios de fórmula). (fonte: `src/artigo2md/pdfscan.py:25`)
+- **Analysis**: resumo do PDF (páginas, páginas com texto, páginas escaneadas, total de caracteres, citações de tabela, pontuação de fórmula, pontuação de artigo). (fonte: `src/artigo2md/pdfscan.py:59`)
+- **PageInfo**: dados por página (número, caracteres, texto nativo, citações de tabela, indícios de fórmula). (fonte: `src/artigo2md/pdfscan.py:50`)
 
 ## Success Criteria
 

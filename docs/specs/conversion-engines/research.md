@@ -47,7 +47,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 1. Testes rápidos com a criação de sockets substituída por uma função que falha, convertendo a fixture de artigo com MarkItDown e com pymupdf4llm (este último pulado quando não instalado).
 2. Testes de configuração: as opções de pipeline do Docling têm serviços remotos desligados; a variável de telemetria do hub está definida depois de importar o módulo de motores; o ambiente passado ao processo do MinerU contém a variável de telemetria (capturado substituindo a execução do subprocesso).
 
-**Rationale**: O teste com sockets bloqueados prova o comportamento dos motores leves. Para o Docling, a conversão real depende de modelos baixados e fica no teste lento já existente (fonte: `tests/test_core.py:99`); o teste de configuração cobre o que este projeto controla.
+**Rationale**: O teste com sockets bloqueados prova o comportamento dos motores leves. Para o Docling, a conversão real depende de modelos baixados e fica no teste lento já existente (fonte: `tests/test_core.py:129`); o teste de configuração cobre o que este projeto controla.
 **Alternatives considered**: Rodar o Docling com sockets bloqueados no teste rápido (falharia sem os modelos em cache); sandbox de rede externa ao pytest (não roda no `uv run pytest` comum).
 
 ## Decision 7: Como testar o MinerU sem instalá-lo (FR-006 a FR-009)

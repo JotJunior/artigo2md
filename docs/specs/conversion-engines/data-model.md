@@ -19,7 +19,7 @@ Registro descritivo de cada motor, mostrado na interface e no diagnóstico. (fon
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
-| id | string | docling, markitdown, pymupdf ou mineru | Ordem fixa da lista (fonte: `tests/test_core.py:45`) |
+| id | string | docling, markitdown, pymupdf ou mineru | Ordem fixa da lista (fonte: `tests/test_core.py:75`) |
 | name | string | | Nome de exibição |
 | license | string | | Licença do motor |
 | required | bool | | Verdadeiro para os motores incluídos |

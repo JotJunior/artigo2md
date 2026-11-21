@@ -25,10 +25,10 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 
 **Acceptance Scenarios**:
 
-1. **Given** a ficha dos motores, **When** ela é consultada, **Then** lista quatro motores na ordem docling, markitdown, pymupdf, mineru; os não obrigatórios têm instrução de instalação e os obrigatórios têm licença MIT (fonte: `tests/test_core.py:45`) (cobre FR-010, FR-011)
-2. **Given** o pymupdf4llm instalado e um artigo de teste, **When** a conversão roda com o motor pymupdf, **Then** o resultado vem desse motor e contém o texto do artigo (fonte: `tests/test_core.py:53`) (cobre FR-004)
-3. **Given** um artigo de teste, **When** a conversão roda com o motor markitdown, **Then** o resultado vem desse motor e contém o texto do artigo (fonte: `tests/test_core.py:80`) (cobre FR-003)
-4. **Given** o teste lento habilitado e um artigo de teste com tabela, **When** a conversão roda com o motor docling, **Then** o resultado vem do Docling, contém o texto do artigo e ao menos uma tabela (fonte: `tests/test_core.py:100`) (cobre FR-001)
+1. **Given** a ficha dos motores, **When** ela é consultada, **Then** lista quatro motores na ordem docling, markitdown, pymupdf, mineru; os não obrigatórios têm instrução de instalação e os obrigatórios têm licença MIT (fonte: `tests/test_core.py:75`) (cobre FR-010, FR-011)
+2. **Given** o pymupdf4llm instalado e um artigo de teste, **When** a conversão roda com o motor pymupdf, **Then** o resultado vem desse motor e contém o texto do artigo (fonte: `tests/test_core.py:83`) (cobre FR-004)
+3. **Given** um artigo de teste, **When** a conversão roda com o motor markitdown, **Then** o resultado vem desse motor e contém o texto do artigo (fonte: `tests/test_core.py:110`) (cobre FR-003)
+4. **Given** o teste lento habilitado e um artigo de teste com tabela, **When** a conversão roda com o motor docling, **Then** o resultado vem do Docling, contém o texto do artigo e ao menos uma tabela (fonte: `tests/test_core.py:130`) (cobre FR-001)
 5. **Given** um PDF com páginas escaneadas, **When** o Docling roda com OCR, **Then** [PENDENTE: qual teste cobre a escolha do OCR (FR-002) e o reuso do conversor (FR-012)?]
 6. **Given** o MinerU instalado, **When** ele é localizado, verificado e executado, **Then** [PENDENTE: qual teste cobre FR-006, FR-007, FR-008 e FR-009?]
 

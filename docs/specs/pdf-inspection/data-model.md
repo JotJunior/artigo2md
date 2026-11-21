@@ -4,7 +4,7 @@ Estruturas em memória; nada é persistido pela inspeção.
 
 ## Entity: Analysis
 
-Resumo do PDF devolvido pela inspeção. (fonte: `src/artigo2md/pdfscan.py:34`)
+Resumo do PDF devolvido pela inspeção. (fonte: `src/artigo2md/pdfscan.py:59`)
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
@@ -15,13 +15,13 @@ Resumo do PDF devolvido pela inspeção. (fonte: `src/artigo2md/pdfscan.py:34`)
 | table_hints | int | padrão 0 | Páginas que citam tabela numerada |
 | formula_score | int | padrão 0 | Soma dos indícios de fórmula |
 | article_score | int | padrão 0 | Soma dos termos de artigo científico |
-| page_info | list de PageInfo | padrão lista vazia | Omitido na forma de dicionário (fonte: `src/artigo2md/pdfscan.py:52`) |
-| fully_scanned | bool derivado | pages > 0 e todas escaneadas | (fonte: `src/artigo2md/pdfscan.py:45`) |
-| needs_ocr | bool derivado | ao menos uma página escaneada | (fonte: `src/artigo2md/pdfscan.py:49`) |
+| page_info | list de PageInfo | padrão lista vazia | Omitido na forma de dicionário (fonte: `src/artigo2md/pdfscan.py:77`) |
+| fully_scanned | bool derivado | pages > 0 e todas escaneadas | (fonte: `src/artigo2md/pdfscan.py:70`) |
+| needs_ocr | bool derivado | ao menos uma página escaneada | (fonte: `src/artigo2md/pdfscan.py:74`) |
 
 ## Entity: PageInfo
 
-Dados de uma página. (fonte: `src/artigo2md/pdfscan.py:25`)
+Dados de uma página. (fonte: `src/artigo2md/pdfscan.py:50`)
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
@@ -35,9 +35,9 @@ Dados de uma página. (fonte: `src/artigo2md/pdfscan.py:25`)
 
 - Analysis 1:N PageInfo via `page_info`
 
-## Entity: erro de PDF inválido `[PROPOSTA — a validar na implementacao]`
+## Entity: InvalidPdfError
 
-Erro de domínio previsto por FR-007; ainda não existe no código (nome sugerido em research, Decision 3).
+Erro de domínio de FR-007, levantado pela inspeção quando o arquivo não abre como PDF. (fonte: `src/artigo2md/pdfscan.py:28`)
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
