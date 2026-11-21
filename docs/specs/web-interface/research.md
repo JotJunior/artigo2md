@@ -31,7 +31,7 @@ Nenhuma mudança de comportamento está prevista.
 
 ## Decision 5: Acesso sem autenticação e escuta local (FR-014)
 
-**Decision**: Citar na spec os testes que já existem: as rotas respondem sem credencial (fonte: `tests/test_web.py:27`) e o serve usa o host local por padrão e avisa quando o host não é local (fonte: `tests/test_cli.py:251`) (fonte: `tests/test_cli.py:424`).
+**Decision**: Citar na spec os testes que já existem: as rotas respondem sem credencial (fonte: `tests/test_web.py:29`) e o serve usa o host local por padrão e avisa quando o host não é local (fonte: `tests/test_cli.py:252`) (fonte: `tests/test_cli.py:429`).
 **Rationale**: O comportamento já está coberto pelos testes da interface web e da linha de comando criados em 2026-11-20 e 2026-11-21.
 **Alternatives considered**: Duplicar os testes nesta feature.
 
@@ -50,5 +50,5 @@ Nenhuma mudança de comportamento está prevista.
 ## Decision 8: Borda entre a página e a API
 
 **Decision**: Documentar o contrato da API a partir do código e incluir um cenário de ida e volta que chama a aplicação de verdade e confere os nomes dos campos que a página lê.
-**Rationale**: A página estática consome as rotas com os mesmos nomes de campo que a API devolve, sem camada de tradução (fonte: `src/artigo2md/static/index.html:189`) (fonte: `src/artigo2md/static/index.html:209`). O teste existente já chama a aplicação real, sem simulação da API (fonte: `tests/test_web.py:27`).
+**Rationale**: A página estática consome as rotas com os mesmos nomes de campo que a API devolve, sem camada de tradução (fonte: `src/artigo2md/static/index.html:189`) (fonte: `src/artigo2md/static/index.html:209`). O teste existente já chama a aplicação real, sem simulação da API (fonte: `tests/test_web.py:29`).
 **Alternatives considered**: Testar a página num navegador automatizado (dependência nova, fora do escopo de SC-001).

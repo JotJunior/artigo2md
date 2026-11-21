@@ -25,7 +25,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 ## Decision 3: MarkItDown — conversores em nuvem
 
 **Decision**: Manter a chamada atual, sem endpoint de nuvem, e cobrir com teste.
-**Rationale**: No markitdown 0.1.9, os conversores Document Intelligence e Content Understanding só são registrados quando o chamador passa o respectivo endpoint (arquivo `markitdown/_markitdown.py` do pacote). O adaptador instancia o MarkItDown só com plugins desligados, sem endpoint nem cliente de LLM (fonte: `src/artigo2md/engines.py:127`).
+**Rationale**: No markitdown 0.1.9, os conversores Document Intelligence e Content Understanding só são registrados quando o chamador passa o respectivo endpoint (arquivo `markitdown/_markitdown.py` do pacote). O adaptador instancia o MarkItDown só com plugins desligados, sem endpoint nem cliente de LLM (fonte: `src/artigo2md/engines.py:186`).
 **Alternatives considered**: Nenhuma mudança de código é necessária; a alternativa seria não testar, o que descumpre SC-001.
 
 ## Decision 4: pymupdf4llm — acesso à rede
@@ -37,7 +37,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 ## Decision 5: MinerU — telemetria
 
 **Decision**: Sem mudança de código; cobrir com teste.
-**Rationale**: O adaptador já executa o MinerU com a variável `MINERU_TELEMETRY_DISABLED` definida (fonte: `src/artigo2md/engines.py:200`).
+**Rationale**: O adaptador já executa o MinerU com a variável `MINERU_TELEMETRY_DISABLED` definida (fonte: `src/artigo2md/engines.py:259`).
 **Alternatives considered**: —
 
 ## Decision 6: Como testar FR-013
@@ -53,7 +53,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 ## Decision 7: Como testar o MinerU sem instalá-lo (FR-006 a FR-009)
 
 **Decision**: Substituir, nos testes, a localização do executável e a execução do subprocesso, simulando as saídas de versão e de conversão; limpar o cache de verificação de versão entre os testes.
-**Rationale**: O MinerU é opcional e pesado (fonte: `README.md:18`); o adaptador concentra a interação em duas chamadas de subprocesso (fonte: `src/artigo2md/engines.py:174`) (fonte: `src/artigo2md/engines.py:202`) e guarda o resultado da verificação em cache por executável (fonte: `src/artigo2md/engines.py:162`).
+**Rationale**: O MinerU é opcional e pesado (fonte: `README.md:18`); o adaptador concentra a interação em duas chamadas de subprocesso (fonte: `src/artigo2md/engines.py:233`) (fonte: `src/artigo2md/engines.py:261`) e guarda o resultado da verificação em cache por executável (fonte: `src/artigo2md/engines.py:221`).
 **Alternatives considered**: Exigir o MinerU instalado para testar (contraria a instrução do projeto de não instalá-lo sem pedido).
 
 ## Decision 8: Como testar pymupdf4llm ausente, OCR e reuso do conversor (FR-005, FR-002, FR-012)
@@ -68,7 +68,7 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 
 ## Decision 9: Contato do Docling com o hub de modelos mesmo com cache
 
-**Decision**: Usar o modo offline do hub quando os modelos já estão em cache, mantendo o download na primeira conversão (informado pelo operador), decidido em 2026-11-21. O desenho fica para um plano próprio: é preciso detectar o cache antes de o hub ser importado e ter um caminho para quando faltar algum modelo.
+**Decision**: Usar o modo offline do hub quando os modelos já estão em cache, mantendo o download na primeira conversão (informado pelo operador), decidido em 2026-11-21. O desenho está na Decision 10.
 **Rationale**: Observado em 2026-11-21 com o docling 2.151.1 e o huggingface-hub 1.33.0, convertendo um artigo de teste com os modelos em cache e a criação de sockets interceptada:
 
 | Situação | Conversão | Tentativas de conexão |
@@ -78,4 +78,20 @@ ambiente do projeto. Valem para as versões citadas; outras versões precisam se
 
 A conversão não depende de rede e o documento não é enviado, mas o contato com o hub acontece a cada primeira conversão do processo. Isso corrige a justificativa dada na Decision 2: o modo offline só quebra a conversão quando não há cache.
 **Alternatives considered**: Documentar o contato e manter (deixa um acesso externo evitável); definir o modo offline sempre (quebra a primeira conversão, que precisa baixar os modelos).
+
+## Decision 10: Desenho do modo offline do hub (FR-015)
+
+**Decision**: Implementado em 2026-11-21 (fonte: `src/artigo2md/engines.py:126`). Cada conversão com o Docling começa com o hub em modo offline, ligado em memória só no processo da conversão; se a conversão falha por modelo ausente do cache, ela é repetida uma vez com a rede liberada. Quem ativa o modo offline por variável de ambiente não tem a repetição, e nos dois casos sem saída a falha vem em português.
+**Rationale**: Observado em 2026-11-21 com o docling 2.151.1 e o huggingface-hub 1.33.0:
+
+| Sondagem | Resultado |
+|----------|-----------|
+| modelos em cache, modo offline ligado em memória depois do import, rede bloqueada | converte; nenhuma tentativa de conexão para fora |
+| cache vazio, modo offline ligado em memória, rede bloqueada | falha com `LocalEntryNotFoundError`, causada por `OfflineModeIsEnabled` |
+| cache vazio, rede bloqueada, com a implementação | a segunda tentativa consulta huggingface.co e, sem rede, termina com a mensagem em português sobre o download |
+
+O hub consulta o modo offline a cada requisição (arquivo `huggingface_hub/utils/_http.py` do pacote), por isso o valor pode ser ligado em memória, sem depender da variável de ambiente lida no import. Isso dispensa detectar o cache de antemão, que era a dificuldade prevista na Decision 9, e evita que o modo offline valha para o MinerU, que roda como processo externo e baixa os próprios modelos.
+**Alternatives considered**: Definir a variável de ambiente antes do import (valeria também para o processo do MinerU e exigiria saber de antemão se há cache); procurar os modelos no cache antes de converter (acopla o projeto aos nomes e revisões de modelo que o Docling usa).
+
+**Não verificado**: o download real com o cache vazio não foi executado nesta pesquisa, para não baixar os modelos de novo; o caminho de repetição foi exercitado até a consulta de rede e por testes com conversor simulado.
 

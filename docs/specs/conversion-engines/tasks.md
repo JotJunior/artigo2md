@@ -143,6 +143,6 @@ Ref: FR-015 · tipo: `partial` · severidade: `HIGH`
 
 A spec pede que, com os modelos do Docling já em cache, o sistema use o modo offline do hub de modelos e a conversão não contate o hub, mantendo o download na primeira conversão. O código presente em `src/artigo2md/engines.py` desativa a telemetria do hub e desliga os serviços remotos do Docling, mas não define o modo offline: em 2026-11-21 a conversão real fez 8 tentativas de conexão ao hub mesmo com cache (research.md, Decision 9). O desenho precisa de plano próprio: detectar o cache antes de o hub ser importado e ter um caminho para quando faltar algum modelo.
 
-- [ ] 4.1.1 Implementar em `src/artigo2md/engines.py` o modo offline do hub quando os modelos já estão em cache, conforme FR-015, com teste da conversão real sem tentativas de conexão ao hub e teste da primeira conversão sem cache
+- [x] 4.1.1 Implementar em `src/artigo2md/engines.py` o modo offline do hub quando os modelos já estão em cache, conforme FR-015, com teste da conversão real sem tentativas de conexão ao hub e teste da primeira conversão sem cache
 
 <!-- converge-key: f1355f15dd5c -->

@@ -30,19 +30,19 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 
 **Acceptance Scenarios**:
 
-1. **Given** a aplicação iniciada com um diretório de dados vazio, **When** a página inicial e as informações são pedidas, **Then** a página responde com sucesso e a lista de motores inclui o docling (fonte: `tests/test_web.py:27`) (cobre FR-001, FR-002)
-2. **Given** o envio de um PDF válido e de um arquivo que não é PDF com o motor markitdown, **When** os jobs são criados, **Then** o arquivo que não é PDF volta com erro e o PDF é convertido até o estado concluído, com o Markdown disponível para leitura (fonte: `tests/test_web.py:27`) (cobre FR-003, FR-004, FR-005, FR-006, FR-008)
-3. **Given** um job concluído, **When** o zip é baixado, **Then** ele contém o Markdown com o nome do arquivo enviado (fonte: `tests/test_web.py:27`) (cobre FR-009)
-4. **Given** um job concluído, **When** ele é apagado, **Then** a resposta confirma e a lista de jobs fica vazia (fonte: `tests/test_web.py:27`) (cobre FR-007, FR-010)
-5. **Given** um envio com motor inexistente, **When** os jobs são criados, **Then** a resposta é 400 (fonte: `tests/test_web.py:49`) (cobre FR-003)
-6. **Given** jobs gravados em fila e em andamento e um job concluído, **When** a aplicação é recriada sobre o mesmo diretório de dados, **Then** os dois primeiros aparecem como erro por interrupção e o concluído permanece (fonte: `tests/test_web.py:125`) (cobre FR-011)
+1. **Given** a aplicação iniciada com um diretório de dados vazio, **When** a página inicial e as informações são pedidas, **Then** a página responde com sucesso e a lista de motores inclui o docling (fonte: `tests/test_web.py:29`) (cobre FR-001, FR-002)
+2. **Given** o envio de um PDF válido e de um arquivo que não é PDF com o motor markitdown, **When** os jobs são criados, **Then** o arquivo que não é PDF volta com erro e o PDF é convertido até o estado concluído, com o Markdown disponível para leitura (fonte: `tests/test_web.py:29`) (cobre FR-003, FR-004, FR-005, FR-006, FR-008)
+3. **Given** um job concluído, **When** o zip é baixado, **Then** ele contém o Markdown com o nome do arquivo enviado (fonte: `tests/test_web.py:29`) (cobre FR-009)
+4. **Given** um job concluído, **When** ele é apagado, **Then** a resposta confirma e a lista de jobs fica vazia (fonte: `tests/test_web.py:29`) (cobre FR-007, FR-010)
+5. **Given** um envio com motor inexistente, **When** os jobs são criados, **Then** a resposta é 400 (fonte: `tests/test_web.py:51`) (cobre FR-003)
+6. **Given** jobs gravados em fila e em andamento e um job concluído, **When** a aplicação é recriada sobre o mesmo diretório de dados, **Then** os dois primeiros aparecem como erro por interrupção e o concluído permanece (fonte: `tests/test_web.py:129`) (cobre FR-011)
 
 ### Edge Cases
 
-- Um job inexistente responde 404 na consulta, no Markdown e na remoção (fonte: `tests/test_web.py:143`) (cobre FR-007)
-- Com a conversão em andamento, a etapa do job mostra o aviso de progresso, o Markdown responde 409 e a remoção responde 409; depois de concluir, o job pode ser apagado (fonte: `tests/test_web.py:107`) (cobre FR-008, FR-010, FR-012)
-- Dois arquivos de mesmo nome ficam com nomes distintos no zip, que também aceita a escolha de jobs; o nome de saída troca os caracteres fora do conjunto permitido e é limitado a 150 caracteres (fonte: `tests/test_web.py:152`) (fonte: `tests/test_web.py:176`) (fonte: `tests/test_web.py:180`) (cobre FR-009, FR-013)
-- As rotas respondem sem credencial e devolvem os campos que a página lê; o serve escuta só na própria máquina por padrão e avisa quando o host não é local (fonte: `tests/test_web.py:185`) (fonte: `tests/test_cli.py:251`) (fonte: `tests/test_cli.py:424`) (cobre FR-014)
+- Um job inexistente responde 404 na consulta, no Markdown e na remoção (fonte: `tests/test_web.py:147`) (cobre FR-007)
+- Com a conversão em andamento, a etapa do job mostra o aviso de progresso, o Markdown responde 409 e a remoção responde 409; depois de concluir, o job pode ser apagado (fonte: `tests/test_web.py:111`) (cobre FR-008, FR-010, FR-012)
+- Dois arquivos de mesmo nome ficam com nomes distintos no zip, que também aceita a escolha de jobs; o nome de saída troca os caracteres fora do conjunto permitido e é limitado a 150 caracteres (fonte: `tests/test_web.py:156`) (fonte: `tests/test_web.py:180`) (fonte: `tests/test_web.py:184`) (cobre FR-009, FR-013)
+- As rotas respondem sem credencial e devolvem os campos que a página lê; o serve escuta só na própria máquina por padrão e avisa quando o host não é local (fonte: `tests/test_web.py:189`) (fonte: `tests/test_cli.py:252`) (fonte: `tests/test_cli.py:429`) (cobre FR-014)
 - Com tempo ocioso curto, o conversor aparece descarregado antes do uso, carregado depois de uma conversão, descarregado de novo após o tempo ocioso, e volta a converter em seguida (fonte: `tests/test_web.py:212`) (cobre FR-015)
 - A consulta de informações não carrega o Docling nem o pymupdf4llm no processo principal, e a resposta traz o estado do conversor (fonte: `tests/test_web.py:229`) (fonte: `tests/test_web.py:189`) (cobre FR-016)
 - Quando o processo auxiliar morre durante uma conversão, o job termina em erro com a mensagem que sugere tentar de novo ou usar outro motor, e a conversão seguinte volta a funcionar (fonte: `tests/test_web.py:245`) (cobre FR-017)
@@ -66,7 +66,7 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 - **FR-013**: O nome do arquivo de saída é derivado do nome enviado, com caracteres fora do conjunto permitido (letras, dígitos, sublinhado, ponto, hífen e espaço) substituídos e limite de 150 caracteres. (fonte: `src/artigo2md/web.py:31`) (fonte: `src/artigo2md/web.py:28`)
 - **FR-014**: A interface não exige autenticação e o servidor escuta apenas na própria máquina por padrão; a exposição na rede depende de escolha explícita de quem inicia o servidor. (informado pelo operador) (fonte: `src/artigo2md/cli.py:152`)
 - **FR-015**: O processo auxiliar de conversão é criado na primeira conversão, encerra-se sozinho depois do tempo ocioso configurado (padrão de 300 segundos; zero significa nunca) e volta a ser criado na conversão seguinte, devolvendo ao sistema a memória dos modelos. (fonte: `src/artigo2md/worker.py:35`) (fonte: `src/artigo2md/web.py:127`)
-- **FR-016**: A consulta de informações verifica os motores sem importar o Docling nem o pymupdf4llm no processo principal, e o rodapé da página mostra se o conversor está carregado. (fonte: `src/artigo2md/engines.py:132`) (fonte: `src/artigo2md/static/index.html:130`)
+- **FR-016**: A consulta de informações verifica os motores sem importar o Docling nem o pymupdf4llm no processo principal, e o rodapé da página mostra se o conversor está carregado. (fonte: `src/artigo2md/engines.py:191`) (fonte: `src/artigo2md/static/index.html:130`)
 - **FR-017**: Quando o processo auxiliar termina de forma inesperada durante uma conversão, o job termina em erro com uma mensagem que sugere tentar de novo ou usar outro motor. (fonte: `src/artigo2md/worker.py:87`)
 
 ### Inferido (nao confirmado)

@@ -32,7 +32,7 @@ Medição num artigo da JAMA Psychiatry (10 páginas, 2 colunas) num Mac mini M-
 ## Instalação
 
 Requer [uv](https://docs.astral.sh/uv/) e ~3 GB livres (modelos do Docling, baixados na
-primeira conversão). Testado em macOS com Apple Silicon e Linux.
+primeira conversão; depois disso o Docling não consulta mais o Hugging Face). Testado em macOS com Apple Silicon e Linux.
 
 ```bash
 git clone https://github.com/drvalber/artigo2md.git
