@@ -16,7 +16,7 @@ FR-001, FR-002, FR-003, FR-005 e FR-006 já têm cenário com teste existente e 
 **Language/Version**: Python >= 3.10 (fonte: `pyproject.toml:7`); o ambiente criado pelo `uv sync` em 2026-11-20 usa Python 3.12
 **Primary Dependencies**: pypdfium2 >= 4.30 (fonte: `pyproject.toml:10`); versão instalada em 2026-11-20: 5.15.2
 **Storage**: N/A — a inspeção só lê o arquivo de entrada
-**Testing**: pytest, com a suíte em `tests` (fonte: `pyproject.toml:34`); fixtures de PDF geradas com fpdf2 (fonte: `tests/conftest.py:4`)
+**Testing**: pytest, com a suíte em `tests` (fonte: `pyproject.toml:34`); fixtures de PDF geradas com fpdf2 (fonte: `tests/conftest.py:5`)
 **Target Platform**: execução local; o README declara teste em macOS com Apple Silicon e Linux (fonte: `README.md:35`)
 **Project Type**: módulo de biblioteca dentro de uma aplicação com linha de comando e interface web
 **Performance Goals**: N/A — a spec não define requisito de desempenho (checklist CHK013 segue aberto)

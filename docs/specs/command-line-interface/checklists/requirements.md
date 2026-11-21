@@ -31,7 +31,7 @@
 ## Cobertura de Cenarios
 
 - [x] CHK013 - Cada requisito funcional é citado em ao menos um cenário ou edge case? [Cobertura, Spec §Acceptance Scenarios] {auto} — gate requirement-coverage: requirements=14, covered=14, errors=0
-- [ ] CHK014 - Algum cenário de aceite tem teste existente como origem? [Gap, Spec §Acceptance Scenarios] {auto} — todos os cenários e edge cases são campos pendentes; nenhum teste chama a linha de comando (fonte: `docs/specs/command-line-interface/spec.md`)
+- [x] CHK014 - Algum cenário de aceite tem teste existente como origem? [Cobertura, Spec §Acceptance Scenarios] {auto} — resolvido em 2026-11-21: todos os cenários citam testes da linha de comando; resta um edge case pendente sobre colisão entre entradas diferentes (fonte: `docs/specs/command-line-interface/spec.md`)
 
 ## Dependencias e Premissas
 

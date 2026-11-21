@@ -10,14 +10,21 @@ from pathlib import Path
 from . import __version__
 
 
-def _collect_pdfs(inputs: list[str]) -> list[Path]:
-    pdfs: list[Path] = []
+def _collect_pdfs(inputs: list[str]) -> list[tuple[Path, Path]]:
+    """Devolve pares (PDF, caminho do Markdown relativo à pasta de saída).
+
+    PDFs achados dentro de uma pasta de entrada mantêm as subpastas dela, para que
+    arquivos de mesmo nome em pastas diferentes não disputem a mesma saída; um PDF
+    passado diretamente vai para a raiz da pasta de saída.
+    """
+    pdfs: list[tuple[Path, Path]] = []
     for item in inputs:
         p = Path(item).expanduser()
         if p.is_dir():
-            pdfs.extend(sorted(x for x in p.rglob("*") if x.suffix.lower() == ".pdf"))
+            found = sorted(x for x in p.rglob("*") if x.suffix.lower() == ".pdf")
+            pdfs.extend((x, x.relative_to(p).with_suffix(".md")) for x in found)
         elif p.suffix.lower() == ".pdf" and p.exists():
-            pdfs.append(p)
+            pdfs.append((p, Path(p.stem + ".md")))
         else:
             print(f"ignorado (não é PDF ou não existe): {p}", file=sys.stderr)
     return pdfs
@@ -33,18 +40,19 @@ def cmd_convert(args: argparse.Namespace) -> int:
     out_dir = Path(args.output).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
     failures = 0
-    for i, pdf in enumerate(pdfs, 1):
-        target = out_dir / (pdf.stem + ".md")
+    for i, (pdf, relative) in enumerate(pdfs, 1):
+        target = out_dir / relative
         if target.exists() and not args.overwrite:
-            print(f"[{i}/{len(pdfs)}] já existe, pulando: {target.name}")
+            print(f"[{i}/{len(pdfs)}] já existe, pulando: {relative}")
             continue
-        print(f"[{i}/{len(pdfs)}] {pdf.name}")
+        print(f"[{i}/{len(pdfs)}] {relative.with_suffix(pdf.suffix)}")
         try:
             result = convert(pdf, engine=args.engine, progress=lambda m: print(f"    {m}"))
         except Exception as exc:
             failures += 1
             print(f"    ERRO: {exc}", file=sys.stderr)
             continue
+        target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(result.markdown, encoding="utf-8")
         if args.report:
             target.with_suffix(".report.json").write_text(

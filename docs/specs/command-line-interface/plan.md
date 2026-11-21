@@ -14,7 +14,7 @@ A spec foi reconstituída do código existente; o que falta implementar é o que
 
 **Language/Version**: Python >= 3.10 (fonte: `pyproject.toml:7`); o ambiente criado pelo `uv sync` em 2026-11-20 usa Python 3.12
 **Primary Dependencies**: argparse da biblioteca padrão (fonte: `src/artigo2md/cli.py:4`); uvicorn para o serve (fonte: `pyproject.toml:13`)
-**Storage**: arquivos — um Markdown por PDF na pasta de saída e, com a opção de relatório, um JSON ao lado (fonte: `src/artigo2md/cli.py:48`)
+**Storage**: arquivos — um Markdown por PDF na pasta de saída e, com a opção de relatório, um JSON ao lado (fonte: `src/artigo2md/cli.py:56`)
 **Testing**: pytest, com a suíte em `tests` (fonte: `pyproject.toml:34`)
 **Target Platform**: execução local; o README declara teste em macOS com Apple Silicon e Linux (fonte: `README.md:35`)
 **Project Type**: cli

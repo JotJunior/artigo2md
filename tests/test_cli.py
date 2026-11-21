@@ -325,3 +325,59 @@ def test_version_option_prints_version_and_exits(capsys):
 
     assert info.value.code == 0
     assert capsys.readouterr().out.strip() == __version__
+
+
+# ── convert: PDFs de mesmo nome em subpastas (FR-014) ────────────────────────
+@pytest.fixture
+def same_named_pdfs(tmp_path):
+    """Pasta de entrada com dois PDFs de mesmo nome em subpastas diferentes."""
+    source = tmp_path / "entrada"
+    _touch_pdf(source / "2023" / "artigo.pdf")
+    _touch_pdf(source / "2024" / "artigo.pdf")
+    return source
+
+
+def test_convert_mirrors_input_subfolders_for_same_named_pdfs(run_cli, fake_convert, same_named_pdfs, tmp_path):
+    out_dir = tmp_path / "saida"
+
+    code, out, _err = run_cli("convert", same_named_pdfs, "-o", out_dir)
+
+    assert code == 0
+    assert len(fake_convert) == 2
+    assert (out_dir / "2023" / "artigo.md").exists()
+    assert (out_dir / "2024" / "artigo.md").exists()
+    assert not (out_dir / "artigo.md").exists()
+    assert "pulando" not in out
+
+
+def test_convert_direct_file_goes_to_output_root(run_cli, fake_convert, same_named_pdfs, tmp_path):
+    out_dir = tmp_path / "saida"
+
+    code, _out, _err = run_cli("convert", same_named_pdfs / "2023" / "artigo.pdf", "-o", out_dir)
+
+    assert code == 0
+    assert (out_dir / "artigo.md").exists()
+    assert not (out_dir / "2023").exists()
+
+
+def test_convert_report_stays_next_to_mirrored_markdown(run_cli, fake_convert, same_named_pdfs, tmp_path):
+    out_dir = tmp_path / "saida"
+
+    code, _out, _err = run_cli("convert", same_named_pdfs, "-o", out_dir, "--report")
+
+    assert code == 0
+    for year in ("2023", "2024"):
+        report = json.loads((out_dir / year / "artigo.report.json").read_text(encoding="utf-8"))
+        assert report["source"] == str(same_named_pdfs / year / "artigo.pdf")
+
+
+def test_convert_rerun_skips_mirrored_outputs(run_cli, fake_convert, same_named_pdfs, tmp_path):
+    out_dir = tmp_path / "saida"
+
+    run_cli("convert", same_named_pdfs, "-o", out_dir)
+    code, out, _err = run_cli("convert", same_named_pdfs, "-o", out_dir)
+
+    assert code == 0
+    assert len(fake_convert) == 2  # nada foi reconvertido na segunda execução
+    assert "já existe, pulando: 2023/artigo.md" in out
+    assert "já existe, pulando: 2024/artigo.md" in out

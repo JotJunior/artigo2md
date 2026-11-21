@@ -57,7 +57,7 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 - **FR-011**: Ao iniciar, o sistema recarrega os jobs gravados e marca como erro por interrupção os que estavam em fila ou em andamento. (fonte: `src/artigo2md/web.py:46`)
 - **FR-012**: O progresso da conversão é gravado na etapa do job. (fonte: `src/artigo2md/web.py:89`)
 - **FR-013**: O nome do arquivo de saída é derivado do nome enviado, com caracteres fora do conjunto permitido substituídos e limite de 150 caracteres. (fonte: `src/artigo2md/web.py:25`)
-- **FR-014**: A interface não exige autenticação e o servidor escuta apenas na própria máquina por padrão; a exposição na rede depende de escolha explícita de quem inicia o servidor. (informado pelo operador) (fonte: `src/artigo2md/cli.py:118`)
+- **FR-014**: A interface não exige autenticação e o servidor escuta apenas na própria máquina por padrão; a exposição na rede depende de escolha explícita de quem inicia o servidor. (informado pelo operador) (fonte: `src/artigo2md/cli.py:126`)
 
 ### Inferido (nao confirmado)
 

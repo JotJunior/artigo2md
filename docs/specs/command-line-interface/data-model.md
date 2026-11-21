@@ -6,12 +6,12 @@ A linha de comando não tem entidade própria em memória; os dados que ela grav
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|
-| caminho | caminho de arquivo | dentro da pasta de saída | Hoje: nome do PDF com extensão md (fonte: `src/artigo2md/cli.py:37`). Após FR-014: repete as subpastas da pasta de entrada (ver `contracts/cli.md`) |
-| conteúdo | texto UTF-8 | | Markdown devolvido pela conversão (fonte: `src/artigo2md/cli.py:48`) |
+| caminho | caminho de arquivo | dentro da pasta de saída | Repete as subpastas da pasta de entrada; PDF passado diretamente vai para a raiz (fonte: `src/artigo2md/cli.py:25`) (ver `contracts/cli.md`) |
+| conteúdo | texto UTF-8 | | Markdown devolvido pela conversão (fonte: `src/artigo2md/cli.py:56`) |
 
 ## Entity: relatório de conversão
 
-Arquivo JSON opcional, gravado ao lado do Markdown. (fonte: `src/artigo2md/cli.py:50`)
+Arquivo JSON opcional, gravado ao lado do Markdown. (fonte: `src/artigo2md/cli.py:58`)
 
 | Field | Type | Constraints | Notes |
 |-------|------|-------------|-------|

@@ -132,3 +132,20 @@ def test_docling_end_to_end(article_pdf):
     assert result.engine.startswith("docling")
     assert "randomized trial" in result.markdown
     assert router.count_markdown_tables(result.markdown) >= 1
+
+
+def test_analyze_counts_formula_hints(formula_pdf, article_pdf):
+    assert analyze(formula_pdf).formula_score == 3
+    assert analyze(article_pdf).formula_score == 0
+
+
+def test_no_network_fixture_blocks_sockets(no_network):
+    import socket
+
+    with pytest.raises(AssertionError, match="acesso à rede"):
+        socket.create_connection(("127.0.0.1", 9), timeout=1)
+
+
+def test_analyze_does_not_touch_the_network(no_network, article_pdf):
+    a = analyze(article_pdf)
+    assert a.pages == 2 and a.text_pages == 2

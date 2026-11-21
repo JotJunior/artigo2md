@@ -27,14 +27,14 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 
 1. **Given** um PDF de 2 páginas com texto nativo e uma citação de tabela numerada, **When** o PDF é inspecionado, **Then** a análise informa 2 páginas com texto, nenhuma escaneada, 1 página com citação de tabela e pontuação de artigo maior que zero (fonte: `tests/test_core.py:9`) (cobre FR-001, FR-002, FR-003, FR-005)
 2. **Given** um PDF de uma página em branco, **When** o PDF é inspecionado, **Then** a análise o marca como totalmente escaneado e com necessidade de OCR (fonte: `tests/test_core.py:17`) (cobre FR-002, FR-006)
-3. **Given** um PDF com símbolos matemáticos, **When** o PDF é inspecionado, **Then** [PENDENTE: qual teste cobre a soma de indícios de fórmula (FR-004)?]
+3. **Given** um PDF cujo texto usa um termo de fórmula e um artigo sem esses termos, **When** os dois são inspecionados, **Then** a pontuação de fórmula conta as ocorrências no primeiro e é zero no segundo (fonte: `tests/test_core.py:137`) (cobre FR-004)
 
 ### Edge Cases
 
 - Quando o arquivo não é um PDF válido ou está protegido por senha, a inspeção falha com mensagem clara em português, sem acionar os motores (informado pelo operador) (fonte: `tests/test_core.py:22`) (fonte: `tests/test_core.py:28`) (fonte: `tests/test_core.py:44`) (cobre FR-007)
 - Quando a biblioteca de leitura devolve um erro sem código conhecido, a inspeção falha com uma mensagem genérica em português que inclui o texto original (fonte: `tests/test_core.py:34`) (cobre FR-007)
 - Quando um PDF protegido por senha é enviado pela interface web, o job termina em erro com a mesma mensagem em português (fonte: `tests/test_web.py:49`) (cobre FR-007)
-- [PENDENTE: qual teste comprova que a inspeção não acessa a rede (FR-008)?]
+- Com a criação de sockets bloqueada, a inspeção termina normalmente; o teste cobre conexões abertas pelo Python, não acesso à rede por código nativo (fonte: `tests/test_core.py:149`) (fonte: `tests/test_core.py:142`) (cobre FR-008)
 
 ## Requirements
 

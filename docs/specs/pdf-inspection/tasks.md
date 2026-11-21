@@ -58,26 +58,26 @@ Ref: research.md Decision 2
 
 Ref: spec.md FR-004; research.md Decision 6; quickstart.md Scenario 2
 
-- [ ] 3.1.1 Criar em `tests/conftest.py` a fixture de PDF cujo texto contém o termo de fórmula
-- [ ] 3.1.2 Escrever o teste de que a pontuação de fórmula da análise é maior que zero
-- [ ] 3.1.3 Substituir na spec o cenário pendente de FR-004 pela fonte do teste
+- [x] 3.1.1 Criar em `tests/conftest.py` a fixture de PDF cujo texto contém o termo de fórmula
+- [x] 3.1.2 Escrever o teste de que a pontuação de fórmula da análise é maior que zero
+- [x] 3.1.3 Substituir na spec o cenário pendente de FR-004 pela fonte do teste
 
 ### 3.2 Inspeção sem acesso à rede `[A]`
 
 Ref: spec.md FR-008; research.md Decision 5; quickstart.md Scenario 5
 
-- [ ] 3.2.1 Criar a fixture de teste que substitui a criação de sockets por uma função que falha
-- [ ] 3.2.2 Escrever o teste de que a inspeção da fixture de artigo termina sem tentar abrir socket
-- [ ] 3.2.3 Escrever o teste de controle que comprova que a fixture de bloqueio realmente falha quando um socket é aberto
-- [ ] 3.2.4 Substituir na spec o edge case pendente de FR-008 pela fonte do teste
+- [x] 3.2.1 Criar a fixture de teste que substitui a criação de sockets por uma função que falha
+- [x] 3.2.2 Escrever o teste de que a inspeção da fixture de artigo termina sem tentar abrir socket
+- [x] 3.2.3 Escrever o teste de controle que comprova que a fixture de bloqueio realmente falha quando um socket é aberto
+- [x] 3.2.4 Substituir na spec o edge case pendente de FR-008 pela fonte do teste
 
 ### 3.3 Fechamento `[M]`
 
 Ref: spec.md SC-001; checklists/requirements.md CHK012
 
-- [ ] 3.3.1 Rodar `uv run pytest` e confirmar a suíte verde
-- [ ] 3.3.2 Atualizar o checklist: CHK012 resolvido com as fontes dos testes
-- [ ] 3.3.3 Rodar o gate de cobertura de requisitos e o lint de origem sobre a spec atualizada
+- [x] 3.3.1 Rodar `uv run pytest` e confirmar a suíte verde
+- [x] 3.3.2 Atualizar o checklist: CHK012 resolvido com as fontes dos testes
+- [x] 3.3.3 Rodar o gate de cobertura de requisitos e o lint de origem sobre a spec atualizada
 
 ---
 

@@ -29,7 +29,7 @@
 ## Cobertura de Cenarios
 
 - [x] CHK011 - Cada requisito funcional é citado em ao menos um cenário ou edge case? [Cobertura, Spec §Acceptance Scenarios] {auto} — gate requirement-coverage: requirements=8, covered=8, errors=0
-- [ ] CHK012 - Cada requisito funcional tem teste existente como origem de um cenário? [Gap, Spec §FR-004, Spec §FR-007, Spec §FR-008] {auto} — FR-004 e FR-008 só aparecem em campos pendentes e FR-007 ainda não foi observado no código (fonte: `docs/specs/pdf-inspection/spec.md`)
+- [x] CHK012 - Cada requisito funcional tem teste existente como origem de um cenário? [Cobertura, Spec §FR-004, Spec §FR-007, Spec §FR-008] {auto} — resolvido em 2026-11-21: FR-004, FR-007 e FR-008 passaram a citar testes; o de FR-008 cobre só conexões abertas pelo Python (fonte: `docs/specs/pdf-inspection/spec.md`)
 
 ## Requisitos Nao-Funcionais
 

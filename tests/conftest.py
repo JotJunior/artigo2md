@@ -1,3 +1,4 @@
+import socket
 from pathlib import Path
 
 import pytest
@@ -64,3 +65,29 @@ def blank_pdf(tmp_path: Path) -> Path:
     pdf.add_page()
     pdf.output(str(tmp_path / "branco.pdf"))
     return tmp_path / "branco.pdf"
+
+
+@pytest.fixture
+def formula_pdf(tmp_path: Path) -> Path:
+    """PDF de texto cujo conteúdo usa um termo de indício de fórmula ("equation")."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Helvetica", size=11)
+    pdf.multi_cell(0, 6, "The dose follows the equation described in the appendix. " * 3)
+    path = tmp_path / "formula.pdf"
+    pdf.output(str(path))
+    return path
+
+
+@pytest.fixture
+def no_network(monkeypatch):
+    """Faz qualquer criação de socket em Python falhar durante o teste.
+
+    Prova que o código testado não abre conexão pela biblioteca padrão; não enxerga
+    acesso à rede feito por código nativo fora do Python.
+    """
+
+    def _blocked(*_args, **_kwargs):
+        raise AssertionError("tentativa de acesso à rede durante o teste")
+
+    monkeypatch.setattr(socket, "socket", _blocked)

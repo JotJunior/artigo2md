@@ -67,11 +67,11 @@ Ref: spec.md FR-009, FR-010, FR-011, FR-012, FR-013; research.md Decisions 6 e 7
 
 Ref: spec.md FR-014; research.md Decisions 1 e 3; contracts/cli.md; quickstart.md Scenario 4
 
-- [ ] 3.1.1 Escrever o teste, inicialmente falhando, de dois PDFs homônimos em subpastas gerando dois Markdown nas subpastas correspondentes
-- [ ] 3.1.2 Escrever o teste de que um PDF passado diretamente continua na raiz da pasta de saída
-- [ ] 3.1.3 Implementar em `src/artigo2md/cli.py` o cálculo do caminho de saída relativo à pasta de entrada, criando as subpastas
-- [ ] 3.1.4 Escrever o teste de que o relatório JSON fica ao lado do Markdown na subpasta
-- [ ] 3.1.5 Escrever o teste de que a reexecução pula corretamente os arquivos já convertidos no novo layout (FR-005)
+- [x] 3.1.1 Escrever o teste, inicialmente falhando, de dois PDFs homônimos em subpastas gerando dois Markdown nas subpastas correspondentes
+- [x] 3.1.2 Escrever o teste de que um PDF passado diretamente continua na raiz da pasta de saída
+- [x] 3.1.3 Implementar em `src/artigo2md/cli.py` o cálculo do caminho de saída relativo à pasta de entrada, criando as subpastas
+- [x] 3.1.4 Escrever o teste de que o relatório JSON fica ao lado do Markdown na subpasta
+- [x] 3.1.5 Escrever o teste de que a reexecução pula corretamente os arquivos já convertidos no novo layout (FR-005)
 
 ### 3.2 Colisão entre entradas diferentes `[M]`
 
@@ -85,10 +85,10 @@ Ref: research.md Decision 2; depende da decisão 1.1.4
 
 Ref: spec.md SC-001; checklists/requirements.md CHK014; plan.md Summary item 3
 
-- [ ] 3.3.1 Atualizar o README: descrição do layout de saída na conversão de pasta
-- [ ] 3.3.2 Atualizar a spec: cenários e edge cases pendentes passam a citar as fontes dos testes e FR-014 passa a citar a fonte no código
-- [ ] 3.3.3 Atualizar o checklist (CHK014) e retirar a marca de proposta de contracts/cli.md
-- [ ] 3.3.4 Rodar `uv run pytest` e confirmar a suíte verde
+- [x] 3.3.1 Atualizar o README: descrição do layout de saída na conversão de pasta
+- [x] 3.3.2 Atualizar a spec: cenários e edge cases pendentes passam a citar as fontes dos testes e FR-014 passa a citar a fonte no código
+- [x] 3.3.3 Atualizar o checklist (CHK014) e retirar a marca de proposta de contracts/cli.md
+- [x] 3.3.4 Rodar `uv run pytest` e confirmar a suíte verde
 
 ---
 

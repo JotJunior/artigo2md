@@ -62,7 +62,7 @@ Para acessar de outra máquina da sua rede (ex.: um servidor em casa via Tailsca
 
 ```bash
 uv run artigo2md convert artigo.pdf                     # → ./markdown/artigo.md
-uv run artigo2md convert ~/Artigos -o ~/Artigos-md      # pasta inteira, recursivo
+uv run artigo2md convert ~/Artigos -o ~/Artigos-md      # pasta inteira, recursivo; a saída repete as subpastas
 uv run artigo2md convert livro.pdf -e docling --report  # força o motor e grava relatório
 ```
 
