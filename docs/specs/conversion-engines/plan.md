@@ -57,13 +57,11 @@ Sem `contracts/`: os adaptadores não expõem interface externa própria (são c
 ### Source Code (repository root)
 
 ```
-src/artigo2md/
-└── engines.py       # ALTERA: serviços remotos do Docling desligados de forma explícita; telemetria do hub desativada (FR-013)
-tests/
-└── test_core.py     # ALTERA: testes de FR-002, FR-005 a FR-009, FR-012 e FR-013
+src/artigo2md/engines.py    # ALTERADO: serviços remotos do Docling desligados de forma explícita; telemetria do hub desativada (FR-013)
+tests/test_engines.py       # NOVO: testes de FR-002, FR-005 a FR-009, FR-012 e FR-013
 ```
 
-**Structure Decision**: Manter a estrutura atual. Se o número de testes novos tornar `tests/test_core.py` difícil de ler, separar os testes de motores em um arquivo próprio dentro de `tests` é uma decisão de implementação, sem efeito no plano.
+**Structure Decision**: Manter a estrutura do código. Na implementação (2026-11-21), os testes de motores foram para um arquivo próprio, `tests/test_engines.py`, em vez de `tests/test_core.py`, alternativa que este plano já previa.
 
 ## Convencoes de Borda
 
