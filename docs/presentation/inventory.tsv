@@ -1,0 +1,15 @@
+# cstk-presentation-inventory v1
+project	artigo2md
+briefing	docs/briefing.md	2205996010	artigo2md
+constitution	docs/constitution.md	2728024328	1.0.0
+principle	1	I	no	Processamento 100% Local
+principle	2	II	no	Dependências Obrigatórias com Licença Permissiva
+principle	3	III	no	Mensagens ao Usuário em Português
+principle	4	IV	no	Testes Antes do Commit
+principle	5	V	yes	Veracidade de Dados — Zero Fabricação
+spec	command-line-interface	active	-	in-progress	spec,plan,research,data-model,quickstart,tasks,checklists,contracts	1	5	0	30	-	747547737	docs/specs/command-line-interface/spec.md	Linha de comando
+spec	conversion-engines	active	-	in-progress	spec,plan,research,data-model,quickstart,tasks,checklists	1	4	0	27	-	925528547	docs/specs/conversion-engines/spec.md	Motores de conversão
+spec	engine-routing	active	-	specified	spec,checklists	1	4	-	-	-	2894345842	docs/specs/engine-routing/spec.md	Roteamento de motores e avaliação de qualidade
+spec	pdf-inspection	active	-	in-progress	spec,plan,research,data-model,quickstart,tasks,checklists	1	4	0	24	-	4136062151	docs/specs/pdf-inspection/spec.md	Inspeção do PDF
+spec	web-interface	active	-	specified	spec,data-model,checklists	1	5	-	-	-	2514764629	docs/specs/web-interface/spec.md	Interface web local
+totals	5	5	0	0	0	81	22	5
