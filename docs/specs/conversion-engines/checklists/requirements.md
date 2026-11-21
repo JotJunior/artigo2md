@@ -7,15 +7,15 @@
 ## Completude de Requisitos
 
 - [x] CHK001 - Cada requisito funcional cita a origem? [Completude, Spec §Functional Requirements] {auto} — FR-001 a FR-013 têm origem citada (fonte: `docs/specs/conversion-engines/spec.md`)
-- [ ] CHK002 - Está definido um limite de tempo para a execução do MinerU como processo externo? [Gap, Spec §FR-008] {auto} — FR-008 não menciona tempo limite (fonte: `docs/specs/conversion-engines/spec.md`)
-- [ ] CHK003 - Está definido o comportamento quando um motor obrigatório não está instalado? [Gap, Spec §FR-010] {auto} — FR-010 só informa a disponibilidade (fonte: `docs/specs/conversion-engines/spec.md`)
+- [x] CHK002 - Está definido um limite de tempo para a execução do MinerU como processo externo? [Completude, Spec §FR-008] {auto} — resolvido em 2026-11-21: FR-008 registra o limite de 1800 segundos por execução (fonte: `docs/specs/conversion-engines/spec.md`)
+- [x] CHK003 - Está definido o comportamento quando um motor obrigatório não está instalado? [Completude, Spec §FR-014] {auto} — resolvido em 2026-11-21: mantido o comportamento atual, registrado como FR-014 (informado pelo operador)
 
 ## Clareza de Requisitos
 
 - [x] CHK004 - A versão aceita do MinerU está especificada? [Clareza, Spec §FR-007] {auto} — só a linha 3.x (fonte: `docs/specs/conversion-engines/spec.md`)
 - [x] CHK005 - Os idiomas do OCR no macOS estão especificados? [Clareza, Spec §FR-002] {auto} — pt-BR e en-US (fonte: `docs/specs/conversion-engines/spec.md`)
-- [ ] CHK006 - Está definido o que é o "modo preciso" da estrutura de tabelas? [Ambiguity, Spec §FR-001] {auto} — o termo aparece sem definição (fonte: `docs/specs/conversion-engines/spec.md`)
-- [ ] CHK007 - Está quantificado quanto do "final da saída do processo" entra na mensagem de falha? [Ambiguity, Spec §FR-009] {auto} — sem tamanho definido (fonte: `docs/specs/conversion-engines/spec.md`)
+- [x] CHK006 - Está definido o que é o "modo preciso" da estrutura de tabelas? [Clareza, Spec §FR-001] {auto} — resolvido em 2026-11-21: FR-001 define o modo preciso (fonte: `docs/specs/conversion-engines/spec.md`)
+- [x] CHK007 - Está quantificado quanto do "final da saída do processo" entra na mensagem de falha? [Clareza, Spec §FR-009] {auto} — resolvido em 2026-11-21: FR-009 registra os últimos 600 caracteres da saída (fonte: `docs/specs/conversion-engines/spec.md`)
 
 ## Consistencia de Requisitos
 
@@ -29,7 +29,7 @@
 ## Cobertura de Cenarios
 
 - [x] CHK011 - Cada requisito funcional é citado em ao menos um cenário ou edge case? [Cobertura, Spec §Acceptance Scenarios] {auto} — gate requirement-coverage: requirements=13, covered=13, errors=0
-- [ ] CHK012 - Cada requisito funcional tem teste existente como origem de um cenário? [Gap, Spec §FR-002, Spec §FR-005, Spec §FR-006, Spec §FR-007, Spec §FR-008, Spec §FR-009, Spec §FR-012, Spec §FR-013] {auto} — esses requisitos só aparecem em cenários ou edge cases pendentes (fonte: `docs/specs/conversion-engines/spec.md`)
+- [x] CHK012 - Cada requisito funcional tem teste existente como origem de um cenário? [Cobertura, Spec §Acceptance Scenarios] {auto} — resolvido em 2026-11-21: todos os requisitos citam testes; resta um edge case pendente sobre a conversão real do Docling sem envio de conteúdo (FR-013) (fonte: `docs/specs/conversion-engines/spec.md`)
 
 ## Requisitos Nao-Funcionais
 

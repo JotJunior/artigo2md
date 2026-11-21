@@ -20,6 +20,11 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Nada sai da máquina: desliga a telemetria do Hugging Face Hub, que o Docling usa para
+# baixar modelos. O hub lê a variável ao ser importado, por isso ela é definida aqui,
+# antes de qualquer import do Docling.
+os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
+
 
 @dataclass
 class EngineOutput:
@@ -38,27 +43,36 @@ _docling_lock = threading.Lock()
 _docling_cache: dict[bool, object] = {}
 
 
+def _docling_pipeline_options(ocr: bool):
+    """Opções do pipeline de PDF: tabelas no modo preciso, OCR sob demanda, nada remoto."""
+    from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
+
+    opts = PdfPipelineOptions()
+    opts.do_table_structure = True
+    opts.table_structure_options.mode = TableFormerMode.ACCURATE
+    opts.table_structure_options.do_cell_matching = True
+    opts.do_ocr = ocr
+    if ocr:
+        opts.ocr_options = _ocr_options()
+    # Serviços remotos desligados de forma explícita, sem depender do padrão do Docling.
+    # Versões antigas do Docling não têm o campo.
+    if hasattr(opts, "enable_remote_services"):
+        opts.enable_remote_services = False
+    return opts
+
+
 def _docling_converter(ocr: bool):
     """Cria (uma vez) o conversor; carregar os modelos é a parte cara."""
     with _docling_lock:
         if ocr in _docling_cache:
             return _docling_cache[ocr]
         from docling.datamodel.base_models import InputFormat
-        from docling.datamodel.pipeline_options import (
-            PdfPipelineOptions,
-            TableFormerMode,
-        )
         from docling.document_converter import DocumentConverter, PdfFormatOption
 
-        opts = PdfPipelineOptions()
-        opts.do_table_structure = True
-        opts.table_structure_options.mode = TableFormerMode.ACCURATE
-        opts.table_structure_options.do_cell_matching = True
-        opts.do_ocr = ocr
-        if ocr:
-            opts.ocr_options = _ocr_options()
         converter = DocumentConverter(
-            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=_docling_pipeline_options(ocr))
+            }
         )
         _docling_cache[ocr] = converter
         return converter
