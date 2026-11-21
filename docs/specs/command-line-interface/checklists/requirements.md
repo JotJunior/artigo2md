@@ -9,15 +9,15 @@
 - [x] CHK001 - Cada requisito funcional cita a origem? [Completude, Spec §Functional Requirements] {auto} — FR-001 a FR-014 têm origem citada (fonte: `docs/specs/command-line-interface/spec.md`)
 - [x] CHK002 - Está definido o tratamento de PDFs com o mesmo nome em pastas diferentes? [Completude, Spec §FR-014] {auto} — definido na clarificação como FR-014: converte todos, com nomes de saída distintos (fonte: `docs/specs/command-line-interface/spec.md`)
 - [x] CHK003 - Está definido o código de saída quando todos os PDFs são pulados por já terem Markdown? [Completude, Spec §FR-005] {auto} — definido na clarificação: código 0 (fonte: `docs/specs/command-line-interface/spec.md`)
-- [ ] CHK004 - Estão definidos requisitos para o serve quando o host não é o local? [Gap, Spec §FR-009] {auto} — FR-009 só define os valores padrão (fonte: `docs/specs/command-line-interface/spec.md`)
+- [x] CHK004 - Estão definidos requisitos para o serve quando o host não é o local? [Completude, Spec §FR-015] {auto} — resolvido em 2026-11-21: com host não local o serve avisa que não há senha, registrado como FR-015 (fonte: `docs/specs/command-line-interface/spec.md`)
 
 ## Clareza de Requisitos
 
 - [x] CHK005 - O host e a porta padrão do serve estão especificados? [Clareza, Spec §FR-009] {auto} — 127.0.0.1 e 8777 (fonte: `docs/specs/command-line-interface/spec.md`)
 - [x] CHK006 - As opções de motor estão enumeradas, com o padrão? [Clareza, Spec §FR-006] {auto} — auto, docling, pymupdf, mineru, markitdown; padrão auto (fonte: `docs/specs/command-line-interface/spec.md`)
 - [x] CHK007 - Os códigos de saída estão especificados para os casos de erro? [Clareza, Spec §FR-003, Spec §FR-008, Spec §FR-010, Spec §FR-012] {auto} — código 1 em cada caso de erro e 0 no doctor com motores obrigatórios instalados (fonte: `docs/specs/command-line-interface/spec.md`)
-- [ ] CHK008 - O conteúdo do relatório JSON está definido? [Ambiguity, Spec §FR-007] {auto} — FR-007 só diz que o relatório é gravado (fonte: `docs/specs/command-line-interface/spec.md`)
-- [ ] CHK009 - Os valores possíveis da "situação" de cada motor no doctor estão enumerados? [Ambiguity, Spec §FR-012] {auto} — o termo aparece sem os valores (fonte: `docs/specs/command-line-interface/spec.md`)
+- [x] CHK008 - O conteúdo do relatório JSON está definido? [Clareza, Spec §FR-007] {auto} — resolvido em 2026-11-21: FR-007 lista o conteúdo do relatório (fonte: `docs/specs/command-line-interface/spec.md`)
+- [x] CHK009 - Os valores possíveis da "situação" de cada motor no doctor estão enumerados? [Clareza, Spec §FR-012] {auto} — resolvido em 2026-11-21: FR-012 enumera as situações possíveis (fonte: `docs/specs/command-line-interface/spec.md`)
 
 ## Consistencia de Requisitos
 

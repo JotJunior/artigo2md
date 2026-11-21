@@ -9,6 +9,9 @@ from pathlib import Path
 
 from . import __version__
 
+# Endereços em que a interface só atende a própria máquina.
+LOCAL_HOSTS = ("127.0.0.1", "localhost", "::1")
+
 
 def _collect_pdfs(inputs: list[str]) -> list[tuple[Path, Path]]:
     """Devolve pares (PDF, caminho do Markdown relativo à pasta de saída).
@@ -30,12 +33,32 @@ def _collect_pdfs(inputs: list[str]) -> list[tuple[Path, Path]]:
     return pdfs
 
 
+def _find_collisions(pdfs: list[tuple[Path, Path]]) -> dict[Path, list[Path]]:
+    """Saídas pedidas por mais de um PDF diferente: {caminho de saída: [PDFs de origem]}."""
+    by_target: dict[Path, list[Path]] = {}
+    for pdf, relative in pdfs:
+        sources = by_target.setdefault(relative, [])
+        if pdf.resolve() not in (s.resolve() for s in sources):
+            sources.append(pdf)
+    return {target: sources for target, sources in by_target.items() if len(sources) > 1}
+
+
 def cmd_convert(args: argparse.Namespace) -> int:
     from .router import convert
 
     pdfs = _collect_pdfs(args.inputs)
     if not pdfs:
         print("Nenhum PDF encontrado.", file=sys.stderr)
+        return 1
+    collisions = _find_collisions(pdfs)
+    if collisions:
+        print("Entradas diferentes gerariam o mesmo arquivo de saída; nada foi convertido:",
+              file=sys.stderr)
+        for target, sources in collisions.items():
+            print(f"  {target} ← {', '.join(str(s) for s in sources)}", file=sys.stderr)
+        print("Passe a pasta que contém esses arquivos (a saída repete as subpastas dela) "
+              "ou converta-os em execuções separadas, com pastas de saída diferentes.",
+              file=sys.stderr)
         return 1
     out_dir = Path(args.output).expanduser()
     out_dir.mkdir(parents=True, exist_ok=True)
@@ -82,6 +105,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
     app = create_app(Path(args.data_dir).expanduser())
     url = f"http://{'localhost' if args.host in ('127.0.0.1', '0.0.0.0') else args.host}:{args.port}"
     print(f"artigo2md {__version__} — interface em {url}")
+    if args.host not in LOCAL_HOSTS:
+        print(f"Atenção: a interface não tem senha e fica acessível a outras máquinas da rede "
+              f"em {args.host}:{args.port}. Não a exponha à internet aberta.", file=sys.stderr)
     if args.open:
         import threading
         import webbrowser

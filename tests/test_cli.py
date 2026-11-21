@@ -381,3 +381,58 @@ def test_convert_rerun_skips_mirrored_outputs(run_cli, fake_convert, same_named_
     assert len(fake_convert) == 2  # nada foi reconvertido na segunda execução
     assert "já existe, pulando: 2023/artigo.md" in out
     assert "já existe, pulando: 2024/artigo.md" in out
+
+
+# ── convert: entradas diferentes que apontam para a mesma saída (FR-016) ─────
+def test_convert_refuses_direct_files_with_the_same_name(run_cli, fake_convert, same_named_pdfs, tmp_path):
+    first = same_named_pdfs / "2023" / "artigo.pdf"
+    second = same_named_pdfs / "2024" / "artigo.pdf"
+    out_dir = tmp_path / "saida"
+
+    code, _out, err = run_cli("convert", first, second, "-o", out_dir)
+
+    assert code == 1
+    assert fake_convert == []  # nada é convertido quando há colisão
+    assert not out_dir.exists()
+    assert "mesmo arquivo de saída" in err
+    assert "artigo.md" in err and str(first) in err and str(second) in err
+    assert "Passe a pasta que contém esses arquivos" in err
+
+
+def test_convert_refuses_folders_with_the_same_relative_path(run_cli, fake_convert, tmp_path):
+    _touch_pdf(tmp_path / "lote-a" / "sub" / "artigo.pdf")
+    _touch_pdf(tmp_path / "lote-b" / "sub" / "artigo.pdf")
+
+    code, _out, err = run_cli("convert", tmp_path / "lote-a", tmp_path / "lote-b", "-o", tmp_path / "saida")
+
+    assert code == 1
+    assert fake_convert == []
+    assert "sub/artigo.md" in err
+
+
+def test_convert_same_file_given_twice_is_not_a_collision(run_cli, fake_convert, tmp_path):
+    source = _touch_pdf(tmp_path / "artigo.pdf")
+
+    code, out, _err = run_cli("convert", source, source, "-o", tmp_path / "saida")
+
+    assert code == 0
+    assert len(fake_convert) == 1
+    assert "já existe, pulando: artigo.md" in out
+
+
+# ── serve: aviso quando a interface fica visível na rede (FR-015) ────────────
+def test_serve_warns_when_host_is_not_local(run_cli, serve_env, port_is_free):
+    code, _out, err = run_cli("serve", "--host", "0.0.0.0")
+
+    assert code == 0
+    assert serve_env["runs"][0]["host"] == "0.0.0.0"
+    assert "não tem senha" in err
+    assert "outras máquinas da rede" in err
+
+
+@pytest.mark.parametrize("host", ["127.0.0.1", "localhost", "::1"])
+def test_serve_does_not_warn_for_local_hosts(run_cli, serve_env, port_is_free, host):
+    code, _out, err = run_cli("serve", "--host", host)
+
+    assert code == 0
+    assert err == ""

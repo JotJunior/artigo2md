@@ -18,6 +18,11 @@
 - Q: Qual a meta mensurável da capacidade? → A: Cobertura por testes automatizados (informado pelo operador)
 - Q: Como as saídas de PDFs homônimos ficam distintas (FR-014)? → A: Espelhar subpastas da entrada (informado pelo operador)
 
+### Session 2026-11-21
+
+- Q: O que o serve faz quando o host não é o local? → A: Avisa ao iniciar e segue (informado pelo operador)
+- Q: Qual a regra quando entradas diferentes apontam para a mesma saída? → A: Recusar com instrução (informado pelo operador)
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Converter, servir e diagnosticar pela linha de comando (Priority: P1) (informado pelo operador)
@@ -42,26 +47,29 @@ Pelo comando artigo2md, a pessoa converte arquivos ou pastas de PDFs em Markdown
 - A falha em um PDF não interrompe os demais (fonte: `tests/test_cli.py:176`) (cobre FR-008)
 - A opção de versão mostra a versão e encerra (fonte: `tests/test_cli.py:322`) (cobre FR-013)
 - Um PDF passado diretamente continua na raiz da pasta de saída (fonte: `tests/test_cli.py:353`) (cobre FR-014)
-- [PENDENTE: qual a regra para duas entradas diferentes da mesma execução que apontam para o mesmo caminho de saída (FR-014)?]
+- Quando entradas diferentes da mesma execução apontam para o mesmo caminho de saída, o convert não converte nada, lista as entradas em conflito e explica como resolver; o mesmo arquivo passado duas vezes não conta como conflito (fonte: `tests/test_cli.py:387`) (fonte: `tests/test_cli.py:402`) (fonte: `tests/test_cli.py:413`) (cobre FR-016)
+- Com host que não é o local, o serve avisa que a interface não tem senha e fica visível na rede; com host local não há aviso (fonte: `tests/test_cli.py:424`) (fonte: `tests/test_cli.py:434`) (cobre FR-015)
 
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: O subcomando convert aceita arquivos PDF e pastas; as pastas são varridas recursivamente por arquivos com extensão pdf. (fonte: `src/artigo2md/cli.py:13`)
-- **FR-002**: A entrada que não é PDF ou não existe é ignorada com aviso na saída de erro. (fonte: `src/artigo2md/cli.py:29`)
-- **FR-003**: Sem nenhum PDF encontrado, o convert avisa e termina com código 1. (fonte: `src/artigo2md/cli.py:37`)
-- **FR-004**: O convert grava um arquivo Markdown por PDF na pasta de saída, que por padrão é a pasta markdown do diretório atual. (fonte: `src/artigo2md/cli.py:119`)
-- **FR-005**: O convert pula o PDF cujo Markdown já existe, salvo com a opção --overwrite; pular não é erro, e o convert termina com código 0 mesmo quando todos são pulados (informado pelo operador). (fonte: `src/artigo2md/cli.py:45`)
-- **FR-006**: A opção --engine escolhe entre auto, docling, pymupdf, mineru e markitdown, com auto como padrão. (fonte: `src/artigo2md/cli.py:120`)
-- **FR-007**: A opção --report grava também um relatório JSON por arquivo convertido. (fonte: `src/artigo2md/cli.py:57`)
-- **FR-008**: A falha em um PDF não interrompe os demais; ao final o convert mostra a contagem de sucessos e erros e termina com código 1 se houve falha. (fonte: `src/artigo2md/cli.py:51`)
-- **FR-009**: O subcomando serve sobe a interface web, por padrão no host 127.0.0.1 e na porta 8777. (fonte: `src/artigo2md/cli.py:126`)
-- **FR-010**: Se a porta já está em uso, o serve avisa, sugere outra porta e termina com código 1. (fonte: `src/artigo2md/cli.py:76`)
-- **FR-011**: A opção --open abre o navegador e a opção --data-dir define onde ficam os envios e os resultados. (fonte: `src/artigo2md/cli.py:128`)
-- **FR-012**: O subcomando doctor lista cada motor com licença e situação e termina com código 0 quando os motores obrigatórios estão instalados, ou 1 caso contrário. (fonte: `src/artigo2md/cli.py:94`)
-- **FR-013**: A opção --version mostra a versão do artigo2md. (fonte: `src/artigo2md/cli.py:114`)
-- **FR-014**: Quando PDFs de entrada têm o mesmo nome em pastas diferentes, o convert converte todos e grava as saídas em caminhos distintos, repetindo na pasta de saída a estrutura de subpastas da pasta de entrada, sem pular nem sobrescrever por coincidência de nome; um PDF passado diretamente vai para a raiz da pasta de saída. (informado pelo operador) (fonte: `src/artigo2md/cli.py:25`)
+- **FR-001**: O subcomando convert aceita arquivos PDF e pastas; as pastas são varridas recursivamente por arquivos com extensão pdf. (fonte: `src/artigo2md/cli.py:16`)
+- **FR-002**: A entrada que não é PDF ou não existe é ignorada com aviso na saída de erro. (fonte: `src/artigo2md/cli.py:32`)
+- **FR-003**: Sem nenhum PDF encontrado, o convert avisa e termina com código 1. (fonte: `src/artigo2md/cli.py:50`)
+- **FR-004**: O convert grava um arquivo Markdown por PDF na pasta de saída, que por padrão é a pasta markdown do diretório atual. (fonte: `src/artigo2md/cli.py:145`)
+- **FR-005**: O convert pula o PDF cujo Markdown já existe, salvo com a opção --overwrite; pular não é erro, e o convert termina com código 0 mesmo quando todos são pulados (informado pelo operador). (fonte: `src/artigo2md/cli.py:68`)
+- **FR-006**: A opção --engine escolhe entre auto, docling, pymupdf, mineru e markitdown, com auto como padrão. (fonte: `src/artigo2md/cli.py:146`)
+- **FR-007**: A opção --report grava também um relatório JSON por arquivo convertido, com a origem, o motor usado, a análise do PDF e as tentativas, sem o Markdown. (fonte: `src/artigo2md/cli.py:80`) (fonte: `src/artigo2md/router.py:48`)
+- **FR-008**: A falha em um PDF não interrompe os demais; ao final o convert mostra a contagem de sucessos e erros e termina com código 1 se houve falha. (fonte: `src/artigo2md/cli.py:74`)
+- **FR-009**: O subcomando serve sobe a interface web, por padrão no host 127.0.0.1 e na porta 8777. (fonte: `src/artigo2md/cli.py:152`)
+- **FR-010**: Se a porta já está em uso, o serve avisa, sugere outra porta e termina com código 1. (fonte: `src/artigo2md/cli.py:99`)
+- **FR-011**: A opção --open abre o navegador e a opção --data-dir define onde ficam os envios e os resultados. (fonte: `src/artigo2md/cli.py:154`)
+- **FR-012**: O subcomando doctor lista cada motor com licença e situação (ok, AUSENTE para motor obrigatório que falta, ou não instalado com a instrução de instalação para motor opcional) (fonte: `src/artigo2md/cli.py:127`) e termina com código 0 quando os motores obrigatórios estão instalados, ou 1 caso contrário. (fonte: `src/artigo2md/cli.py:120`)
+- **FR-013**: A opção --version mostra a versão do artigo2md. (fonte: `src/artigo2md/cli.py:140`)
+- **FR-014**: Quando PDFs de mesmo nome estão em subpastas diferentes de uma pasta de entrada, o convert converte todos e grava as saídas em caminhos distintos, repetindo na pasta de saída a estrutura de subpastas da pasta de entrada, sem pular nem sobrescrever por coincidência de nome; um PDF passado diretamente vai para a raiz da pasta de saída. (informado pelo operador) (fonte: `src/artigo2md/cli.py:28`)
+- **FR-015**: Quando o serve é iniciado com host que não é o local, o sistema avisa que a interface não tem senha e fica acessível a outras máquinas da rede, e segue normalmente. (informado pelo operador) (fonte: `src/artigo2md/cli.py:108`)
+- **FR-016**: Quando entradas diferentes da mesma execução apontam para o mesmo caminho de saída, o convert não converte nada, lista as entradas em conflito, explica como resolver e termina com código 1. (informado pelo operador) (fonte: `src/artigo2md/cli.py:53`)
 
 ### Inferido (nao confirmado)
 

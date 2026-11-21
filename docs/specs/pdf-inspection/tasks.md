@@ -21,11 +21,11 @@ Escopo: atender FR-007 (falha clara com PDF inválido ou protegido por senha), c
 
 Ref: checklists/requirements.md CHK006, CHK007, CHK013, CHK014
 
-- [ ] 1.1.1 Enumerar na spec os símbolos e termos de indício de fórmula de FR-004, a partir de `src/artigo2md/pdfscan.py` (CHK006)
-- [ ] 1.1.2 Enumerar na spec os termos de artigo científico de FR-005, a partir de `src/artigo2md/pdfscan.py` (CHK007)
-- [ ] 1.1.3 Obter do operador a decisão sobre requisito de tempo de inspeção por documento e registrá-la na spec (CHK013)
-- [ ] 1.1.4 Obter do operador a decisão sobre o risco aceito da heurística por termos (CHK014)
-- [ ] 1.1.5 Atualizar o checklist com os itens resolvidos
+- [x] 1.1.1 Enumerar na spec os símbolos e termos de indício de fórmula de FR-004, a partir de `src/artigo2md/pdfscan.py` (CHK006)
+- [x] 1.1.2 Enumerar na spec os termos de artigo científico de FR-005, a partir de `src/artigo2md/pdfscan.py` (CHK007)
+- [x] 1.1.3 Obter do operador a decisão sobre requisito de tempo de inspeção por documento e registrá-la na spec (CHK013)
+- [x] 1.1.4 Obter do operador a decisão sobre o risco aceito da heurística por termos (CHK014)
+- [x] 1.1.5 Atualizar o checklist com os itens resolvidos
 
 ---
 

@@ -21,11 +21,11 @@ Escopo: atender FR-014 (PDFs homônimos em pastas diferentes, com a saída repet
 
 Ref: checklists/requirements.md CHK004, CHK008, CHK009; research.md Decision 2 (ponto a confirmar)
 
-- [ ] 1.1.1 Obter do operador a decisão sobre requisitos do serve quando o host não é o local e registrá-la na spec (CHK004)
-- [ ] 1.1.2 Registrar na spec o conteúdo do relatório JSON, conforme data-model.md (CHK008)
-- [ ] 1.1.3 Enumerar na spec os valores de situação de cada motor no doctor, a partir de `src/artigo2md/cli.py` (CHK009)
-- [ ] 1.1.4 Confirmar com o operador a regra para colisão entre entradas diferentes da mesma execução (research.md Decision 2)
-- [ ] 1.1.5 Atualizar o checklist com os itens resolvidos
+- [x] 1.1.1 Obter do operador a decisão sobre requisitos do serve quando o host não é o local e registrá-la na spec (CHK004)
+- [x] 1.1.2 Registrar na spec o conteúdo do relatório JSON, conforme data-model.md (CHK008)
+- [x] 1.1.3 Enumerar na spec os valores de situação de cada motor no doctor, a partir de `src/artigo2md/cli.py` (CHK009)
+- [x] 1.1.4 Confirmar com o operador a regra para colisão entre entradas diferentes da mesma execução (research.md Decision 2)
+- [x] 1.1.5 Atualizar o checklist com os itens resolvidos
 
 ---
 
@@ -77,9 +77,9 @@ Ref: spec.md FR-014; research.md Decisions 1 e 3; contracts/cli.md; quickstart.m
 
 Ref: research.md Decision 2; depende da decisão 1.1.4
 
-- [ ] 3.2.1 Escrever o teste, inicialmente falhando, de dois arquivos homônimos passados diretamente na mesma execução
-- [ ] 3.2.2 Implementar a regra confirmada pelo operador para separar as saídas
-- [ ] 3.2.3 Escrever o teste da mensagem em português que informa a separação
+- [x] 3.2.1 Escrever o teste, inicialmente falhando, de dois arquivos homônimos passados diretamente na mesma execução
+- [x] 3.2.2 Implementar a regra confirmada pelo operador para separar as saídas <!-- 2026-11-21: regra confirmada pelo operador foi recusar com instrução, não separar as saídas -->
+- [x] 3.2.3 Escrever o teste da mensagem em português que informa a separação <!-- 2026-11-21: a mensagem testada é a da recusa, com as entradas em conflito e a instrução -->
 
 ### 3.3 Documentação e fechamento `[M]`
 

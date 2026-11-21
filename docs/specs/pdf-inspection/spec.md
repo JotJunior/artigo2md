@@ -17,6 +17,11 @@
 - Q: O processamento sem rede da inspeção vira requisito? → A: Sim, promovido a requisito (informado pelo operador)
 - Q: Qual a meta mensurável da capacidade? → A: Cobertura por testes automatizados (informado pelo operador)
 
+### Session 2026-11-21
+
+- Q: A inspeção deve ter requisito de tempo por documento? → A: Não, sem requisito (informado pelo operador)
+- Q: O risco da heurística por termos é aceitável? → A: Sim, aceitável (informado pelo operador)
+
 ## User Scenarios & Testing
 
 ### User Story 1 - Inspecionar o PDF antes de converter (Priority: P1) (informado pelo operador)
@@ -43,8 +48,8 @@ Antes da conversão, o artigo2md lê o texto nativo de cada página do PDF e res
 - **FR-001**: O sistema lê o texto nativo de cada página do PDF com pypdfium2 e acumula o total de páginas e de caracteres. (fonte: `src/artigo2md/pdfscan.py:84`)
 - **FR-002**: O sistema trata como escaneada a página com menos de 80 caracteres de texto nativo e conta separadamente páginas com texto e páginas escaneadas. (fonte: `src/artigo2md/pdfscan.py:21`)
 - **FR-003**: O sistema conta as páginas que citam tabelas pelos termos "table", "tabela" ou "quadro" seguidos de número. (fonte: `src/artigo2md/pdfscan.py:18`)
-- **FR-004**: O sistema soma indícios de fórmula: símbolos matemáticos e os termos "equation" e "equação". (fonte: `src/artigo2md/pdfscan.py:19`)
-- **FR-005**: O sistema soma ocorrências de termos típicos de artigo científico, em inglês e português, numa pontuação de artigo. (fonte: `src/artigo2md/pdfscan.py:13`)
+- **FR-004**: O sistema soma indícios de fórmula: os símbolos ∑, Σ, ∫, √, ≤, ≥, ≈, ∂ e ∇ e os termos "equation" e "equação". (fonte: `src/artigo2md/pdfscan.py:19`)
+- **FR-005**: O sistema soma, numa pontuação de artigo, as ocorrências dos termos abstract, method ou methods, result ou results, discussion, references, resumo, método ou métodos, resultado ou resultados, discussão e referência ou referências. (fonte: `src/artigo2md/pdfscan.py:13`)
 - **FR-006**: O sistema marca o PDF como totalmente escaneado quando todas as páginas são escaneadas e como necessitando de OCR quando ao menos uma é. (fonte: `src/artigo2md/pdfscan.py:70`)
 - **FR-007**: O sistema falha com mensagem clara em português quando o arquivo não é um PDF válido ou está protegido por senha; os demais erros de abertura recebem uma mensagem genérica em português. (informado pelo operador) (fonte: `src/artigo2md/pdfscan.py:32`)
 - **FR-008**: O sistema inspeciona apenas o arquivo local e não acessa a rede durante a inspeção. (informado pelo operador) (fonte: `src/artigo2md/pdfscan.py:3`)

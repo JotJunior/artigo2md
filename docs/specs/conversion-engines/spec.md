@@ -66,7 +66,7 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 - **FR-011**: O sistema mantém a ficha de cada motor (identificador, nome, licença, obrigatoriedade, papel, peso, instalação) com o estado de instalação e o detalhe de versão incompatível do MinerU. (fonte: `src/artigo2md/engines.py:219`)
 - **FR-012**: O conversor do Docling é criado uma vez por modo (com ou sem OCR) e reutilizado. (fonte: `src/artigo2md/engines.py:64`)
 - **FR-013**: Nenhum motor envia o documento ou conteúdo dele a serviços externos, e a telemetria é desativada sempre que o motor oferece essa opção: os serviços remotos do Docling ficam desligados de forma explícita e a telemetria do hub de modelos é desativada no processo; o download de modelos do Docling na primeira conversão continua permitido. (informado pelo operador) (fonte: `src/artigo2md/engines.py:60`) (fonte: `src/artigo2md/engines.py:26`)
-- **FR-014**: Quando um motor obrigatório não está instalado, o diagnóstico o mostra como ausente e termina com código 1, e na conversão ele conta como tentativa com erro e o próximo motor é tentado. (informado pelo operador) (fonte: `src/artigo2md/cli.py:107`) (fonte: `src/artigo2md/router.py:137`)
+- **FR-014**: Quando um motor obrigatório não está instalado, o diagnóstico o mostra como ausente e termina com código 1, e na conversão ele conta como tentativa com erro e o próximo motor é tentado. (informado pelo operador) (fonte: `src/artigo2md/cli.py:133`) (fonte: `src/artigo2md/router.py:137`)
 
 ### Inferido (nao confirmado)
 

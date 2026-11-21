@@ -14,8 +14,8 @@
 
 - [x] CHK004 - O limiar que define página escaneada está quantificado? [Clareza, Spec §FR-002] {auto} — 80 caracteres de texto nativo (fonte: `docs/specs/pdf-inspection/spec.md`)
 - [x] CHK005 - Os termos que caracterizam citação de tabela estão enumerados? [Clareza, Spec §FR-003] {auto} — table, tabela ou quadro seguidos de número (fonte: `docs/specs/pdf-inspection/spec.md`)
-- [ ] CHK006 - Os símbolos matemáticos contados como indício de fórmula estão enumerados? [Ambiguity, Spec §FR-004] {auto} — o requisito diz "símbolos matemáticos" sem listá-los (fonte: `docs/specs/pdf-inspection/spec.md`)
-- [ ] CHK007 - Os termos típicos de artigo científico estão enumerados? [Ambiguity, Spec §FR-005] {auto} — o requisito diz "termos típicos" sem listá-los (fonte: `docs/specs/pdf-inspection/spec.md`)
+- [x] CHK006 - Os símbolos matemáticos contados como indício de fórmula estão enumerados? [Clareza, Spec §FR-004] {auto} — resolvido em 2026-11-21: FR-004 enumera os símbolos e os termos (fonte: `docs/specs/pdf-inspection/spec.md`)
+- [x] CHK007 - Os termos típicos de artigo científico estão enumerados? [Clareza, Spec §FR-005] {auto} — resolvido em 2026-11-21: FR-005 enumera os termos (fonte: `docs/specs/pdf-inspection/spec.md`)
 
 ## Consistencia de Requisitos
 
@@ -33,8 +33,8 @@
 
 ## Requisitos Nao-Funcionais
 
-- [ ] CHK013 - Há requisito de tempo de inspeção por documento? [Gap] {auto} — a spec não traz requisito de desempenho
-- [ ] CHK014 - A heurística por termos (tabela, fórmula, artigo) é suficiente para o risco aceito de escolher o motor errado? [Risco, Spec §FR-003, Spec §FR-004, Spec §FR-005] {humano}
+- [x] CHK013 - Há requisito de tempo de inspeção por documento? [Completude, Spec §Clarifications] {auto} — resolvido em 2026-11-21: decidido não ter requisito de tempo para a inspeção (informado pelo operador)
+- [x] CHK014 - A heurística por termos (tabela, fórmula, artigo) é suficiente para o risco aceito de escolher o motor errado? [Risco, Spec §FR-003, Spec §FR-004, Spec §FR-005] {humano} — risco aceito em 2026-11-21: a nota de qualidade e a nova tentativa com outro motor corrigem uma escolha inicial ruim (informado pelo operador)
 
 ## Dependencias e Premissas
 
