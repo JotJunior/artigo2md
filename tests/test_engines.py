@@ -194,3 +194,103 @@ def test_docling_converter_is_created_once_per_mode(monkeypatch):
     assert engines._docling_converter(False) is without_ocr
     assert engines._docling_converter(True) is not without_ocr
     assert set(engines._docling_cache) == {False, True}
+
+
+# ── modo offline do hub de modelos (FR-015) ──────────────────────────────────
+class _FakeDoclingConverter:
+    """Conversor simulado: falha por falta de modelo enquanto o hub está offline, se assim configurado."""
+
+    def __init__(self, models_cached: bool):
+        self.models_cached = models_cached
+        self.offline_flags: list[bool] = []
+
+    def convert(self, _path):
+        import huggingface_hub.constants as hub_constants
+        from huggingface_hub.errors import LocalEntryNotFoundError
+
+        self.offline_flags.append(hub_constants.HF_HUB_OFFLINE)
+        if hub_constants.HF_HUB_OFFLINE and not self.models_cached:
+            raise LocalEntryNotFoundError("modelo ausente do cache (simulado)")
+        return "resultado simulado"
+
+
+@pytest.fixture
+def hub_offline_env(monkeypatch):
+    """Garante que o teste não herda nem deixa para trás o modo offline do hub."""
+    import huggingface_hub.constants as hub_constants
+
+    monkeypatch.delenv("HF_HUB_OFFLINE", raising=False)
+    monkeypatch.delenv("TRANSFORMERS_OFFLINE", raising=False)
+    monkeypatch.setattr(hub_constants, "HF_HUB_OFFLINE", False)
+    return hub_constants
+
+
+def test_docling_converts_offline_when_models_are_cached(hub_offline_env, article_pdf):
+    converter = _FakeDoclingConverter(models_cached=True)
+
+    assert engines._convert_with_docling(converter, article_pdf) == "resultado simulado"
+    assert converter.offline_flags == [True]  # uma única tentativa, sem contato com o hub
+
+
+def test_docling_falls_back_to_online_when_models_are_missing(hub_offline_env, article_pdf):
+    converter = _FakeDoclingConverter(models_cached=False)
+
+    assert engines._convert_with_docling(converter, article_pdf) == "resultado simulado"
+    assert converter.offline_flags == [True, False]  # tenta offline; sem modelo, baixa
+
+
+def test_docling_reports_clearly_when_models_cannot_be_downloaded(hub_offline_env, article_pdf):
+    class _NeverAvailable:
+        calls = 0
+
+        def convert(self, _path):
+            from huggingface_hub.errors import LocalEntryNotFoundError
+
+            type(self).calls += 1
+            raise LocalEntryNotFoundError("sem cache e sem rede (simulado)")
+
+    with pytest.raises(engines.EngineUnavailable, match="Não foi possível baixar os modelos do Docling"):
+        engines._convert_with_docling(_NeverAvailable(), article_pdf)
+    assert _NeverAvailable.calls == 2  # offline e depois online
+
+
+def test_docling_other_errors_are_not_retried(hub_offline_env, article_pdf):
+    class _Broken:
+        calls = 0
+
+        def convert(self, _path):
+            type(self).calls += 1
+            raise RuntimeError("falha que não tem a ver com modelos")
+
+    with pytest.raises(RuntimeError, match="não tem a ver com modelos"):
+        engines._convert_with_docling(_Broken(), article_pdf)
+    assert _Broken.calls == 1
+
+
+def test_docling_respects_offline_mode_chosen_by_the_user(hub_offline_env, article_pdf, monkeypatch):
+    monkeypatch.setenv("HF_HUB_OFFLINE", "1")
+    converter = _FakeDoclingConverter(models_cached=False)
+
+    with pytest.raises(engines.EngineUnavailable, match="modo offline"):
+        engines._convert_with_docling(converter, article_pdf)
+    assert converter.offline_flags == [True]  # não liga a rede contra a escolha de quem usa
+
+
+@pytest.mark.skipif(not os.environ.get("ARTIGO2MD_SLOW"), reason="lento: defina ARTIGO2MD_SLOW=1")
+def test_docling_real_conversion_does_not_contact_the_hub_when_cached(article_pdf, monkeypatch):
+    """Conversão real, com os modelos já em cache: nenhuma consulta de endereço externo."""
+    import socket
+
+    lookups: list[str] = []
+
+    def _record(host, *_args, **_kwargs):
+        lookups.append(str(host))
+        raise OSError("rede bloqueada pelo teste")
+
+    monkeypatch.setattr(socket, "getaddrinfo", _record)
+    monkeypatch.setattr(engines, "_docling_cache", {})
+
+    result = engines.run_docling(article_pdf)
+
+    assert "randomized trial" in result.markdown
+    assert lookups == []

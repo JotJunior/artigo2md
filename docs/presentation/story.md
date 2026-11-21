@@ -56,7 +56,7 @@ Nenhum documento do projeto contém dado inventado. Sem fonte rastreável, o tra
 
 <!-- slide: chapter -->
 ## Do retrato à entrega
-O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. Esses planos foram executados e conferidos contra o combinado, e a conferência mais recente abriu um item novo de privacidade.
+O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. Esses planos foram executados e conferidos contra o combinado, inclusive um item de privacidade que a própria conferência revelou.
 
 <!-- slide: spec key=command-line-interface -->
 ## Converter pastas inteiras com um comando
@@ -84,9 +84,9 @@ O produto reúne conversores com talentos diferentes: um principal para páginas
 ### Como foi pensada
 A garantia de privacidade estava declarada para apenas um dos conversores. A decisão foi estendê-la a todos: recursos remotos desligados de forma explícita e coleta de dados de uso desativada sempre que o conversor oferece essa opção.
 ### Como foi enriquecida
-As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente. Baixar os modelos na primeira conversão continua permitido: isso traz dados para a máquina, não envia o documento. Uma verificação em execução real mostrou, porém, que o conversor principal consulta a central de modelos mesmo com tudo já baixado, e evitar esse contato virou requisito.
+As perguntas transformaram a privacidade em exigência para todos os conversores e mantiveram a política de aceitar, do conversor opcional de fórmulas, apenas a geração que trabalha localmente. Baixar os modelos na primeira conversão continua permitido: isso traz dados para a máquina, não envia o documento. Uma verificação em execução real mostrou, porém, que o conversor principal consultava a central de modelos mesmo com tudo já baixado, e evitar esse contato virou requisito.
 ### Como foi implementada
-Quase tudo entregue: os recursos remotos do conversor principal ficam desligados de forma declarada, a coleta de dados de uso é desativada e cada conversor tem a sua verificação automática. Com a rede bloqueada, a conversão real funciona normalmente. Falta a tarefa aberta pela última conferência: evitar a consulta à central de modelos quando eles já estão baixados.
+Entregue e conferida contra o combinado: os recursos remotos do conversor principal ficam desligados de forma declarada, a coleta de dados de uso é desativada e, com os modelos já baixados, a conversão acontece sem nenhum contato com a central de modelos. A rede só é usada na primeira conversão, para baixá-los. Cada conversor tem a sua verificação automática.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
 @metric Revisão final | converge
@@ -162,7 +162,7 @@ O produto veio primeiro. A documentação de cada peça chegou depois e, logo em
 
 <!-- slide: closing -->
 ## O que vem a seguir
-O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. A base para isso está pronta: quase tudo o que foi planejado está entregue e conferido. Falta evitar que o conversor principal consulte a central de modelos quando tudo já está baixado.
+O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. A base para isso está pronta: o que foi planejado está entregue e conferido, e, com os modelos já baixados, o conversor principal trabalha sem contatar a central de modelos.
 > Qualidade e robustez em primeiro lugar.
 @source docs/briefing.md
 @source docs/specs/conversion-engines/spec.md

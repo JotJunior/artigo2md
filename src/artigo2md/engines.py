@@ -98,6 +98,65 @@ def _ocr_options():
     return po.EasyOcrOptions(lang=["pt", "en"])
 
 
+def _set_hub_offline(offline: bool) -> None:
+    """Liga ou desliga o modo offline do hub de modelos só neste processo.
+
+    Mexe no valor em memória, e não na variável de ambiente, para não valer também para o
+    MinerU, que roda como processo externo e baixa os próprios modelos.
+    """
+    import huggingface_hub.constants as hub_constants
+
+    hub_constants.HF_HUB_OFFLINE = offline
+
+
+def _is_missing_model(exc: BaseException) -> bool:
+    """O erro, ou algum erro que o causou, é o do hub para modelo ausente do cache?"""
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    seen: set[int] = set()
+    current: BaseException | None = exc
+    while current is not None and id(current) not in seen:
+        if isinstance(current, LocalEntryNotFoundError):
+            return True
+        seen.add(id(current))
+        current = current.__cause__ or current.__context__
+    return False
+
+
+def _convert_with_docling(converter, path: Path):
+    """Converte sem contatar o hub de modelos quando eles já estão em cache.
+
+    Mesmo com tudo em cache, o hub é consultado a cada primeira conversão do processo. Por
+    isso a conversão começa com o hub em modo offline; só quando falta modelo (primeira
+    conversão da máquina) ela é repetida com a rede liberada, para baixar.
+    """
+    user_wants_offline = any(
+        os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
+        for name in ("HF_HUB_OFFLINE", "TRANSFORMERS_OFFLINE")
+    )
+    _set_hub_offline(True)
+    try:
+        return converter.convert(str(path))
+    except Exception as exc:
+        if not _is_missing_model(exc):
+            raise
+        if user_wants_offline:
+            raise EngineUnavailable(
+                "Os modelos do Docling ainda não foram baixados e o modo offline do hub "
+                "(HF_HUB_OFFLINE) está ativo. Desative-o para a primeira conversão."
+            ) from exc
+    _set_hub_offline(False)
+    try:
+        return converter.convert(str(path))
+    except Exception as exc:
+        if not _is_missing_model(exc):
+            raise
+        raise EngineUnavailable(
+            "Não foi possível baixar os modelos do Docling. Verifique a conexão com a "
+            "internet: ela só é necessária na primeira conversão."
+        ) from exc
+
+
 def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
     try:
         converter = _docling_converter(ocr)
@@ -105,7 +164,7 @@ def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
         raise EngineUnavailable(
             f"Docling não está instalado. Rode: {install_hint('docling')}"
         ) from exc
-    result = converter.convert(str(path))
+    result = _convert_with_docling(converter, path)
     doc = result.document
     return EngineOutput(
         engine="docling" + ("+ocr" if ocr else ""),

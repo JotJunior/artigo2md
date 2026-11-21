@@ -9,13 +9,15 @@ A spec foi reconstituída do código existente; o que falta implementar é o que
 1. **FR-013** — nenhum motor envia o documento ou conteúdo dele a serviços externos, e a telemetria é desativada sempre que o motor oferece a opção. Hoje o código só trata o MinerU. Abordagem: tornar explícito no adaptador do Docling que serviços remotos ficam desligados e desativar a telemetria do Hugging Face Hub no processo (research, Decisions 1 e 2); MarkItDown, pymupdf4llm e MinerU não precisam de mudança de código (Decisions 3 a 5).
 2. **SC-001** — testes automatizados para FR-002, FR-005, FR-006, FR-007, FR-008, FR-009, FR-012 e FR-013 (research, Decisions 6 a 8).
 
+3. **FR-015** — acrescentado em 2026-11-21: com os modelos em cache, a conversão com o Docling usa o modo offline do hub; o desenho e as sondagens estão em research, Decisions 9 e 10.
+
 FR-001, FR-003, FR-004, FR-010 e FR-011 já têm cenário com teste existente e não mudam.
 
 ## Technical Context
 
 **Language/Version**: Python >= 3.10 (fonte: `pyproject.toml:7`); o ambiente criado pelo `uv sync` em 2026-11-20 usa Python 3.12
-**Primary Dependencies**: docling >= 2.40 e markitdown >= 0.1.2 obrigatórios (fonte: `pyproject.toml:9`); pymupdf4llm opcional (fonte: `pyproject.toml:20`); MinerU 3.x como processo externo opcional (fonte: `src/artigo2md/engines.py:165`). Versões instaladas em 2026-11-20: docling 2.151.1, markitdown 0.1.9, pymupdf4llm 2.1, huggingface-hub 1.33.0
-**Storage**: N/A — os adaptadores devolvem o Markdown em memória; o MinerU usa um diretório temporário (fonte: `src/artigo2md/engines.py:201`)
+**Primary Dependencies**: docling >= 2.40 e markitdown >= 0.1.2 obrigatórios (fonte: `pyproject.toml:9`); pymupdf4llm opcional (fonte: `pyproject.toml:20`); MinerU 3.x como processo externo opcional (fonte: `src/artigo2md/engines.py:224`). Versões instaladas em 2026-11-20: docling 2.151.1, markitdown 0.1.9, pymupdf4llm 2.1, huggingface-hub 1.33.0
+**Storage**: N/A — os adaptadores devolvem o Markdown em memória; o MinerU usa um diretório temporário (fonte: `src/artigo2md/engines.py:260`)
 **Testing**: pytest, com a suíte em `tests` (fonte: `pyproject.toml:34`); o teste real com Docling é opcional e lento (fonte: `tests/test_core.py:129`)
 **Target Platform**: execução local; o README declara teste em macOS com Apple Silicon e Linux (fonte: `README.md:35`)
 **Project Type**: módulo de biblioteca dentro de uma aplicação com linha de comando e interface web

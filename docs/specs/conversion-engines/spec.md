@@ -47,29 +47,29 @@ O artigo2md tem um adaptador para cada motor de conversão (Docling, MarkItDown,
 
 - Sem o pymupdf4llm instalado, a conversão com esse motor sinaliza motor indisponível com a instrução de instalação (fonte: `tests/test_engines.py:162`) (cobre FR-005)
 - Quando o MinerU termina com erro ou não gera Markdown, a conversão falha com o final da saída do processo; com versão incompatível, nenhuma conversão é disparada (fonte: `tests/test_engines.py:139`) (fonte: `tests/test_engines.py:146`) (fonte: `tests/test_engines.py:153`) (cobre FR-009, FR-007)
-- Quando um motor obrigatório não está instalado, o diagnóstico acusa e falha, e a conversão segue para o próximo motor (fonte: `tests/test_cli.py:311`) (fonte: `tests/test_core.py:116`) (cobre FR-014)
-- Com a rede bloqueada e os modelos em cache, a conversão real do Docling funciona; sem bloqueio, ela tenta conexões ao hub de modelos para conferi-los, sem enviar o documento, e com o modo offline do hub essas tentativas somem (fonte: `docs/specs/conversion-engines/research.md`) (cobre FR-013)
-- [PENDENTE: qual teste cobre o uso do modo offline do hub quando os modelos já estão em cache (FR-015)?]
+- Quando um motor obrigatório não está instalado, o diagnóstico acusa e falha, e a conversão segue para o próximo motor (fonte: `tests/test_cli.py:316`) (fonte: `tests/test_core.py:116`) (cobre FR-014)
+- Com a rede bloqueada e os modelos em cache, a conversão real do Docling funciona; até 2026-11-21 ela ainda tentava conexões ao hub de modelos para conferi-los, sem enviar o documento, o que o modo offline de FR-015 eliminou (fonte: `docs/specs/conversion-engines/research.md`) (cobre FR-013)
+- Com os modelos em cache, a conversão acontece com o hub em modo offline e, na conversão real, nenhum endereço externo é consultado; quando falta modelo, ela é repetida com a rede liberada; se o download não é possível, ou se o modo offline foi ativado por quem usa, a falha vem em português (fonte: `tests/test_engines.py:228`) (fonte: `tests/test_engines.py:235`) (fonte: `tests/test_engines.py:242`) (fonte: `tests/test_engines.py:270`) (fonte: `tests/test_engines.py:280`) (cobre FR-015)
 
 ## Requirements
 
 ### Functional Requirements
 
-- **FR-001**: O sistema converte com o Docling com estrutura de tabelas no modo preciso (o modo de maior precisão do reconhecimento de tabelas do Docling, com correspondência de células) e devolve o Markdown e o número de tabelas. (fonte: `src/artigo2md/engines.py:101`) (fonte: `src/artigo2md/engines.py:61`)
+- **FR-001**: O sistema converte com o Docling com estrutura de tabelas no modo preciso (o modo de maior precisão do reconhecimento de tabelas do Docling, com correspondência de células) e devolve o Markdown e o número de tabelas. (fonte: `src/artigo2md/engines.py:160`) (fonte: `src/artigo2md/engines.py:61`)
 - **FR-002**: Quando o OCR é pedido, o sistema usa no macOS o OCR nativo da Apple com os idiomas pt-BR e en-US; nos demais sistemas usa a opção automática do Docling ou, na falta dela, o EasyOCR. (fonte: `src/artigo2md/engines.py:90`)
-- **FR-003**: O sistema converte com o MarkItDown com plugins desligados. (fonte: `src/artigo2md/engines.py:119`)
-- **FR-004**: O sistema converte com o pymupdf4llm quando ele está instalado. (fonte: `src/artigo2md/engines.py:144`)
-- **FR-005**: Sem o pymupdf4llm instalado, o sistema sinaliza motor indisponível com a instrução de instalação. (fonte: `src/artigo2md/engines.py:123`)
-- **FR-006**: O sistema localiza o MinerU pelo comando no PATH ou pelo caminho indicado na variável de ambiente ARTIGO2MD_MINERU. (fonte: `src/artigo2md/engines.py:155`)
-- **FR-007**: O sistema só considera o MinerU utilizável na linha 3.x; outra versão é reportada como incompatível. (fonte: `src/artigo2md/engines.py:181`)
-- **FR-008**: O sistema executa o MinerU como processo externo com a telemetria desativada pela variável MINERU_TELEMETRY_DISABLED e usa o maior arquivo Markdown gerado; cada execução tem limite de 1800 segundos. (fonte: `src/artigo2md/engines.py:200`) (fonte: `src/artigo2md/engines.py:194`)
-- **FR-009**: Quando o MinerU termina com erro ou não gera Markdown, o sistema sinaliza falha com os últimos 600 caracteres da saída do processo. (fonte: `src/artigo2md/engines.py:207`)
-- **FR-010**: O sistema informa quais dos quatro motores estão disponíveis na máquina, verificando a instalação sem importar os pacotes. (fonte: `src/artigo2md/engines.py:212`)
-- **FR-011**: O sistema mantém a ficha de cada motor (identificador, nome, licença, obrigatoriedade, papel, peso, instalação) com o estado de instalação e o detalhe de versão incompatível do MinerU. (fonte: `src/artigo2md/engines.py:238`)
+- **FR-003**: O sistema converte com o MarkItDown com plugins desligados. (fonte: `src/artigo2md/engines.py:178`)
+- **FR-004**: O sistema converte com o pymupdf4llm quando ele está instalado. (fonte: `src/artigo2md/engines.py:203`)
+- **FR-005**: Sem o pymupdf4llm instalado, o sistema sinaliza motor indisponível com a instrução de instalação. (fonte: `src/artigo2md/engines.py:208`)
+- **FR-006**: O sistema localiza o MinerU pelo comando no PATH ou pelo caminho indicado na variável de ambiente ARTIGO2MD_MINERU. (fonte: `src/artigo2md/engines.py:214`)
+- **FR-007**: O sistema só considera o MinerU utilizável na linha 3.x; outra versão é reportada como incompatível. (fonte: `src/artigo2md/engines.py:240`)
+- **FR-008**: O sistema executa o MinerU como processo externo com a telemetria desativada pela variável MINERU_TELEMETRY_DISABLED e usa o maior arquivo Markdown gerado; cada execução tem limite de 1800 segundos. (fonte: `src/artigo2md/engines.py:259`) (fonte: `src/artigo2md/engines.py:253`)
+- **FR-009**: Quando o MinerU termina com erro ou não gera Markdown, o sistema sinaliza falha com os últimos 600 caracteres da saída do processo. (fonte: `src/artigo2md/engines.py:266`)
+- **FR-010**: O sistema informa quais dos quatro motores estão disponíveis na máquina, verificando a instalação sem importar os pacotes. (fonte: `src/artigo2md/engines.py:271`)
+- **FR-011**: O sistema mantém a ficha de cada motor (identificador, nome, licença, obrigatoriedade, papel, peso, instalação) com o estado de instalação e o detalhe de versão incompatível do MinerU. (fonte: `src/artigo2md/engines.py:297`)
 - **FR-012**: O conversor do Docling é criado uma vez por modo (com ou sem OCR) e reutilizado. (fonte: `src/artigo2md/engines.py:73`)
 - **FR-013**: Nenhum motor envia o documento ou conteúdo dele a serviços externos, e a telemetria é desativada sempre que o motor oferece essa opção: os serviços remotos do Docling ficam desligados de forma explícita e a telemetria do hub de modelos é desativada no processo; o download de modelos do Docling na primeira conversão continua permitido. (informado pelo operador) (fonte: `src/artigo2md/engines.py:69`) (fonte: `src/artigo2md/engines.py:27`)
 - **FR-014**: Quando um motor obrigatório não está instalado, o diagnóstico o mostra como ausente e termina com código 1, e na conversão ele conta como tentativa com erro e o próximo motor é tentado. (informado pelo operador) (fonte: `src/artigo2md/cli.py:133`) (fonte: `src/artigo2md/router.py:137`)
-- **FR-015**: Quando os modelos do Docling já estão em cache, o sistema usa o modo offline do hub de modelos, de forma que a conversão não contata o hub; sem cache, o download na primeira conversão continua permitido. Requisito definido em 2026-11-21, ainda não observado no código. (informado pelo operador)
+- **FR-015**: Quando os modelos do Docling já estão em cache, o sistema usa o modo offline do hub de modelos, de forma que a conversão não contata o hub; sem cache, a conversão é repetida com a rede liberada para baixar os modelos, a menos que o modo offline tenha sido ativado por quem usa. (informado pelo operador) (fonte: `src/artigo2md/engines.py:126`)
 
 ### Inferido (nao confirmado)
 
