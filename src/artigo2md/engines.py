@@ -21,6 +21,11 @@ import threading
 from dataclasses import dataclass, field
 from pathlib import Path
 
+# Nada sai da máquina: desliga a telemetria do Hugging Face Hub, que o Docling usa para
+# baixar modelos. O hub lê a variável ao ser importado, por isso ela é definida aqui,
+# antes de qualquer import do Docling.
+os.environ["HF_HUB_DISABLE_TELEMETRY"] = "1"
+
 
 @dataclass
 class EngineOutput:
@@ -34,9 +39,35 @@ class EngineUnavailable(RuntimeError):
     pass
 
 
+def install_hint(engine_id: str) -> str:
+    """Comando que instala o motor: o da ficha, para os opcionais; `uv sync`, para os incluídos."""
+    for info in ENGINE_INFO:
+        if info["id"] == engine_id:
+            return info["install"] or "uv sync"
+    raise ValueError(f"Motor desconhecido: {engine_id}")
+
+
 # ── Docling ──────────────────────────────────────────────────────────────────
 _docling_lock = threading.Lock()
 _docling_cache: dict[bool, object] = {}
+
+
+def _docling_pipeline_options(ocr: bool):
+    """Opções do pipeline de PDF: tabelas no modo preciso, OCR sob demanda, nada remoto."""
+    from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
+
+    opts = PdfPipelineOptions()
+    opts.do_table_structure = True
+    opts.table_structure_options.mode = TableFormerMode.ACCURATE
+    opts.table_structure_options.do_cell_matching = True
+    opts.do_ocr = ocr
+    if ocr:
+        opts.ocr_options = _ocr_options()
+    # Serviços remotos desligados de forma explícita, sem depender do padrão do Docling.
+    # Versões antigas do Docling não têm o campo.
+    if hasattr(opts, "enable_remote_services"):
+        opts.enable_remote_services = False
+    return opts
 
 
 def _docling_converter(ocr: bool):
@@ -45,21 +76,12 @@ def _docling_converter(ocr: bool):
         if ocr in _docling_cache:
             return _docling_cache[ocr]
         from docling.datamodel.base_models import InputFormat
-        from docling.datamodel.pipeline_options import (
-            PdfPipelineOptions,
-            TableFormerMode,
-        )
         from docling.document_converter import DocumentConverter, PdfFormatOption
 
-        opts = PdfPipelineOptions()
-        opts.do_table_structure = True
-        opts.table_structure_options.mode = TableFormerMode.ACCURATE
-        opts.table_structure_options.do_cell_matching = True
-        opts.do_ocr = ocr
-        if ocr:
-            opts.ocr_options = _ocr_options()
         converter = DocumentConverter(
-            format_options={InputFormat.PDF: PdfFormatOption(pipeline_options=opts)}
+            format_options={
+                InputFormat.PDF: PdfFormatOption(pipeline_options=_docling_pipeline_options(ocr))
+            }
         )
         _docling_cache[ocr] = converter
         return converter
@@ -77,7 +99,13 @@ def _ocr_options():
 
 
 def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
-    result = _docling_converter(ocr).convert(str(path))
+    try:
+        converter = _docling_converter(ocr)
+    except ImportError as exc:
+        raise EngineUnavailable(
+            f"Docling não está instalado. Rode: {install_hint('docling')}"
+        ) from exc
+    result = converter.convert(str(path))
     doc = result.document
     return EngineOutput(
         engine="docling" + ("+ocr" if ocr else ""),
@@ -89,7 +117,12 @@ def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
 
 # ── MarkItDown ───────────────────────────────────────────────────────────────
 def run_markitdown(path: Path) -> EngineOutput:
-    from markitdown import MarkItDown
+    try:
+        from markitdown import MarkItDown
+    except ImportError as exc:
+        raise EngineUnavailable(
+            f"MarkItDown não está instalado. Rode: {install_hint('markitdown')}"
+        ) from exc
 
     text = MarkItDown(enable_plugins=False).convert(str(path)).text_content
     return EngineOutput(engine="markitdown", markdown=text or "")
@@ -113,7 +146,7 @@ def run_pymupdf(path: Path) -> EngineOutput:
         import pymupdf4llm
     except ImportError as exc:
         raise EngineUnavailable(
-            "pymupdf4llm não está instalado (opcional). Rode: uv sync --extra pymupdf"
+            f"pymupdf4llm não está instalado (opcional). Rode: {install_hint('pymupdf')}"
         ) from exc
     return EngineOutput(engine="pymupdf", markdown=pymupdf4llm.to_markdown(str(path)))
 
@@ -161,7 +194,9 @@ def mineru_available() -> bool:
 def run_mineru(path: Path, timeout: int = 1800) -> EngineOutput:
     ok, detail = mineru_status()
     if not ok:
-        raise EngineUnavailable(f"MinerU indisponível ({detail}). Veja o README.")
+        # O detalhe de versão incompatível já traz o comando; nos outros casos, vem da ficha.
+        hint = "" if "instale" in detail else f" Instale com: {install_hint('mineru')}."
+        raise EngineUnavailable(f"MinerU indisponível ({detail}).{hint} Veja o README.")
     env = dict(os.environ, MINERU_TELEMETRY_DISABLED="1")  # nada sai da máquina
     with tempfile.TemporaryDirectory(prefix="artigo2md-mineru-") as tmp:
         proc = subprocess.run(
