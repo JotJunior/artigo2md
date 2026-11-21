@@ -49,11 +49,14 @@ def install_hint(engine_id: str) -> str:
 
 # ── Docling ──────────────────────────────────────────────────────────────────
 _docling_lock = threading.Lock()
-_docling_cache: dict[bool, object] = {}
+_docling_cache: dict[tuple[bool, bool], object] = {}
 
 
-def _docling_pipeline_options(ocr: bool):
-    """Opções do pipeline de PDF: tabelas no modo preciso, OCR sob demanda, nada remoto."""
+def _docling_pipeline_options(ocr: bool, cpu: bool = False):
+    """Opções do pipeline de PDF: tabelas no modo preciso, OCR sob demanda, nada remoto.
+
+    Com `cpu`, os modelos rodam no processador em vez da placa de vídeo.
+    """
     from docling.datamodel.pipeline_options import PdfPipelineOptions, TableFormerMode
 
     opts = PdfPipelineOptions()
@@ -63,6 +66,12 @@ def _docling_pipeline_options(ocr: bool):
     opts.do_ocr = ocr
     if ocr:
         opts.ocr_options = _ocr_options()
+    if cpu:
+        try:
+            from docling.datamodel.accelerator_options import AcceleratorDevice, AcceleratorOptions
+        except ImportError:  # versões antigas do Docling
+            from docling.datamodel.pipeline_options import AcceleratorDevice, AcceleratorOptions
+        opts.accelerator_options = AcceleratorOptions(device=AcceleratorDevice.CPU)
     # Serviços remotos desligados de forma explícita, sem depender do padrão do Docling.
     # Versões antigas do Docling não têm o campo.
     if hasattr(opts, "enable_remote_services"):
@@ -70,20 +79,44 @@ def _docling_pipeline_options(ocr: bool):
     return opts
 
 
-def _docling_converter(ocr: bool):
-    """Cria (uma vez) o conversor; carregar os modelos é a parte cara."""
+def is_gpu_oom(exc_or_text) -> bool:
+    """Falta de memória na placa de vídeo (CUDA/MPS). Comum quando outro programa usa a GPU."""
+    text = str(exc_or_text).lower()
+    return "out of memory" in text and ("cuda" in text or "mps" in text or "gpu" in text)
+
+
+def release_gpu_memory() -> None:
+    """Descarta os modelos do Docling e devolve a memória da placa (antes do MinerU,
+    que roda em outro processo e precisa da GPU livre)."""
     with _docling_lock:
-        if ocr in _docling_cache:
-            return _docling_cache[ocr]
+        _docling_cache.clear()
+    import gc
+
+    gc.collect()
+    torch = sys.modules.get("torch")  # só se já foi carregado; nunca importar aqui
+    if torch is not None:
+        try:
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+        except Exception:
+            pass
+
+
+def _docling_converter(ocr: bool, cpu: bool = False):
+    """Cria (uma vez) o conversor; carregar os modelos é a parte cara."""
+    key = (ocr, cpu)
+    with _docling_lock:
+        if key in _docling_cache:
+            return _docling_cache[key]
         from docling.datamodel.base_models import InputFormat
         from docling.document_converter import DocumentConverter, PdfFormatOption
 
         converter = DocumentConverter(
             format_options={
-                InputFormat.PDF: PdfFormatOption(pipeline_options=_docling_pipeline_options(ocr))
+                InputFormat.PDF: PdfFormatOption(pipeline_options=_docling_pipeline_options(ocr, cpu))
             }
         )
-        _docling_cache[ocr] = converter
+        _docling_cache[key] = converter
         return converter
 
 
@@ -129,6 +162,10 @@ def _convert_with_docling(converter, path: Path):
     Mesmo com tudo em cache, o hub é consultado a cada primeira conversão do processo. Por
     isso a conversão começa com o hub em modo offline; só quando falta modelo (primeira
     conversão da máquina) ela é repetida com a rede liberada, para baixar.
+
+    Falha de página não vira exceção (`raises_on_error=False`): quem chama confere o
+    estado do resultado. A falta de modelo acontece ao montar o pipeline e continua
+    chegando aqui como exceção.
     """
     user_wants_offline = any(
         os.environ.get(name, "").strip().lower() in ("1", "true", "yes", "on")
@@ -136,7 +173,7 @@ def _convert_with_docling(converter, path: Path):
     )
     _set_hub_offline(True)
     try:
-        return converter.convert(str(path))
+        return converter.convert(str(path), raises_on_error=False)
     except Exception as exc:
         if not _is_missing_model(exc):
             raise
@@ -147,7 +184,7 @@ def _convert_with_docling(converter, path: Path):
             ) from exc
     _set_hub_offline(False)
     try:
-        return converter.convert(str(path))
+        return converter.convert(str(path), raises_on_error=False)
     except Exception as exc:
         if not _is_missing_model(exc):
             raise
@@ -157,20 +194,42 @@ def _convert_with_docling(converter, path: Path):
         ) from exc
 
 
+def _docling_ok(result) -> bool:
+    status = getattr(result.status, "value", str(result.status))
+    return str(status).lower() == "success"
+
+
 def run_docling(path: Path, ocr: bool = False) -> EngineOutput:
+    cpu = False
     try:
         converter = _docling_converter(ocr)
     except ImportError as exc:
         raise EngineUnavailable(
             f"Docling não está instalado. Rode: {install_hint('docling')}"
         ) from exc
-    result = _convert_with_docling(converter, path)
+    try:
+        result = _convert_with_docling(converter, path)
+        # O Docling engole a falta de memória da GPU página a página e devolve um
+        # resultado parcial (sem tabelas, com texto faltando). Parcial → refaz na CPU.
+        retry = not _docling_ok(result)
+    except Exception as exc:
+        if not is_gpu_oom(exc):
+            raise
+        result, retry = None, True
+    if retry:
+        release_gpu_memory()
+        cpu_result = _convert_with_docling(_docling_converter(ocr, cpu=True), path)
+        # Se os dois saírem parciais (PDF com páginas defeituosas), fica o de mais texto.
+        if (result is None or _docling_ok(cpu_result)
+                or len(cpu_result.document.export_to_markdown())
+                >= len(result.document.export_to_markdown())):
+            result, cpu = cpu_result, True
     doc = result.document
     return EngineOutput(
-        engine="docling" + ("+ocr" if ocr else ""),
+        engine="docling" + ("+ocr" if ocr else "") + ("+cpu" if cpu else ""),
         markdown=doc.export_to_markdown(),
         tables=len(doc.tables),
-        extra={"status": str(result.status)},
+        extra={"status": str(result.status), "gpu_fallback": cpu},
     )
 
 
@@ -256,16 +315,30 @@ def run_mineru(path: Path, timeout: int = 1800) -> EngineOutput:
         # O detalhe de versão incompatível já traz o comando; nos outros casos, vem da ficha.
         hint = "" if "instale" in detail else f" Instale com: {install_hint('mineru')}."
         raise EngineUnavailable(f"MinerU indisponível ({detail}).{hint} Veja o README.")
+    release_gpu_memory()  # o MinerU roda em outro processo e precisa da placa livre
     env = dict(os.environ, MINERU_TELEMETRY_DISABLED="1")  # nada sai da máquina
-    with tempfile.TemporaryDirectory(prefix="artigo2md-mineru-") as tmp:
-        proc = subprocess.run(
-            [_mineru_exe(), "-p", str(path), "-o", tmp],
-            capture_output=True, text=True, timeout=timeout, env=env,
-        )
-        mds = sorted(Path(tmp).rglob("*.md"), key=lambda p: p.stat().st_size, reverse=True)
-        if proc.returncode != 0 or not mds:
-            raise RuntimeError("MinerU falhou: " + (proc.stderr or proc.stdout)[-600:])
-        return EngineOutput(engine="mineru", markdown=mds[0].read_text(encoding="utf-8"))
+
+    def attempt(extra_env: dict) -> tuple[str | None, str]:
+        with tempfile.TemporaryDirectory(prefix="artigo2md-mineru-") as tmp:
+            proc = subprocess.run(
+                [_mineru_exe(), "-p", str(path), "-o", tmp],
+                capture_output=True, text=True, timeout=timeout, env=dict(env, **extra_env),
+            )
+            mds = sorted(Path(tmp).rglob("*.md"), key=lambda p: p.stat().st_size, reverse=True)
+            if proc.returncode == 0 and mds:
+                return mds[0].read_text(encoding="utf-8"), ""
+            return None, proc.stderr + proc.stdout
+
+    markdown, log = attempt({})
+    cpu = False
+    if markdown is None and is_gpu_oom(log) and "MINERU_DEVICE_MODE" not in os.environ:
+        # A placa está cheia (outro programa usando a GPU): refaz no processador.
+        cpu = True
+        markdown, log = attempt({"MINERU_DEVICE_MODE": "cpu"})
+    if markdown is None:
+        raise RuntimeError("MinerU falhou: " + log[-600:])
+    return EngineOutput(engine="mineru" + ("+cpu" if cpu else ""), markdown=markdown,
+                        extra={"gpu_fallback": cpu})
 
 
 def available_engines() -> dict[str, bool]:
