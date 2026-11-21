@@ -56,7 +56,7 @@ Nenhum documento do projeto contém dado inventado. Sem fonte rastreável, o tra
 
 <!-- slide: chapter -->
 ## Do retrato à entrega
-O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. A maior parte desses planos já foi executada e conferida contra o combinado.
+O produto já existia e funcionava. Cada peça foi documentada a partir do que ele realmente faz, passou por perguntas e decisões e, onde havia lacuna, ganhou um plano. Todos esses planos foram executados e conferidos contra o combinado.
 
 <!-- slide: spec key=command-line-interface -->
 ## Converter pastas inteiras com um comando
@@ -104,11 +104,12 @@ Depois de examinar o documento, o produto monta a ordem de conversores a tentar,
 ### Como foi pensada
 A nota cai quando o documento cita tabelas e nenhuma aparece no resultado, quando o texto sai curto demais ou quando boa parte do conteúdo original se perde. É a resposta direta ao problema que deu origem ao projeto.
 ### Como foi enriquecida
-As perguntas ratificaram os critérios da nota como a definição de conversão aceitável e fixaram o que acontece quando alguém pede um conversor que não está instalado: o produto explica como instalar, sem trocar a escolha da pessoa. Uma verificação prática mostrou que essa orientação só aparecia para um dos conversores, e completar os demais entrou no plano.
+As perguntas ratificaram os critérios da nota como a definição de conversão aceitável e fixaram o que acontece quando alguém pede um conversor que não está instalado: o produto explica como instalar, sem trocar a escolha da pessoa. Uma verificação prática mostrou que essa orientação só aparecia para um dos conversores, e a lacuna foi fechada. Ficou decidido também não impor limite de tempo além do que já existe.
 ### Como foi implementada
-A capacidade já existe no produto. Completar a orientação de instalação para todos os conversores e as verificações automáticas que faltam está planejado e em andamento, ainda sem tarefas concluídas.
+Entregue e conferida contra o combinado: quem pede um conversor ausente recebe, em português, a orientação de instalação de qualquer conversor, e cada regra de escolha e de nota tem a sua verificação automática.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
+@metric Revisão final | converge
 @source docs/specs/engine-routing/spec.md
 @source docs/specs/engine-routing/research.md
 
@@ -137,18 +138,19 @@ Uma página local onde a pessoa envia um ou mais PDFs, acompanha a fila de conve
 ### Como foi pensada
 As conversões acontecem uma por vez, porque os conversores são pesados. Cada pedido guarda o documento original, o andamento e o resultado, e um pedido interrompido por reinício fica sinalizado em vez de sumir.
 ### Como foi enriquecida
-As perguntas fecharam decisões de uso: a página não pede senha e atende só o próprio computador por padrão, não há limite de envio e os arquivos ficam guardados até a pessoa apagar.
+As perguntas fecharam decisões de uso: a página não pede senha e atende só o próprio computador por padrão, não há limite de envio nem de fila e os arquivos ficam guardados até a pessoa apagar.
 ### Como foi implementada
-A página já existe no produto e nenhuma mudança de comportamento está prevista. As verificações automáticas dos casos de erro e a conferência do combinado entre a página e o serviço local estão planejadas e em andamento, ainda sem tarefas concluídas.
+Conferida contra o combinado, sem mudança de comportamento: os casos de erro ganharam verificação automática e um teste confirma que a página e o serviço local usam os mesmos nomes para cada informação.
 @metric Tarefas entregues | tasks
 @metric Dúvidas esclarecidas | clarify-questions
+@metric Revisão final | converge
 @source docs/specs/web-interface/spec.md
 @source docs/specs/web-interface/research.md
 @source docs/specs/web-interface/data-model.md
 
 <!-- slide: timeline -->
 ## A jornada
-O produto veio primeiro. A documentação de cada peça chegou depois e, logo em seguida, as melhorias planejadas começaram a ser entregues e conferidas.
+O produto veio primeiro. A documentação de cada peça chegou depois e, logo em seguida, as melhorias planejadas foram entregues e conferidas, peça por peça.
 @timeline
 
 <!-- slide: numbers -->
@@ -160,9 +162,10 @@ O produto veio primeiro. A documentação de cada peça chegou depois e, logo em
 
 <!-- slide: closing -->
 ## O que vem a seguir
-O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. Antes disso, o compromisso assumido é concluir o que ainda está em andamento, para que cada comportamento do produto tenha a sua verificação automática.
+O horizonte é crescer em capacidades: novos formatos, novos conversores e mais recursos de qualidade. A base para isso está pronta: o que foi planejado até aqui está entregue e conferido. Fica em aberto uma prova direta de que a conversão principal não envia conteúdo.
 > Qualidade e robustez em primeiro lugar.
 @source docs/briefing.md
+@source docs/specs/conversion-engines/spec.md
 
 <!-- slide: sources -->
 ## Fontes

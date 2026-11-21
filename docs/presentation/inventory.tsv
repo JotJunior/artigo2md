@@ -1,6 +1,6 @@
 # cstk-presentation-inventory v1
 project	artigo2md
-briefing	docs/briefing.md	2573796031	artigo2md
+briefing	docs/briefing.md	229907948	artigo2md
 constitution	docs/constitution.md	2728024328	1.0.0
 principle	1	I	no	Processamento 100% Local
 principle	2	II	no	Dependências Obrigatórias com Licença Permissiva
@@ -8,8 +8,8 @@ principle	3	III	no	Mensagens ao Usuário em Português
 principle	4	IV	no	Testes Antes do Commit
 principle	5	V	yes	Veracidade de Dados — Zero Fabricação
 spec	command-line-interface	active	-	implemented	spec,plan,research,data-model,quickstart,tasks,checklists,contracts,converge-report	2	7	30	30	clean	4264788060	docs/specs/command-line-interface/spec.md	Linha de comando
-spec	conversion-engines	active	-	implemented	spec,plan,research,data-model,quickstart,tasks,checklists,converge-report	2	6	27	27	clean	2940262145	docs/specs/conversion-engines/spec.md	Motores de conversão
-spec	engine-routing	active	-	in-progress	spec,plan,research,data-model,quickstart,tasks,checklists	1	4	0	23	-	1001490396	docs/specs/engine-routing/spec.md	Roteamento de motores e avaliação de qualidade
-spec	pdf-inspection	active	-	implemented	spec,plan,research,data-model,quickstart,tasks,checklists,converge-report	2	6	24	24	clean	580902984	docs/specs/pdf-inspection/spec.md	Inspeção do PDF
-spec	web-interface	active	-	in-progress	spec,plan,research,data-model,quickstart,tasks,checklists,contracts	1	5	0	20	-	3554130420	docs/specs/web-interface/spec.md	Interface web local
-totals	5	5	0	0	81	124	28	5
+spec	conversion-engines	active	-	implemented	spec,plan,research,data-model,quickstart,tasks,checklists,converge-report	2	6	27	27	clean	2422651520	docs/specs/conversion-engines/spec.md	Motores de conversão
+spec	engine-routing	active	-	implemented	spec,plan,research,data-model,quickstart,tasks,checklists,converge-report	2	5	23	23	clean	2592197237	docs/specs/engine-routing/spec.md	Roteamento de motores e avaliação de qualidade
+spec	pdf-inspection	active	-	implemented	spec,plan,research,data-model,quickstart,tasks,checklists,converge-report	2	6	24	24	clean	1961581612	docs/specs/pdf-inspection/spec.md	Inspeção do PDF
+spec	web-interface	active	-	implemented	spec,plan,research,data-model,quickstart,tasks,checklists,contracts,converge-report	2	6	20	20	clean	907842767	docs/specs/web-interface/spec.md	Interface web local
+totals	5	5	0	0	124	124	30	5
