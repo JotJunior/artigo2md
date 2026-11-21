@@ -146,6 +146,15 @@ def test_mineru_runs_with_telemetry_disabled_and_returns_largest_markdown(fake_m
     assert conversion["env"]["MINERU_TELEMETRY_DISABLED"] == "1"
 
 
+def test_mineru_run_releases_docling_models_first(fake_mineru, article_pdf, monkeypatch):
+    """O MinerU roda em outro processo: os conversores do Docling em memória são descartados antes."""
+    monkeypatch.setattr(engines, "_docling_cache", {(False, False): object()})
+
+    engines.run_mineru(article_pdf)
+
+    assert engines._docling_cache == {}
+
+
 def test_mineru_failure_reports_end_of_process_output(fake_mineru, article_pdf):
     fake_mineru["returncode"] = 1
 
