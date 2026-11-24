@@ -1,5 +1,16 @@
 <!--
-Sync Impact Report
+Sync Impact Report (emenda 1.1.1)
+- Version: 1.1.0 → 1.1.1
+- Bump PATCH: clarificação do Princípio II, sem obrigação nova nem removida
+- Principios modificados: II — numa imagem de container, quem decide o enquadramento da licença (inclusive a proibição de GPL/AGPL) é o software do serviço que a imagem entrega; os componentes do sistema base da imagem são documentados apenas como informação
+- Secoes adicionadas: nenhuma
+- Secoes removidas: nenhuma
+- Artefatos que precisam atualizacao: nenhum (a feature container-stack registrou a mesma interpretação como decisão do operador)
+- TODOs pendentes: nenhum
+- Origem: emenda confirmada pelo operador em 2026-11-24, ao responder o bloqueio block-001 da feature container-stack
+-->
+<!--
+Sync Impact Report (emenda 1.1.0)
 - Version: 1.0.1 → 1.1.0
 - Bump MINOR: expansão material dos princípios I a IV para a versão desktop macOS (briefing 2.0). Nenhum princípio foi removido ou redefinido de forma incompatível; as obrigações anteriores permanecem
 - Principios modificados:
@@ -43,11 +54,12 @@ O projeto é MIT (fonte: `pyproject.toml:6`) e, segundo o README, os motores AGP
 
 - Toda dependência obrigatória de código (pip, npm, cargo) tem licença permissiva (MIT, Apache ou BSD).
 - Todo serviço ou imagem de container obrigatório tem licença permissiva ou copyleft fraco (ex.: MPL-2.0) e roda sem modificação do seu código-fonte.
+- Numa imagem de container, o enquadramento acima vale para o software do serviço que a imagem entrega; a licença dos componentes do sistema base da imagem é documentada como informação e não decide o enquadramento.
 - A licença de cada nova dependência, serviço ou imagem é verificada em fonte oficial na etapa `plan` da feature que a introduz.
 
 **MUST NOT:**
 
-- Nenhuma dependência, serviço ou imagem GPL ou AGPL entra como obrigatória; motores AGPL permanecem opcionais.
+- Nenhuma dependência ou serviço GPL ou AGPL entra como obrigatório, nem imagem cujo serviço seja GPL ou AGPL; motores AGPL permanecem opcionais.
 
 ### III. Mensagens ao Usuário em Português
 
@@ -87,4 +99,4 @@ Princípio-base proposto pelo cstk e ratificado (informado pelo operador).
 - Versionamento semântico: MAJOR para remoção ou redefinição incompatível de princípio; MINOR para novo princípio ou expansão material de seção; PATCH para clarificações de texto.
 - Exceção a um princípio exige decisão registrada do stakeholder de decisão antes da mudança.
 
-**Version**: 1.1.0 | **Ratified**: 2026-11-20 | **Last Amended**: 2026-11-23
+**Version**: 1.1.1 | **Ratified**: 2026-11-20 | **Last Amended**: 2026-11-24
