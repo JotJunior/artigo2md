@@ -10,7 +10,7 @@ requisitos da linha de comando, exigidos por SC-001. Hoje nenhum teste chama a l
 **Rationale**: Decisão do operador em 2026-11-20. O caminho de saída passa a depender só da posição do PDF na pasta de entrada, então é estável entre execuções e o pulo de arquivo já convertido (FR-005) continua correto. Antes desta mudança, o destino usava só o nome do PDF e o segundo homônimo era pulado como já existente. Implementado em 2026-11-21: o caminho relativo é calculado na coleta dos PDFs (fonte: `src/artigo2md/cli.py:28`).
 **Alternatives considered**: Sufixo numérico no nome (depende da ordem dos arquivos e muda quando um PDF novo aparece); prefixo com o nome da subpasta só quando há colisão (o nome de um arquivo mudaria conforme os vizinhos).
 
-**Consequência a tratar no backlog**: o layout de saída muda para quem converte pastas com subpastas. O README descreve a conversão de pasta inteira (fonte: `README.md:72`) e precisa ser atualizado junto.
+**Consequência a tratar no backlog**: o layout de saída muda para quem converte pastas com subpastas. O README descreve a conversão de pasta inteira (fonte: `README.md:78`) e precisa ser atualizado junto.
 
 ## Decision 2: Colisões que o espelhamento não resolve
 

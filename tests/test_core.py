@@ -149,3 +149,92 @@ def test_no_network_fixture_blocks_sockets(no_network):
 def test_analyze_does_not_touch_the_network(no_network, article_pdf):
     a = analyze(article_pdf)
     assert a.pages == 2 and a.text_pages == 2
+
+
+def test_is_gpu_oom():
+    assert engines.is_gpu_oom("torch.OutOfMemoryError: CUDA out of memory. Tried to allocate 564.00 MiB")
+    assert engines.is_gpu_oom(RuntimeError("MPS backend out of memory"))
+    assert not engines.is_gpu_oom("MemoryError")
+    assert not engines.is_gpu_oom("arquivo corrompido")
+
+
+def test_mineru_retries_on_cpu_when_gpu_is_full(article_pdf, monkeypatch, tmp_path):
+    """Placa cheia (outro programa usando a GPU) → refaz com MINERU_DEVICE_MODE=cpu."""
+    import subprocess
+    import types
+    from pathlib import Path
+
+    monkeypatch.delenv("MINERU_DEVICE_MODE", raising=False)
+    monkeypatch.setattr(engines, "mineru_status", lambda: (True, "versão 3.4.5"))
+    monkeypatch.setattr(engines, "_mineru_exe", lambda: "mineru")
+    calls = []
+
+    def fake_run(cmd, env, **kw):
+        calls.append(env.get("MINERU_DEVICE_MODE"))
+        assert env["MINERU_TELEMETRY_DISABLED"] == "1"
+        if env.get("MINERU_DEVICE_MODE") != "cpu":
+            return types.SimpleNamespace(returncode=1, stdout="", stderr="CUDA out of memory.")
+        out = Path(cmd[cmd.index("-o") + 1]) / "doc" / "auto"
+        out.mkdir(parents=True)
+        (out / "doc.md").write_text("# ok", encoding="utf-8")
+        return types.SimpleNamespace(returncode=0, stdout="", stderr="")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    result = engines.run_mineru(article_pdf)
+    assert calls == [None, "cpu"]
+    assert result.engine == "mineru+cpu" and result.markdown == "# ok"
+
+
+def test_mineru_other_errors_do_not_retry(article_pdf, monkeypatch):
+    import subprocess
+    import types
+
+    monkeypatch.setattr(engines, "mineru_status", lambda: (True, "versão 3.4.5"))
+    monkeypatch.setattr(engines, "_mineru_exe", lambda: "mineru")
+    calls = []
+
+    def fake_run(cmd, env, **kw):
+        calls.append(1)
+        return types.SimpleNamespace(returncode=1, stdout="", stderr="PDF inválido")
+
+    monkeypatch.setattr(subprocess, "run", fake_run)
+    with pytest.raises(RuntimeError, match="PDF inválido"):
+        engines.run_mineru(article_pdf)
+    assert calls == [1]
+
+
+def test_docling_partial_result_is_redone_on_cpu(article_pdf, monkeypatch):
+    """O Docling engole a falta de memória da GPU e devolve PARTIAL_SUCCESS → refaz na CPU."""
+    import types
+
+    def fake_result(status, md):
+        doc = types.SimpleNamespace(export_to_markdown=lambda: md, tables=[1] * len(md))
+        return types.SimpleNamespace(status=types.SimpleNamespace(value=status), document=doc)
+
+    used = []
+
+    def fake_converter(ocr, cpu=False):
+        used.append(cpu)
+        res = fake_result("success", "# completo") if cpu else fake_result("partial_success", "#")
+        return types.SimpleNamespace(convert=lambda path, raises_on_error=True: res)
+
+    monkeypatch.setattr(engines, "_docling_converter", fake_converter)
+    out = engines.run_docling(article_pdf)
+    assert used == [False, True]
+    assert out.engine == "docling+cpu" and out.markdown == "# completo"
+
+
+def test_docling_success_does_not_retry(article_pdf, monkeypatch):
+    import types
+
+    used = []
+    doc = types.SimpleNamespace(export_to_markdown=lambda: "# ok", tables=[])
+    res = types.SimpleNamespace(status=types.SimpleNamespace(value="success"), document=doc)
+
+    def fake_converter(ocr, cpu=False):
+        used.append(cpu)
+        return types.SimpleNamespace(convert=lambda path, raises_on_error=True: res)
+
+    monkeypatch.setattr(engines, "_docling_converter", fake_converter)
+    assert engines.run_docling(article_pdf).engine == "docling"
+    assert used == [False]

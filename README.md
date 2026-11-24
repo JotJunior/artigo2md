@@ -65,6 +65,12 @@ volta a ocupar ~40 MB. Ajuste com `--idle-timeout SEGUNDOS` (`0` = nunca descarr
 para quem converte o dia todo numa máquina com RAM de sobra). O rodapé da interface mostra
 se o conversor está carregado.
 
+**Placa de vídeo (NVIDIA).** Docling e MinerU usam a GPU sozinhos se o PyTorch a reconhecer.
+Se outro programa estiver ocupando a memória da placa e faltar espaço, a conversão é refeita
+no processador automaticamente (mais lenta, mas não falha); o relatório mostra o motor como
+`docling+cpu` ou `mineru+cpu`. Antes de chamar o MinerU, o artigo2md descarrega os modelos do
+Docling para liberar a placa.
+
 **Linha de comando:**
 
 ```bash

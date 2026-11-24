@@ -22,6 +22,16 @@ def test_docling_pipeline_disables_remote_services_explicitly():
         assert opts.do_ocr is ocr
 
 
+def test_docling_cpu_pipeline_runs_on_the_processor_and_stays_local():
+    from docling.datamodel.accelerator_options import AcceleratorDevice
+
+    opts = engines._docling_pipeline_options(False, cpu=True)
+
+    assert opts.accelerator_options.device == AcceleratorDevice.CPU
+    assert opts.enable_remote_services is False
+    assert engines._docling_pipeline_options(False).accelerator_options.device != AcceleratorDevice.CPU
+
+
 def test_importing_engines_disables_hub_telemetry():
     # Processo novo: confere que a variável já vale quando o hub é importado depois.
     code = (
@@ -136,6 +146,15 @@ def test_mineru_runs_with_telemetry_disabled_and_returns_largest_markdown(fake_m
     assert conversion["env"]["MINERU_TELEMETRY_DISABLED"] == "1"
 
 
+def test_mineru_run_releases_docling_models_first(fake_mineru, article_pdf, monkeypatch):
+    """O MinerU roda em outro processo: os conversores do Docling em memória são descartados antes."""
+    monkeypatch.setattr(engines, "_docling_cache", {(False, False): object()})
+
+    engines.run_mineru(article_pdf)
+
+    assert engines._docling_cache == {}
+
+
 def test_mineru_failure_reports_end_of_process_output(fake_mineru, article_pdf):
     fake_mineru["returncode"] = 1
 
@@ -193,7 +212,7 @@ def test_docling_converter_is_created_once_per_mode(monkeypatch):
 
     assert engines._docling_converter(False) is without_ocr
     assert engines._docling_converter(True) is not without_ocr
-    assert set(engines._docling_cache) == {False, True}
+    assert set(engines._docling_cache) == {(False, False), (True, False)}
 
 
 # ── modo offline do hub de modelos (FR-015) ──────────────────────────────────
@@ -204,7 +223,7 @@ class _FakeDoclingConverter:
         self.models_cached = models_cached
         self.offline_flags: list[bool] = []
 
-    def convert(self, _path):
+    def convert(self, _path, raises_on_error=True):
         import huggingface_hub.constants as hub_constants
         from huggingface_hub.errors import LocalEntryNotFoundError
 
@@ -243,7 +262,7 @@ def test_docling_reports_clearly_when_models_cannot_be_downloaded(hub_offline_en
     class _NeverAvailable:
         calls = 0
 
-        def convert(self, _path):
+        def convert(self, _path, raises_on_error=True):
             from huggingface_hub.errors import LocalEntryNotFoundError
 
             type(self).calls += 1
@@ -258,7 +277,7 @@ def test_docling_other_errors_are_not_retried(hub_offline_env, article_pdf):
     class _Broken:
         calls = 0
 
-        def convert(self, _path):
+        def convert(self, _path, raises_on_error=True):
             type(self).calls += 1
             raise RuntimeError("falha que não tem a ver com modelos")
 
@@ -274,6 +293,55 @@ def test_docling_respects_offline_mode_chosen_by_the_user(hub_offline_env, artic
     with pytest.raises(engines.EngineUnavailable, match="modo offline"):
         engines._convert_with_docling(converter, article_pdf)
     assert converter.offline_flags == [True]  # não liga a rede contra a escolha de quem usa
+
+
+def test_docling_cpu_retry_also_starts_with_the_hub_offline(hub_offline_env, article_pdf, monkeypatch):
+    """Resultado parcial na placa de vídeo: a repetição no processador também começa offline."""
+    import types
+
+    seen: list[tuple[bool, bool]] = []  # (cpu, hub offline)
+
+    def fake_result(status, markdown):
+        doc = types.SimpleNamespace(export_to_markdown=lambda: markdown, tables=[])
+        return types.SimpleNamespace(status=types.SimpleNamespace(value=status), document=doc)
+
+    def fake_converter(_ocr, cpu=False):
+        def convert(_path, raises_on_error=True):
+            assert raises_on_error is False
+            seen.append((cpu, hub_offline_env.HF_HUB_OFFLINE))
+            return fake_result("success", "# completo") if cpu else fake_result("partial_success", "#")
+
+        return types.SimpleNamespace(convert=convert)
+
+    monkeypatch.setattr(engines, "_docling_converter", fake_converter)
+
+    result = engines.run_docling(article_pdf)
+
+    assert seen == [(False, True), (True, True)]
+    assert result.engine == "docling+cpu" and result.extra["gpu_fallback"] is True
+
+
+def test_docling_missing_model_is_not_mistaken_for_gpu_failure(hub_offline_env, article_pdf, monkeypatch):
+    """Sem modelo e sem rede: a falha é a de modelos, e não há repetição no processador."""
+    import types
+
+    from huggingface_hub.errors import LocalEntryNotFoundError
+
+    used: list[bool] = []
+
+    def fake_converter(_ocr, cpu=False):
+        used.append(cpu)
+
+        def convert(_path, raises_on_error=True):
+            raise LocalEntryNotFoundError("sem cache e sem rede (simulado)")
+
+        return types.SimpleNamespace(convert=convert)
+
+    monkeypatch.setattr(engines, "_docling_converter", fake_converter)
+
+    with pytest.raises(engines.EngineUnavailable, match="Não foi possível baixar os modelos do Docling"):
+        engines.run_docling(article_pdf)
+    assert used == [False]
 
 
 @pytest.mark.skipif(not os.environ.get("ARTIGO2MD_SLOW"), reason="lento: defina ARTIGO2MD_SLOW=1")

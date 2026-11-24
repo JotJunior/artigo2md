@@ -35,9 +35,9 @@ O app é monousuário e local: não tem login nem contas, cada Mac tem o seu ban
 Capacidades já presentes no projeto:
 
 1. Inspeção do PDF antes da conversão: páginas escaneadas, tabelas e fórmulas (fonte: `README.md:6`) (fonte: `tests/test_core.py:9`)
-2. Escolha automática do motor, avaliação de qualidade e fallback para o próximo motor, mantendo o resultado de maior nota (fonte: `README.md:79`) (fonte: `tests/test_core.py:116`)
+2. Escolha automática do motor, avaliação de qualidade e fallback para o próximo motor, mantendo o resultado de maior nota (fonte: `README.md:85`) (fonte: `tests/test_core.py:116`)
 3. Quatro motores: Docling e MarkItDown incluídos; pymupdf4llm e MinerU 3.x opcionais (fonte: `README.md:13`) (fonte: `tests/test_core.py:75`)
-4. Linha de comando com os subcomandos convert, serve e doctor (fonte: `CLAUDE.md:10`) (fonte: `README.md:68`)
+4. Linha de comando com os subcomandos convert, serve e doctor (fonte: `CLAUDE.md:10`) (fonte: `README.md:74`)
 5. Interface web: envio de PDFs, fila, visualização do Markdown e download de um arquivo .md ou de todos em .zip (fonte: `README.md:55`) (fonte: `tests/test_web.py:29`)
 
 Capacidades novas da versão desktop (informado pelo operador):
@@ -61,7 +61,7 @@ Capacidades novas da versão desktop (informado pelo operador):
 - Windows e Linux para o app desktop, por enquanto (informado pelo operador)
 - Nuvem: nenhum serviço remoto, nenhuma hospedagem (informado pelo operador)
 - Login, multiusuário e sincronização entre máquinas (informado pelo operador)
-- O README registra que o artigo2md recusa o MinerU 4.x (fonte: `README.md:108`)
+- O README registra que o artigo2md recusa o MinerU 4.x (fonte: `README.md:114`)
 
 ## 4. Prioridades e Trade-offs
 
@@ -105,7 +105,7 @@ Capacidades novas da versão desktop (informado pelo operador):
 - A suíte de testes passa antes de qualquer commit (informado pelo operador)
 - Mensagens ao usuário em português, inclusive na interface do app desktop (informado pelo operador)
 - O teste real com Docling é opcional, habilitado pela variável de ambiente ARTIGO2MD_SLOW (fonte: `tests/test_core.py:129`)
-- Cada conversão recebe uma nota de qualidade; segundo o README, abaixo de 65/100 o próximo motor é tentado (fonte: `README.md:83`)
+- Cada conversão recebe uma nota de qualidade; segundo o README, abaixo de 65/100 o próximo motor é tentado (fonte: `README.md:89`)
 
 **Compliance**: nenhum especifico (informado pelo operador)
 
@@ -116,7 +116,7 @@ Capacidades novas da versão desktop (informado pelo operador):
 **12 meses**: Possível suporte a Windows e Linux no app desktop, já que a exclusividade Apple é "por enquanto" (informado pelo operador) [inferido: horizonte de 12 meses]
 
 **Riscos conhecidos**:
-- Mudanças nos motores de terceiros: versões novas podem quebrar a conversão ou mudar licença/telemetria (informado pelo operador). O README registra que o MinerU 4.x é recusado (fonte: `README.md:108`) e que o MinerU 3.4.5 usa o pacote six sem declará-lo (fonte: `README.md:109`)
+- Mudanças nos motores de terceiros: versões novas podem quebrar a conversão ou mudar licença/telemetria (informado pelo operador). O README registra que o MinerU 4.x é recusado (fonte: `README.md:114`) e que o MinerU 3.4.5 usa o pacote six sem declará-lo (fonte: `README.md:115`)
 - Peso dos modelos: downloads de vários GB e tempo de conversão podem afastar usuários (informado pelo operador). O README cita cerca de 3 GB livres para os modelos do Docling (fonte: `README.md:34`)
 - Sem autenticação: exposição indevida da interface web na rede (informado pelo operador). O README afirma que não há senha (fonte: `README.md:59`)
 - O Docker é pré-requisito para usuários não técnicos: a instalação pode afastá-los se não for bem guiada (informado pelo operador)
