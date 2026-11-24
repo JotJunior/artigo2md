@@ -66,7 +66,7 @@ Pela interface web local, a pessoa envia um ou mais PDFs, acompanha cada convers
 - **FR-013**: O nome do arquivo de saída é derivado do nome enviado, com caracteres fora do conjunto permitido (letras, dígitos, sublinhado, ponto, hífen e espaço) substituídos e limite de 150 caracteres. (fonte: `src/artigo2md/web.py:31`) (fonte: `src/artigo2md/web.py:28`)
 - **FR-014**: A interface não exige autenticação e o servidor escuta apenas na própria máquina por padrão; a exposição na rede depende de escolha explícita de quem inicia o servidor. (informado pelo operador) (fonte: `src/artigo2md/cli.py:152`)
 - **FR-015**: O processo auxiliar de conversão é criado na primeira conversão, encerra-se sozinho depois do tempo ocioso configurado (padrão de 300 segundos; zero significa nunca) e volta a ser criado na conversão seguinte, devolvendo ao sistema a memória dos modelos. (fonte: `src/artigo2md/worker.py:35`) (fonte: `src/artigo2md/web.py:127`)
-- **FR-016**: A consulta de informações verifica os motores sem importar o Docling nem o pymupdf4llm no processo principal, e o rodapé da página mostra se o conversor está carregado. (fonte: `src/artigo2md/engines.py:191`) (fonte: `src/artigo2md/static/index.html:130`)
+- **FR-016**: A consulta de informações verifica os motores sem importar o Docling nem o pymupdf4llm no processo principal, e o rodapé da página mostra se o conversor está carregado. (fonte: `src/artigo2md/engines.py:250`) (fonte: `src/artigo2md/static/index.html:130`)
 - **FR-017**: Quando o processo auxiliar termina de forma inesperada durante uma conversão, o job termina em erro com uma mensagem que sugere tentar de novo ou usar outro motor. (fonte: `src/artigo2md/worker.py:87`)
 
 ### Inferido (nao confirmado)
