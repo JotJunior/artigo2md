@@ -1,0 +1,7 @@
+# Contexto de build mínimo (modo allowlist): nada entra, a não ser o que está liberado abaixo.
+# Assim `stack/.env` (credenciais), `.git` e PDFs nunca vão para o build da imagem da API.
+*
+!pyproject.toml
+!uv.lock
+!src/artigo2md/
+**/__pycache__

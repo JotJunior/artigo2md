@@ -310,7 +310,8 @@ def test_doctor_reports_ready_when_required_engines_are_installed(run_cli, monke
     assert lines[0].startswith(f"artigo2md {__version__} · Python ")
     assert lines[1].split() == ["Docling", "MIT", "ok"]
     assert lines[2].split(maxsplit=2) == ["MinerU", "AGPL-3.0", "não instalado (opcional: instale à parte)"]
-    assert lines[-1] == "Pronto para uso."
+    # a seção de infraestrutura vem depois (tests/test_infra.py e os testes abaixo)
+    assert lines[3] == "Pronto para uso."
 
 
 def test_doctor_fails_when_a_required_engine_is_missing(run_cli, monkeypatch):
@@ -322,6 +323,105 @@ def test_doctor_fails_when_a_required_engine_is_missing(run_cli, monkeypatch):
     assert code == 1
     assert out.splitlines()[1].split() == ["Docling", "MIT", "AUSENTE"]
     assert "Faltam motores obrigatórios" in out
+
+
+# ── doctor: seção de infraestrutura (container-stack, FR-009/FR-010) ─────────────
+@pytest.fixture
+def infra_down(monkeypatch, tmp_path):
+    """Aponta as três portas para endereços sem ninguém ouvindo e isola o `./stack/.env`."""
+    monkeypatch.chdir(tmp_path)
+    ports = []
+    for var in ("ARTIGO2MD_POSTGRES_PORT", "ARTIGO2MD_RABBITMQ_PORT", "ARTIGO2MD_API_PORT"):
+        s = socket.socket()
+        s.bind(("127.0.0.1", 0))
+        port = s.getsockname()[1]
+        s.close()
+        monkeypatch.setenv(var, str(port))
+        ports.append(port)
+    return ports
+
+
+@pytest.mark.parametrize("required_installed", [True, False])
+def test_doctor_exit_code_ignores_infrastructure_state(
+    run_cli, monkeypatch, infra_down, required_installed
+):
+    table = [_engine_row("Docling", required=True, installed=required_installed)]
+    monkeypatch.setattr(engines, "engine_table", lambda: table)
+
+    code, out, _err = run_cli("doctor")
+
+    assert code == (0 if required_installed else 1)
+    lines = out.splitlines()
+    start = lines.index("Infraestrutura (versão desktop, opcional):")
+    assert [line.split()[0] for line in lines[start + 1 : start + 4]] == ["postgres", "rabbitmq", "api"]
+    assert all("inacessível" in line for line in lines[start + 1 : start + 4])
+    assert lines[-1].startswith("Para subir a infraestrutura: sh stack/up.sh")
+
+
+def test_doctor_omits_instruction_when_all_services_are_reachable(run_cli, monkeypatch, infra_down):
+    table = [_engine_row("Docling", required=True, installed=True)]
+    monkeypatch.setattr(engines, "engine_table", lambda: table)
+    from artigo2md import infra
+
+    reachable = [
+        infra.InfraReport(name, "127.0.0.1", 1000 + i, infra.REACHABLE, "acessível")
+        for i, name in enumerate(["postgres", "rabbitmq", "api"])
+    ]
+    monkeypatch.setattr(infra, "collect", lambda *a, **k: reachable)
+
+    code, out, _err = run_cli("doctor")
+
+    assert code == 0
+    assert "acessível" in out
+    assert "Para subir a infraestrutura" not in out
+
+
+def test_doctor_survives_an_unexpected_infrastructure_failure(run_cli, monkeypatch):
+    table = [_engine_row("Docling", required=True, installed=True)]
+    monkeypatch.setattr(engines, "engine_table", lambda: table)
+    from artigo2md import infra
+
+    def boom(*_a, **_k):
+        raise RuntimeError("falha inesperada")
+
+    monkeypatch.setattr(infra, "collect", boom)
+
+    code, out, _err = run_cli("doctor")
+
+    assert code == 0
+    assert "Pronto para uso." in out
+    assert "não foi possível verificar" in out
+
+
+def test_convert_does_not_touch_the_infrastructure(run_cli, fake_convert, article_pdf, tmp_path, monkeypatch):
+    from artigo2md import infra
+
+    def forbidden(*_a, **_k):
+        raise AssertionError("convert não pode consultar a infraestrutura")
+
+    monkeypatch.setattr(infra, "collect", forbidden)
+    monkeypatch.setattr(socket, "create_connection", forbidden)
+
+    code, out, _err = run_cli("convert", article_pdf, "-o", tmp_path / "saida")
+
+    assert code == 0
+    assert "Infraestrutura" not in out
+
+
+def test_convert_path_does_not_import_the_infrastructure_module():
+    import subprocess
+    import sys
+
+    code = (
+        "import sys\n"
+        "from artigo2md import cli\n"
+        "assert 'artigo2md.infra' not in sys.modules\n"
+        "cli.main(['convert', '/caminho/que/nao/existe.pdf'])\n"
+        "assert 'artigo2md.infra' not in sys.modules\n"
+    )
+    proc = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True, timeout=120)
+
+    assert proc.returncode == 0, proc.stderr
 
 
 def test_version_option_prints_version_and_exits(capsys):

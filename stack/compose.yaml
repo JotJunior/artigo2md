@@ -1,0 +1,81 @@
+# Infraestrutura local do artigo2md (versão desktop): Postgres, RabbitMQ (com painel) e API base.
+#
+# Use os scripts `stack/up.sh` e `stack/down.sh`; eles validam o `stack/.env` e chamam este arquivo.
+# Todas as portas são publicadas SOMENTE em 127.0.0.1 (o endereço é texto fixo aqui, não parametrizável).
+# Nenhum serviço usa `restart`: a stack só sobe quando é pedido.
+name: artigo2md
+
+services:
+  postgres:
+    image: postgres:18-trixie
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:?defina POSTGRES_USER em stack/.env}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD em stack/.env}
+      POSTGRES_DB: ${POSTGRES_DB:?defina POSTGRES_DB em stack/.env}
+    ports:
+      - "127.0.0.1:${ARTIGO2MD_POSTGRES_PORT:?defina ARTIGO2MD_POSTGRES_PORT em stack/.env}:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql
+    security_opt:
+      - "no-new-privileges:true"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  rabbitmq:
+    image: rabbitmq:4.4-management
+    hostname: rabbitmq
+    environment:
+      RABBITMQ_DEFAULT_USER: ${RABBITMQ_DEFAULT_USER:?defina RABBITMQ_DEFAULT_USER em stack/.env}
+      RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?defina RABBITMQ_DEFAULT_PASS em stack/.env}
+    ports:
+      - "127.0.0.1:${ARTIGO2MD_RABBITMQ_PORT:?defina ARTIGO2MD_RABBITMQ_PORT em stack/.env}:5672"
+      - "127.0.0.1:${ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT:?defina ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT em stack/.env}:15672"
+    volumes:
+      - rabbitmqdata:/var/lib/rabbitmq
+    security_opt:
+      - "no-new-privileges:true"
+    healthcheck:
+      test: ["CMD-SHELL", "rabbitmq-diagnostics -q check_running && rabbitmq-diagnostics -q check_port_connectivity"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+  api:
+    image: artigo2md-api:local
+    build:
+      context: ..
+      dockerfile: stack/api/Dockerfile
+    user: "10001:10001"
+    read_only: true
+    tmpfs:
+      - /tmp
+    cap_drop:
+      - ALL
+    security_opt:
+      - "no-new-privileges:true"
+    ports:
+      - "127.0.0.1:${ARTIGO2MD_API_PORT:?defina ARTIGO2MD_API_PORT em stack/.env}:8000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import http.client, sys; c = http.client.HTTPConnection('127.0.0.1', 8000, timeout=3); c.request('GET', '/health'); sys.exit(0 if c.getresponse().status == 200 else 1)"
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+
+volumes:
+  pgdata:
+  rabbitmqdata:

@@ -116,12 +116,60 @@ Por que essas restrições:
   falha com uma mensagem enganosa sobre o `torch`.
 - O artigo2md roda o MinerU sempre com `MINERU_TELEMETRY_DISABLED=1`.
 
+## Infraestrutura local (versão desktop)
+
+Opcional: a conversão (`convert`) e a interface web continuam funcionando sem nada disto. Para a versão
+desktop, `stack/` traz uma infraestrutura local em containers (Docker): **Postgres**, **RabbitMQ** (com
+painel de gestão) e uma **API base** com `GET /health`. Tudo roda só na sua máquina: as portas são
+publicadas apenas em `127.0.0.1` e nenhum serviço envia dados para fora.
+
+```bash
+cp stack/.env.example stack/.env     # depois edite o stack/.env e troque as duas senhas
+sh stack/up.sh                       # sobe tudo e espera ficar saudável (até 2 min)
+uv run artigo2md doctor              # a seção "Infraestrutura" mostra os três serviços
+sh stack/down.sh                     # derruba; os dados (volumes) são mantidos
+sh stack/down.sh --apagar-dados      # derruba e APAGA os dados (pede que você digite "apagar")
+```
+
+- **Senhas**: 12 ou mais caracteres, sem `$`, diferentes do valor de exemplo (`troque-esta-senha`). O
+  `up.sh` confere o `stack/.env` antes de chamar o Docker e cita só o nome da variável, nunca o valor.
+  As credenciais só valem na primeira inicialização dos volumes; para trocá-las depois, use
+  `--apagar-dados`. Em automação, `sh stack/down.sh --apagar-dados --sim` apaga sem perguntar (sem
+  terminal interativo e sem `--sim`, nada é apagado).
+- **Portas** (mude no `stack/.env` se alguma estiver ocupada; o `up.sh` avisa e sai com código 4):
+  Postgres `5432`, RabbitMQ `5672`, painel do RabbitMQ `15672`, API `8778`. O `up.sh` mostra no final a
+  URL do painel. O `doctor` lê as mesmas portas (variável de ambiente, depois o arquivo indicado em
+  `ARTIGO2MD_STACK_ENV`, depois `./stack/.env`, depois o padrão).
+- **Imagens**: a primeira execução baixa as imagens oficiais e constrói `artigo2md-api:local`; depois
+  nada é baixado nem reconstruído sem pedido explícito: `sh stack/up.sh --atualizar-imagens` (com a
+  stack derrubada) é o único caminho para baixar imagens novas.
+- **Códigos de saída do `up.sh`**: 0 ok, 2 parâmetros inválidos, 3 Docker indisponível, 4 porta
+  ocupada, 5 serviço não ficou saudável.
+- **Licenças** dos componentes (serviços, imagens e dependências da API): `stack/THIRD_PARTY_LICENSES.md`.
+
+Riscos aceitos desta primeira versão (decisões registradas em `docs/specs/container-stack/research.md`):
+
+- as credenciais ficam visíveis em `docker inspect` para quem já controla o Docker desta máquina
+  (stack local de um só usuário);
+- as imagens são escolhidas por tag, sem fixar digest (as tags podem mudar entre atualizações);
+- o painel do RabbitMQ não tem proteção contra DNS rebinding (a API base tem; o responsável futuro é
+  `desktop-stack-control`);
+- Postgres e RabbitMQ seguem os padrões das imagens oficiais, com `no-new-privileges` como único
+  endurecimento adicional (a API roda sem privilégios, com sistema de arquivos somente leitura);
+- o `doctor` fecha a conexão logo após o handshake de protocolo, o que pode deixar uma linha de
+  "conexão encerrada" nos registros do Postgres e do RabbitMQ.
+
+Testes: `uv run pytest` roda sem Docker; com Docker disponível,
+`ARTIGO2MD_STACK=1 uv run pytest tests/test_stack_integration.py` sobe uma cópia isolada da stack (projeto
+Compose, portas e senhas próprios) e a derruba ao final.
+
 ## Desenvolvimento
 
 ```bash
 uv sync --extra dev --extra pymupdf
 uv run pytest                       # rápido
 ARTIGO2MD_SLOW=1 uv run pytest      # inclui o teste real com Docling (baixa modelos)
+ARTIGO2MD_STACK=1 uv run pytest tests/test_stack_integration.py   # integração com Docker
 ```
 
 ## Licença

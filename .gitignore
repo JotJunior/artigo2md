@@ -8,3 +8,4 @@ artigo2md-dados/
 *.pdf
 !tests/fixtures/*.pdf
 .DS_Store
+stack/.env
