@@ -21,12 +21,14 @@ pymupdf = ["pymupdf4llm>=0.0.17"]
 # Worker nativo da fila de conversão (`artigo2md worker`). O pika é fixado em 1.5.0 para casar com a licença
 # verificada (BSD-3-Clause; docs/specs/conversion-queue/research.md, L15/L16): upgrade exige nova verificação.
 queue = ["pika==1.5.0", "psutil"]
-dev = ["pytest>=8", "httpx>=0.27", "fpdf2>=2.7", "pyyaml>=6"]
+# asyncpg (Apache-2.0): driver do Postgres da camada `artigo2md.store`; só entra aqui, no grupo `api` e nunca em
+# `dependencies`, para `convert`, `doctor` e `serve` seguirem funcionando sem ele (feature job-store, FR-021).
+dev = ["pytest>=8", "httpx>=0.27", "fpdf2>=2.7", "pyyaml>=6", "asyncpg>=0.32.0,<0.33"]
 
 # Dependências mínimas da imagem da API em container (stack/api/Dockerfile): só estes pacotes,
 # sem Docling nem motores de conversão. Instalado com `uv sync --frozen --only-group api`.
 [dependency-groups]
-api = ["fastapi>=0.115", "uvicorn>=0.30"]
+api = ["fastapi>=0.115", "uvicorn>=0.30", "asyncpg>=0.32.0,<0.33"]
 
 [project.scripts]
 artigo2md = "artigo2md.cli:main"
