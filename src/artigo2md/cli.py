@@ -132,7 +132,19 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
         print(f"  {e['name']:<12} {e['license']:<9} {tag}")
     required_ok = all(e["installed"] for e in table if e["required"])
     print("Pronto para uso." if required_ok else "Faltam motores obrigatórios: rode `uv sync`.")
+    _print_infra_section()
     return 0 if required_ok else 1
+
+
+def _print_infra_section() -> None:
+    """Seção opcional de infraestrutura (versão desktop). Nunca altera o código de saída."""
+    from . import infra  # import local: `convert` nunca carrega este módulo
+
+    try:
+        for line in infra.format_section(infra.collect()):
+            print(line)
+    except Exception:  # defensivo: a infraestrutura é opcional e não pode quebrar o doctor
+        print("Infraestrutura (versão desktop, opcional): não foi possível verificar.")
 
 
 def main(argv: list[str] | None = None) -> int:
