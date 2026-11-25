@@ -55,3 +55,14 @@ https://pypi.org/project/pydantic/2.14.4/ (campo "License expression"), porque o
 | typing-extensions 4.16.0 | `artigo2md-api:local` | PSF-2.0 | permissiva | https://pypi.org/pypi/typing-extensions/4.16.0/json | 2026-11-24 |
 | typing-inspection 0.4.5 | `artigo2md-api:local` | MIT | permissiva | https://pypi.org/pypi/typing-inspection/0.4.5/json | 2026-11-24 |
 | opentelemetry-api 1.45.2 | `artigo2md-api:local` | Apache-2.0 | permissiva | https://pypi.org/pypi/opentelemetry-api/1.45.2/json | 2026-11-24 |
+
+## Driver do Postgres (feature `job-store`, FR-018)
+
+Entra no grupo `api` (imagem) e no extra `dev` (testes no host); não traz Docling nem pymupdf4llm. Licença
+confirmada no campo `license_expression` da página oficial no PyPI e no METADATA do wheel (decisão do operador
+no block-005, dec-024 da execução feature-00c `job-store`).
+
+| Componente | Imagem | Licença (como na fonte) | Princípio II | Fonte oficial | Consultado em |
+|---|---|---|---|---|---|
+| asyncpg 0.32.0 | `artigo2md-api:local` | Apache-2.0 | permissiva | https://pypi.org/pypi/asyncpg/0.32.0/json | 2026-11-25 |
+| async-timeout (dependência do asyncpg só em Python < 3.11; fora da imagem 3.13 e do CI 3.12) | — | Apache 2 (classifier "License :: OSI Approved :: Apache Software License") | permissiva | https://pypi.org/pypi/async-timeout/json (versão 5.0.1 lida) | 2026-11-25 |

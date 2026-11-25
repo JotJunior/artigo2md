@@ -1,0 +1,41 @@
+# Performance Checklist: Persistência da versão desktop (job-store)
+
+**Purpose**: validar a qualidade dos requisitos de desempenho, escala e degradação da camada de persistência (migrações, listagem de documentos, linha do tempo, concorrência). Não mede código.
+**Created**: 2026-11-25
+**Feature**: [spec.md](../spec.md)
+
+## Metas quantificadas
+
+- [x] CHK001 - Cada meta de desempenho declarada tem valor numérico e unidade? [Mensurabilidade, Spec §SC-001, §SC-003] {auto} — evidência: SC-001 (até 10 s, 100% das execuções), SC-003 (1.000 documentos, até 2 s).
+- [x] CHK002 - O ambiente de referência das metas está definido (SC-003: "máquina de desenvolvimento comum"; SC-001: sem ambiente declarado)? [Ambiguity, Spec §SC-001, §SC-003] {auto} — nenhum dos dois critérios fixa hardware, estado do container ou cache frio/quente. — **resolvido (job-store, execute-task 2026-11-25)**: ambiente de referência = a máquina de desenvolvimento onde o teste roda, Postgres da stack local, cache quente; o teste imprime sistema, versão do Python e `server_version` (spec SC-001, SC-003; quickstart cenário 9).
+- [x] CHK003 - "Numa única consulta" (FR-009, SC-003) é um critério verificável, com a forma de contagem de consultas definida? [Ambiguity, Spec §FR-009, Quickstart cenário 9] {auto} — o quickstart repete "uma única consulta" sem dizer como isso é medido (contador no pool, log do servidor). — **resolvido (job-store, execute-task 2026-11-25)**: "uma única consulta" é medida por um contador no ponto único de execução de SQL do repositório, que deve registrar exatamente 1 comando (spec SC-003; quickstart cenário 9).
+- [x] CHK004 - Há alvos de tempo para a linha do tempo (`list_events`), para as gravações de job (`create_job`, `complete_job`) e para arquivar/excluir um projeto grande? [Gap, Spec §FR-008, §FR-011] {auto} — nenhum SC cobre essas operações; só migração e listagem de documentos têm meta. — **resolvido (job-store, execute-task 2026-11-25)**: decisão explícita: não há meta de tempo para `list_events`, `create_job`, `complete_job`, arquivar nem excluir projeto grande; nenhum número é presumido (spec, Assumptions "Volumes e tempos não especificados").
+- [x] CHK005 - O volume esperado por projeto (documentos, jobs por documento, tentativas, eventos) está declarado além do ponto único de 1.000 documentos? [Gap, Spec §SC-003, Plan §Scale/Scope] {humano} — **resolvido (job-store, execute-task 2026-11-25)**: **resposta do operador (block-006, opção A)**: manter só a meta de SC-003 (1.000 documentos); os demais volumes ficam declarados como não especificados (spec, Assumptions; plan, Scale/Scope).
+
+## Escalabilidade e consultas
+
+- [x] CHK006 - Os índices que sustentam as consultas com meta (status derivado do job mais recente; linha do tempo por projeto e por documento) estão especificados? [Completude, Spec §FR-009, §FR-008] {auto} — evidência: data-model, `jobs_document_recent_idx`, `history_events_project_idx` e `history_events_document_idx`.
+- [x] CHK007 - Os índices (ou a ausência deles) para as operações em lote por projeto (cancelar jobs não finais; exclusão em cascata) estão definidos? [Gap, Spec §FR-011, Data-model] {auto} — o data-model não lista índice em `jobs(project_id)` nem em `sources(project_id)`; a spec não impõe meta de tempo para essas operações (ver CHK004). — **resolvido (job-store, execute-task 2026-11-25)**: índices definidos: `jobs_project_idx`, `sources_project_idx`, `documents_source_idx` e `history_events_job_idx`, além dos já existentes; `job_attempts` e `job_results` já são cobertos por `UNIQUE (job_id, position)` e pela chave primária (data-model).
+- [x] CHK008 - Está definido se `list_documents` pode crescer sem paginação, ou qual o comportamento acima de 1.000 documentos? [Ambiguity, Spec §FR-009, SC-003] {auto} — o contrato não tem `limit`/`offset` para essa operação; a US4 pagina eventos, mas FR-009 não pagina documentos. — **resolvido (job-store, execute-task 2026-11-25)**: `list_documents` permanece sem paginação, com o limite de referência de 1.000 documentos (SC-003) documentado (spec FR-009; contracts/repository.md).
+- [x] CHK009 - A paginação por limite e deslocamento da linha do tempo está exigida? [Completude, Spec §FR-008, US4-4] {auto} — evidência: US4-4 e contracts/repository.md (`limit` 1..500, `offset`).
+
+## Concorrência e degradação
+
+- [x] CHK010 - Os cenários de concorrência exigidos têm resultado determinístico? [Clareza, Spec §FR-004, §FR-012, US3-6] {auto} — evidência: edge case "chamadas simultâneas" (uma recusada com mensagem), US3-6 (cada migração uma vez, sem erro); quickstart cenários 4.4 e 6.3.
+- [x] CHK011 - Estão definidos o tamanho do pool e o comportamento quando as conexões se esgotam (espera, prazo, recusa)? [Gap, Spec §FR-014, contracts/repository.md] {auto} — o contrato fixa `min_size=1`, `max_size=5` (PROPOSTA) e nada sobre espera por conexão. — **resolvido (job-store, execute-task 2026-11-25)**: pool `min_size=1`, `max_size=5`; esgotado, a chamada espera até `acquire_timeout` (10 s, `pool.acquire(timeout=...)`) e falha com `DatabaseUnavailableError` (contracts/repository.md, "Ciclo de vida"; nomes de parâmetros conferidos em research S11).
+- [x] CHK012 - Há prazo máximo para conectar e para executar uma consulta, de modo que "banco indisponível" falhe em tempo definido? [Gap, Spec §edge "Banco indisponível", §FR-016] {auto} — o edge case exige falha com mensagem em português e sem gravação parcial, sem dizer em quanto tempo. — **resolvido (job-store, execute-task 2026-11-25)**: `connect_timeout` 10 s (`timeout` de `connect`), `command_timeout` 30 s e `acquire_timeout` 10 s, configuráveis e marcados [PROPOSTA]; estouro vira `DatabaseUnavailableError` (contracts/repository.md; research S11).
+- [x] CHK013 - A espera pelo lock de migração concorrente tem limite de tempo ou comportamento definido quando o outro processo trava? [Gap, Spec §FR-012, contracts/migrations.md] {auto} — o contrato diz que "o segundo espera o lock"; não há prazo nem mensagem para espera longa, e SC-001 (10 s) não distingue espera de execução. — **resolvido (job-store, execute-task 2026-11-25)**: espera pelo lock de migração limitada a 60 s por `pg_try_advisory_lock` repetido; estouro levanta `MigrationLockTimeoutError` com mensagem em português; SC-001 exclui a espera pelo lock (contracts/migrations.md; spec SC-001; research D3, V-03).
+- [x] CHK014 - A falha com banco indisponível exige que não reste gravação parcial e que repetir depois de reconectar funcione? [Completude, Spec §edge "Banco indisponível", §FR-014] {auto} — evidência: edge case citado e FR-014 (transação única); `DatabaseUnavailableError` documentada como repetível (contracts/repository.md).
+
+## Não-regressão e crescimento
+
+- [x] CHK015 - Está exigido que `convert`, `doctor` e `serve` não sofram custo da nova camada (sem importar driver nem conectar)? [Completude, Spec §FR-021, SC-004] {auto} — evidência: FR-021 e SC-004; quickstart cenário 8 verifica `sys.modules`.
+- [x] CHK016 - A inclusão do driver tem critério verificável de não inflar a imagem da API com motores pesados? [Mensurabilidade, Spec §FR-018, US6-3] {auto} — evidência: US6-3 (imagem sem Docling nem pymupdf4llm); research D2 (driver só no grupo `api` e extra `dev`).
+- [x] CHK017 - A retenção por tempo indeterminado vem acompanhada de expectativa de crescimento do volume `pgdata` ou de limite aceitável? [Gap, Assumption, Spec §FR-011] {humano} — **resolvido (job-store, execute-task 2026-11-25)**: **resposta do operador (block-006, opção A)**: sem limite de crescimento do `pgdata`; o usuário exclui projetos quando quiser (FR-011) (spec, Assumptions; plan, Riscos).
+
+## Notes
+
+- Items `{auto}` marcados `[x]` citam a evidência; os `[ ]` com marcador são achados abertos.
+- Destinos: `[Ambiguity]` (CHK002, CHK003, CHK008) → `/clarify`; `[Gap]` (CHK004, CHK007, CHK011, CHK012, CHK013) → tarefas de requisito em `/create-tasks`; `{humano}` (CHK005, CHK017) → decisão do dono do produto antes de `execute-task`.
+- Metas de latência de gravação são opcionais para um banco local monousuário; CHK004 pede apenas que a ausência seja uma decisão explícita.
+- Atualização 2026-11-25 (execute-task, FASE 1): CHK002/003/004/007/008/011/012/013 resolvidos; CHK005 e CHK017 respondidos pelo operador no block-006.

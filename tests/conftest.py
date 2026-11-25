@@ -1,7 +1,9 @@
+import asyncio
 import socket
 from pathlib import Path
 
 import pytest
+import store_db
 from fpdf import FPDF
 
 PARA = (
@@ -91,3 +93,46 @@ def no_network(monkeypatch):
         raise AssertionError("tentativa de acesso à rede durante o teste")
 
     monkeypatch.setattr(socket, "socket", _blocked)
+
+
+# --- Banco temporário para os testes de integração da camada `store` (só com ARTIGO2MD_DB_TESTS=1) ----------
+
+
+@pytest.fixture(scope="session")
+def db_base_settings():
+    """Parâmetros da stack local (banco real). Só serve para criar/apagar bancos temporários."""
+    if not store_db.db_tests_enabled():
+        pytest.skip(store_db.SKIP_REASON)
+    from artigo2md.store import DbSettings, StoreConfigError
+
+    try:
+        return DbSettings.from_env()
+    except StoreConfigError as exc:
+        pytest.fail(f"Os testes de integração precisam da stack configurada: {exc}", pytrace=False)
+
+
+def _temporary_database(base, apply_migrations: bool):
+    """Gerador: cria o banco, entrega os parâmetros e SEMPRE apaga no fim (inclusive após falha de teste)."""
+    name = store_db.new_test_db_name()
+    asyncio.run(store_db.create_database(base, name))
+    try:
+        settings = store_db.settings_for(base, name)
+        if apply_migrations:
+            from artigo2md.store import apply_migrations as run_migrations
+
+            asyncio.run(run_migrations(settings))
+        yield settings
+    finally:
+        asyncio.run(store_db.drop_database(base, name))
+
+
+@pytest.fixture(scope="session")
+def migrated_database(db_base_settings):
+    """Banco temporário da sessão com as migrações aplicadas (um nome aleatório `artigo2md_test_<16 hex>`)."""
+    yield from _temporary_database(db_base_settings, apply_migrations=True)
+
+
+@pytest.fixture
+def empty_database(db_base_settings):
+    """Banco temporário vazio, um por teste: para testar o próprio runner de migrações."""
+    yield from _temporary_database(db_base_settings, apply_migrations=False)
