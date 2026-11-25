@@ -163,6 +163,23 @@ Testes: `uv run pytest` roda sem Docker; com Docker disponível,
 `ARTIGO2MD_STACK=1 uv run pytest tests/test_stack_integration.py` sobe uma cópia isolada da stack (projeto
 Compose, portas e senhas próprios) e a derruba ao final.
 
+### Persistência (camada `artigo2md.store`)
+
+O pacote `artigo2md.store` guarda projetos, fontes, documentos, jobs, tentativas, resultados e o histórico no
+Postgres da stack local, com migrações versionadas em SQL (`src/artigo2md/store/migrations/`). Só a futura
+`project-api` o usa: `convert`, `serve`, `doctor` e o worker não o importam nem exigem o driver `asyncpg`.
+
+- **Conexão**: lê `ARTIGO2MD_POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_DB` (variável de
+  ambiente, depois o arquivo de `ARTIGO2MD_STACK_ENV`, depois `./stack/.env`). A variável opcional
+  `ARTIGO2MD_POSTGRES_HOST` aceita só `127.0.0.1` (padrão), `::1`, `localhost` ou `postgres` (nome do serviço
+  na rede da stack); qualquer outro valor é recusado antes de abrir a conexão. Não precisa constar do
+  `stack/.env.example`.
+- **Testes de integração**: com a stack no ar e o `stack/.env` preenchido,
+  `ARTIGO2MD_DB_TESTS=1 uv run --extra dev --extra pymupdf pytest -k store` roda os cenários contra um banco
+  temporário `artigo2md_test_<16 hex>`, criado e apagado pelo próprio teste (o usuário do `stack/.env` precisa
+  poder criar bancos). O banco real não é lido nem alterado. Sem a variável, esses testes ficam `SKIPPED` e o
+  resto da suíte roda sem Docker.
+
 ## Desenvolvimento
 
 ```bash
