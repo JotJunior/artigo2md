@@ -180,13 +180,62 @@ Postgres da stack local, com migrações versionadas em SQL (`src/artigo2md/stor
   poder criar bancos). O banco real não é lido nem alterado. Sem a variável, esses testes ficam `SKIPPED` e o
   resto da suíte roda sem Docker.
 
+## Fila de conversão (worker)
+
+Opcional, como a stack: `convert` e `serve` não carregam nada disto. O `artigo2md worker` é um processo
+nativo (fora do Docker, para usar o OCR da Apple e a GPU) que consome jobs do RabbitMQ da stack, converte cada
+PDF com os mesmos motores e grava o Markdown em `--data-dir/<job_id>/`. Ele só fala com `127.0.0.1`.
+
+```bash
+uv sync --extra queue                # pika e psutil; só o worker precisa deles
+sh stack/up.sh                       # a stack de cima tem de estar no ar
+mkdir -p ~/artigo2md-fila
+uv run artigo2md worker --data-dir ~/artigo2md-fila
+```
+
+As credenciais do RabbitMQ vêm de `RABBITMQ_DEFAULT_USER` e `RABBITMQ_DEFAULT_PASS` no ambiente ou, na falta
+delas, de `ARTIGO2MD_STACK_ENV` e de `./stack/.env`; a porta segue a mesma ordem do `doctor`. Se o RabbitMQ
+estiver fora do ar, o worker avisa e tenta de novo, sem encerrar. `SIGINT`/`SIGTERM` encerram com calma: o job
+em andamento tem `--shutdown-timeout` segundos para terminar; depois disso ele volta à fila.
+
+| Opção | Padrão | Para quê |
+|---|---|---|
+| `--data-dir PASTA` | obrigatória | pasta (já existente e gravável) onde o Markdown é gravado |
+| `--workers N` | 4 | conversões simultâneas (cada uma é um processo próprio, com os modelos na RAM) |
+| `--min-free-memory MB` | 4822 | memória livre mínima para iniciar mais um conversor; abaixo disso o job espera |
+| `--retry-delay SEG` | 30 | espera antes de uma nova tentativa depois de falha passageira |
+| `--max-attempts N` | 3 | tentativas por job, a primeira incluída (1 = sem nova tentativa) |
+| `--idle-timeout SEG` | 300 | descarrega o conversor ocioso (0 = nunca), como no `serve` |
+| `--shutdown-timeout SEG` | 30 | prazo para o job em andamento ao encerrar |
+| `--conversion-timeout SEG` | 0 | limite por conversão (0 = sem limite; valor de 1800 s ou mais é recusado, pois 30 min é o prazo do broker) |
+
+Códigos de saída: `0` encerrado por `SIGINT`/`SIGTERM`; `1` defeito inesperado do worker; `2` erro de uso
+(opção ausente ou inválida, `--data-dir` inexistente); `3` extra `queue` não instalado; `4` credenciais
+ausentes ou recusadas pelo broker; `5` fila ou exchange já existente com configuração diferente (nada é alterado).
+
+**Memória — leia antes de aumentar `--workers`.** Os padrões `--workers 4` e `--min-free-memory 4822` vêm
+de uma medição, não de um palpite, e valem só para as condições dela
+([`ram-measurement.md`](docs/specs/conversion-queue/ram-measurement.md)): um lote sintético de 24 páginas
+(texto nativo, escaneado e com tabelas), motor `auto`, num único Mac de 64 GiB. Naquela máquina, o maior
+consumo observado de um conversor foi 4018 MB, e quatro conversores juntos chegaram a 14055 MB. O
+`--min-free-memory` é esse maior pico com uma margem de 1,20. Por isso o padrão de `--workers` não passa de 4,
+o maior pool medido. PDFs maiores ou de outros perfis podem pedir mais; em máquinas com menos RAM, ajuste os
+dois valores (menos `--workers`, `--min-free-memory` acima do consumo de um conversor). A proteção de RAM adia
+conversores quando falta memória livre, mas não substitui esse ajuste. O processo principal do worker não
+carrega os motores; só os processos filhos de conversão carregam.
+
+Os testes do worker rodam em `uv run pytest` sem Docker (com um canal AMQP falso); com a stack no ar,
+`ARTIGO2MD_STACK=1 uv run pytest tests/test_jobqueue_integration.py` exercita um broker real. O formato das
+mensagens e a topologia estão em `docs/specs/conversion-queue/contracts/`.
+
 ## Desenvolvimento
 
 ```bash
-uv sync --extra dev --extra pymupdf
+uv sync --extra dev --extra pymupdf --extra queue
 uv run pytest                       # rápido
 ARTIGO2MD_SLOW=1 uv run pytest      # inclui o teste real com Docling (baixa modelos)
 ARTIGO2MD_STACK=1 uv run pytest tests/test_stack_integration.py   # integração com Docker
+ARTIGO2MD_STACK=1 uv run pytest tests/test_jobqueue_integration.py   # worker com RabbitMQ real
 ```
 
 ## Licença

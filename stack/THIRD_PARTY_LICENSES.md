@@ -66,3 +66,21 @@ no block-005, dec-024 da execução feature-00c `job-store`).
 |---|---|---|---|---|---|
 | asyncpg 0.32.0 | `artigo2md-api:local` | Apache-2.0 | permissiva | https://pypi.org/pypi/asyncpg/0.32.0/json | 2026-11-25 |
 | async-timeout (dependência do asyncpg só em Python < 3.11; fora da imagem 3.13 e do CI 3.12) | — | Apache 2 (classifier "License :: OSI Approved :: Apache Software License") | permissiva | https://pypi.org/pypi/async-timeout/json (versão 5.0.1 lida) | 2026-11-25 |
+
+## Dependências Python do worker nativo (extra `queue`)
+
+Dependências do extra opcional `queue` do `pyproject.toml` (feature `conversion-queue`, FR-020): só são
+instaladas por quem usa `artigo2md worker` (`uv sync --extra queue`) e nunca são importadas por `convert`,
+`doctor` ou `serve`. O `pika` é fixado em `1.5.0` para casar com a licença verificada; qualquer upgrade exige
+nova verificação e novo registro. A licença do `pika` 1.5.0 (BSD-3-Clause) foi lida pelo operador no campo
+`license` da página oficial do PyPI e no arquivo LICENSE do repositório oficial `https://github.com/pika/pika`
+(resposta ao bloqueio humano `block-001`, consulta dele em 2026-11-24); o agente não conseguiu consultar a rede
+(guard de comandos) e conferiu apenas, localmente, que os metadados do pacote instalado do `uv.lock` declaram
+`License: BSD-3-Clause`, `Requires-Python: >=3.7` e nenhuma dependência de runtime (só extras opcionais
+`gevent`/`tornado`/`twisted`, não instalados). A do `psutil` 7.2.2 foi lida nos metadados do pacote resolvido
+pelo `uv.lock`.
+
+| Componente | Imagem | Licença (como na fonte) | Princípio II | Fonte oficial | Consultado em |
+|---|---|---|---|---|---|
+| pika 1.5.0 | worker nativo (extra `queue`) | BSD-3-Clause | permissiva | https://pypi.org/pypi/pika/json | 2026-11-24 |
+| psutil 7.2.2 | worker nativo (extra `queue`) | BSD-3-Clause | permissiva | `psutil-7.2.2.dist-info/METADATA` do pacote resolvido pelo `uv.lock` | 2026-11-25 |

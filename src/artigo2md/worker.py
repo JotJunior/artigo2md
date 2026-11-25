@@ -8,12 +8,45 @@ segundos, ele termina e a RAM volta inteira para o sistema.
 from __future__ import annotations
 
 import multiprocessing as mp
+import signal
 import threading
 import time
 from typing import Callable
 
 
+class ConversionError(RuntimeError):
+    """O filho concluiu com falha. `kind`: `error` (qualquer erro de conversão) ou `invalid_pdf`."""
+
+    def __init__(self, message: str, kind: str = "error"):
+        super().__init__(message)
+        self.kind = kind
+
+
+class WorkerCrashed(RuntimeError):
+    """O processo de conversão morreu sem responder (possível falta de memória)."""
+
+
+class ConversionTimeout(RuntimeError):
+    """A conversão passou do limite de tempo e o filho foi encerrado."""
+
+    def __init__(self, seconds: float):
+        super().__init__(f"A conversão excedeu o limite de {seconds:g} s e foi encerrada.")
+        self.seconds = seconds
+
+
+CRASH_MESSAGE = (
+    "O processo de conversão terminou inesperadamente "
+    "(possível falta de memória). Tente de novo ou use outro motor."
+)
+TICK_INTERVAL = 0.5  # segundos entre chamadas de `tick` enquanto espera o filho
+
+
 def _child_main(conn) -> None:
+    # O Ctrl+C do terminal chega a todo o grupo de processos. O encerramento do filho é sempre do pai
+    # (`_stop`/`kill`); se o filho morresse com KeyboardInterrupt, o pai leria EOF e trataria como
+    # `worker_crashed` em vez de concluir o job ou devolvê-lo à fila (FR-013).
+    signal.signal(signal.SIGINT, signal.SIG_IGN)
+    from .pdfscan import InvalidPdfError
     from .router import convert
 
     while True:
@@ -28,6 +61,8 @@ def _child_main(conn) -> None:
             result = convert(path, engine=engine, progress=lambda m: conn.send(("progress", m)))
             conn.send(("done", {"markdown": result.markdown, "engine": result.engine,
                                 "report": result.report()}))
+        except InvalidPdfError as exc:
+            conn.send(("invalid_pdf", str(exc)[:800]))
         except Exception as exc:
             conn.send(("error", str(exc)[:800]))
 
@@ -71,30 +106,79 @@ class ConversionWorker:
         if conn is not None:
             conn.close()
 
-    def convert(self, path: str, engine: str, progress: Callable[[str], None]) -> dict:
+    def kill(self) -> None:
+        """Encerra o filho de imediato, sem esperar o lock (encerramento por prazo, FR-013).
+
+        Quem está em `convert` percebe a morte do filho e levanta `WorkerCrashed`.
+        """
+        proc = self._proc
+        if proc is not None and proc.is_alive():
+            proc.kill()
+            proc.join(5)
+
+    def convert(
+        self,
+        path: str,
+        engine: str,
+        progress: Callable[[str], None],
+        tick: Callable[[], None] | None = None,
+        timeout: float = 0,
+    ) -> dict:
+        """Converte `path` no processo auxiliar.
+
+        `tick` (opcional) é chamado a cada `TICK_INTERVAL` s enquanto se espera o filho (mantém o heartbeat
+        de quem usa esta chamada numa conexão AMQP). `timeout` > 0 limita a conversão: ao estourar, o filho
+        é encerrado e levanta `ConversionTimeout`. Sem `tick` e sem `timeout` o comportamento é o de sempre.
+        """
         with self._lock:
+            deadline = time.monotonic() + timeout if timeout and timeout > 0 else None
             try:
                 if not self.alive:
                     progress("Carregando o conversor")
                     self._start()
                 self._conn.send((str(path), engine))
                 while True:
+                    wait = None
+                    if tick is not None or deadline is not None:
+                        wait = TICK_INTERVAL
+                        if deadline is not None:
+                            wait = max(0.0, min(wait, deadline - time.monotonic()))
                     try:
-                        kind, payload = self._conn.recv()
+                        ready = wait is None or self._conn.poll(wait)
+                        message = self._conn.recv() if ready else None
                     except (EOFError, OSError):
                         self._stop()
-                        raise RuntimeError(
-                            "O processo de conversão terminou inesperadamente "
-                            "(possível falta de memória). Tente de novo ou use outro motor."
-                        )
+                        raise WorkerCrashed(CRASH_MESSAGE) from None
+                    if message is None:  # a espera terminou sem resposta do filho
+                        if deadline is not None and time.monotonic() >= deadline:
+                            self._kill_and_stop()
+                            raise ConversionTimeout(timeout)
+                        if tick is not None:
+                            self._callback(tick)
+                        continue
+                    kind, payload = message
                     if kind == "progress":
-                        progress(payload)
+                        self._callback(progress, payload)
                     elif kind == "done":
                         return payload
                     else:
-                        raise RuntimeError(payload)
+                        raise ConversionError(payload, kind)
             finally:
                 self._last_used = time.monotonic()
+
+    def _callback(self, func: Callable, *args) -> None:
+        """Chama `tick`/`progress`; se levantarem, o filho é encerrado para não deixar resposta velha no cano."""
+        try:
+            func(*args)
+        except BaseException:
+            self._kill_and_stop()
+            raise
+
+    def _kill_and_stop(self) -> None:
+        proc = self._proc
+        if proc is not None and proc.is_alive():
+            proc.kill()
+        self._stop()
 
     def _reaper(self) -> None:
         interval = max(0.2, min(30.0, self.idle_timeout / 4))
