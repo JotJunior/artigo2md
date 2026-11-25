@@ -55,3 +55,21 @@ https://pypi.org/project/pydantic/2.14.4/ (campo "License expression"), porque o
 | typing-extensions 4.16.0 | `artigo2md-api:local` | PSF-2.0 | permissiva | https://pypi.org/pypi/typing-extensions/4.16.0/json | 2026-11-24 |
 | typing-inspection 0.4.5 | `artigo2md-api:local` | MIT | permissiva | https://pypi.org/pypi/typing-inspection/0.4.5/json | 2026-11-24 |
 | opentelemetry-api 1.45.2 | `artigo2md-api:local` | Apache-2.0 | permissiva | https://pypi.org/pypi/opentelemetry-api/1.45.2/json | 2026-11-24 |
+
+## Dependências Python do worker nativo (extra `queue`)
+
+Dependências do extra opcional `queue` do `pyproject.toml` (feature `conversion-queue`, FR-020): só são
+instaladas por quem usa `artigo2md worker` (`uv sync --extra queue`) e nunca são importadas por `convert`,
+`doctor` ou `serve`. O `pika` é fixado em `1.5.0` para casar com a licença verificada; qualquer upgrade exige
+nova verificação e novo registro. A licença do `pika` 1.5.0 (BSD-3-Clause) foi lida pelo operador no campo
+`license` da página oficial do PyPI e no arquivo LICENSE do repositório oficial `https://github.com/pika/pika`
+(resposta ao bloqueio humano `block-001`, consulta dele em 2026-11-24); o agente não conseguiu consultar a rede
+(guard de comandos) e conferiu apenas, localmente, que os metadados do pacote instalado do `uv.lock` declaram
+`License: BSD-3-Clause`, `Requires-Python: >=3.7` e nenhuma dependência de runtime (só extras opcionais
+`gevent`/`tornado`/`twisted`, não instalados). A do `psutil` 7.2.2 foi lida nos metadados do pacote resolvido
+pelo `uv.lock`.
+
+| Componente | Imagem | Licença (como na fonte) | Princípio II | Fonte oficial | Consultado em |
+|---|---|---|---|---|---|
+| pika 1.5.0 | worker nativo (extra `queue`) | BSD-3-Clause | permissiva | https://pypi.org/pypi/pika/json | 2026-11-24 |
+| psutil 7.2.2 | worker nativo (extra `queue`) | BSD-3-Clause | permissiva | `psutil-7.2.2.dist-info/METADATA` do pacote resolvido pelo `uv.lock` | 2026-11-25 |

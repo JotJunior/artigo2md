@@ -4,8 +4,12 @@ A função de entrada é chamada em processo, com a lista de argumentos, e devol
 código de saída (ver docs/specs/command-line-interface/research.md, Decision 4).
 """
 import json
+import os
 import socket
+import subprocess
+import sys
 from pathlib import Path
+from types import SimpleNamespace
 
 import pytest
 
@@ -541,3 +545,201 @@ def test_serve_does_not_warn_for_local_hosts(run_cli, serve_env, port_is_free, h
 
     assert code == 0
     assert err == ""
+
+
+# ── worker: opções, extra ausente e códigos de saída (tarefas 5.3.1 a 5.3.4) ─────────────────────────
+@pytest.fixture
+def worker_env(monkeypatch, tmp_path):
+    """Ambiente limpo para `artigo2md worker`: sem credenciais herdadas, sem `stack/.env`, sem serviço real."""
+    for var in ("RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS", "ARTIGO2MD_STACK_ENV"):
+        monkeypatch.delenv(var, raising=False)
+    monkeypatch.chdir(tmp_path)
+    data = tmp_path / "dados"
+    data.mkdir()
+    return SimpleNamespace(data=data, tmp=tmp_path, monkeypatch=monkeypatch)
+
+
+@pytest.fixture
+def fake_service(monkeypatch):
+    """Troca `Service` por um dublê que registra as configurações e devolve o código de saída escolhido."""
+    pytest.importorskip("pika")
+    pytest.importorskip("psutil")
+    from artigo2md.jobqueue import service
+
+    state = SimpleNamespace(exit_code=0, settings=[])
+
+    class Dummy:
+        def __init__(self, settings):
+            state.settings.append(settings)
+
+        def run(self):
+            return state.exit_code
+
+    monkeypatch.setattr(service, "Service", Dummy)
+    return state
+
+
+def _worker_args(env, *extra, workers=2, memory=500):
+    return ["worker", "--data-dir", env.data, "--workers", workers, "--min-free-memory", memory, *extra]
+
+
+def test_worker_requires_data_dir(run_cli, worker_env):
+    code, _out, err = run_cli("worker", "--workers", 1, "--min-free-memory", 0)
+    assert code == 2
+    assert "a opção --data-dir é obrigatória (pasta onde o worker grava o Markdown)" in err
+
+
+def test_worker_without_the_ram_options_uses_the_defaults_derived_from_the_measurement(
+        run_cli, worker_env, fake_service):
+    from artigo2md.jobqueue import settings as queue_settings
+
+    worker_env.monkeypatch.setenv("RABBITMQ_DEFAULT_USER", "u")
+    worker_env.monkeypatch.setenv("RABBITMQ_DEFAULT_PASS", "p")
+    code, _out, err = run_cli("worker", "--data-dir", worker_env.data)
+    assert code == 0 and "medição" not in err  # a recusa "medição pendente" deixou de valer (tarefa 7.3)
+    (settings,) = fake_service.settings
+    assert settings.workers == queue_settings.DEFAULT_WORKERS
+    assert settings.min_free_memory_mb == queue_settings.DEFAULT_MIN_FREE_MEMORY_MB
+
+
+@pytest.mark.parametrize("extra,fragment", [
+    (["--retry-delay", "0"], "--retry-delay inválido"),
+    (["--max-attempts", "0"], "--max-attempts inválido"),
+    (["--idle-timeout", "-1"], "--idle-timeout inválido"),
+    (["--shutdown-timeout", "-1"], "--shutdown-timeout inválido"),
+    (["--conversion-timeout", "-1"], "--conversion-timeout inválido"),
+])
+def test_worker_rejects_invalid_values_with_exit_2(run_cli, worker_env, fake_service, extra, fragment):
+    code, _out, err = run_cli(*_worker_args(worker_env, *extra))
+    assert code == 2 and fragment in err and fake_service.settings == []
+
+
+def test_worker_rejects_non_positive_workers_and_negative_memory(run_cli, worker_env, fake_service):
+    assert run_cli(*_worker_args(worker_env, workers=0))[0] == 2
+    assert run_cli(*_worker_args(worker_env, memory=-1))[0] == 2
+
+
+def test_worker_rejects_non_numeric_values_in_portuguese(run_cli, worker_env, fake_service, capsys):
+    with pytest.raises(SystemExit) as info:
+        cli.main(["worker", "--data-dir", str(worker_env.data), "--workers", "dois", "--min-free-memory", "0"])
+    assert info.value.code == 2
+    err = capsys.readouterr().err
+    assert "erro:" in err and "deve ser um número inteiro" in err and "argumento --workers" in err
+
+
+def test_worker_rejects_a_missing_data_dir(run_cli, worker_env, fake_service):
+    code, _out, err = run_cli("worker", "--data-dir", worker_env.tmp / "nao-existe", "--workers", 1,
+                              "--min-free-memory", 0)
+    assert code == 2 and "A pasta de dados não existe" in err
+
+
+def test_worker_without_the_queue_extra_exits_3(run_cli, worker_env, monkeypatch):
+    monkeypatch.setitem(sys.modules, "pika", None)  # `import pika` passa a levantar ImportError
+    code, _out, err = run_cli(*_worker_args(worker_env))
+    assert code == 3
+    assert "O worker precisa das dependências da fila. Instale com: uv sync --extra queue" in err
+
+
+def test_worker_without_credentials_exits_4_and_never_prints_a_value(run_cli, worker_env, fake_service):
+    code, _out, err = run_cli(*_worker_args(worker_env))
+    assert code == 4
+    assert ("Credenciais do RabbitMQ não encontradas. Defina RABBITMQ_DEFAULT_USER e RABBITMQ_DEFAULT_PASS "
+            "no ambiente ou em stack/.env.") in err
+
+
+def test_worker_passes_the_options_to_the_service_and_hides_the_credentials(run_cli, worker_env, fake_service):
+    worker_env.monkeypatch.setenv("RABBITMQ_DEFAULT_USER", "usuario-teste")
+    worker_env.monkeypatch.setenv("RABBITMQ_DEFAULT_PASS", "senha-teste-secreta")
+    code, _out, err = run_cli(*_worker_args(worker_env, "--retry-delay", "5", "--max-attempts", "4",
+                                            "--idle-timeout", "0", "--shutdown-timeout", "7",
+                                            "--conversion-timeout", "60"))
+    assert code == 0
+    (settings,) = fake_service.settings
+    assert (settings.workers, settings.min_free_memory_mb, settings.retry_delay, settings.max_attempts,
+            settings.idle_timeout, settings.shutdown_timeout, settings.conversion_timeout) == (2, 500, 5, 4, 0, 7, 60)
+    assert settings.data_dir == worker_env.data.resolve() and settings.host == "127.0.0.1"
+    assert "senha-teste-secreta" not in err and "usuario-teste" not in err
+    assert "RABBITMQ_DEFAULT_PASS" not in os.environ  # removida do ambiente antes de qualquer filho
+
+
+@pytest.mark.parametrize("service_code", [0, 4, 5])
+def test_worker_returns_the_exit_code_of_the_service(run_cli, worker_env, fake_service, service_code):
+    worker_env.monkeypatch.setenv("RABBITMQ_DEFAULT_USER", "u")
+    worker_env.monkeypatch.setenv("RABBITMQ_DEFAULT_PASS", "p")
+    fake_service.exit_code = service_code
+    assert run_cli(*_worker_args(worker_env))[0] == service_code
+
+
+def test_worker_help_documents_the_options_in_portuguese(capsys):
+    with pytest.raises(SystemExit) as info:
+        cli.main(["worker", "--help"])
+    assert info.value.code == 0
+    out = capsys.readouterr().out
+    for option in ("--data-dir", "--workers", "--min-free-memory", "--retry-delay", "--max-attempts",
+                   "--idle-timeout", "--shutdown-timeout", "--conversion-timeout"):
+        assert option in out
+    from artigo2md.jobqueue import settings as queue_settings
+
+    assert f"padrão: {queue_settings.DEFAULT_WORKERS}" in out
+    assert f"padrão: {queue_settings.DEFAULT_MIN_FREE_MEMORY_MB}" in out
+    assert "docs/specs/conversion-queue/ram-measurement.md" in out
+
+
+# ── a fila não é carregada por convert/doctor/serve; o worker não importa os motores (5.3.5, 5.3.6) ──
+def _run_isolated(code: str, env_extra: dict | None = None) -> str:
+    env = {**os.environ, **(env_extra or {})}
+    done = subprocess.run([sys.executable, "-I", "-c", code], capture_output=True, text=True, check=True, env=env)
+    return done.stdout
+
+
+def test_convert_doctor_and_serve_do_not_load_the_queue(tmp_path):
+    code = f"""
+import json, sys
+from artigo2md import cli
+cli.main(["doctor"])
+cli.cmd_serve = lambda args: 0
+out = {{}}
+cli.main(["serve", "--port", "1"])
+print(json.dumps({{"pika": "pika" in sys.modules, "jobqueue": any(m.startswith("artigo2md.jobqueue") for m in sys.modules)}}))
+"""
+    loaded = json.loads(_run_isolated(code).strip().splitlines()[-1])
+    assert loaded == {"pika": False, "jobqueue": False}
+
+
+def test_convert_output_does_not_depend_on_the_queue(tmp_path, article_pdf):
+    code = f"""
+import json, sys
+from artigo2md import cli
+status = cli.main(["convert", {str(article_pdf)!r}, "-o", {str(tmp_path / 'saida')!r}, "-e", "markitdown"])
+print(json.dumps({{"status": status, "pika": "pika" in sys.modules,
+                   "jobqueue": any(m.startswith("artigo2md.jobqueue") for m in sys.modules)}}))
+"""
+    loaded = json.loads(_run_isolated(code).strip().splitlines()[-1])
+    assert loaded == {"status": 0, "pika": False, "jobqueue": False}
+    assert (tmp_path / "saida" / "artigo.md").read_text(encoding="utf-8").strip()
+
+
+def test_worker_main_process_does_not_import_the_conversion_engines(tmp_path):
+    pytest.importorskip("pika")
+    pytest.importorskip("psutil")
+    (tmp_path / "dados").mkdir()
+    code = f"""
+import json, sys
+from artigo2md import cli
+from artigo2md.jobqueue import amqp
+
+class ProbableAuthenticationError(Exception):
+    pass
+
+def refuse(_settings):
+    raise ProbableAuthenticationError("recusado")
+
+amqp.open_connection = refuse  # nenhuma conexão real: o teste só quer o caminho de código do worker
+status = cli.main(["worker", "--data-dir", {str(tmp_path / 'dados')!r}, "--workers", "1", "--min-free-memory", "0"])
+print(json.dumps({{"status": status, "docling": "docling" in sys.modules,
+                   "pymupdf4llm": "pymupdf4llm" in sys.modules, "pika": "pika" in sys.modules}}))
+"""
+    env = {"RABBITMQ_DEFAULT_USER": "u", "RABBITMQ_DEFAULT_PASS": "p"}
+    loaded = json.loads(_run_isolated(code, env).strip().splitlines()[-1])
+    assert loaded["status"] == 4
+    assert loaded["docling"] is False and loaded["pymupdf4llm"] is False
