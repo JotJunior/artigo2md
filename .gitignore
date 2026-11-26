@@ -9,3 +9,9 @@ artigo2md-dados/
 !tests/fixtures/*.pdf
 .DS_Store
 stack/.env
+
+# desktop (Tauri 2 + Svelte 5)
+desktop/node_modules/
+desktop/src-tauri/target/
+desktop/dist/
+desktop/src-tauri/gen/
