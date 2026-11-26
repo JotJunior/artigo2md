@@ -23,6 +23,12 @@ else
     ENV_FILE="$STACK_DIR/.env.example"
 fi
 
+# O compose exige ARTIGO2MD_DATA_DIR para montar a pasta de dados, mas `down` não monta nada: um valor
+# qualquer basta para a interpolação (o ambiente do shell tem precedência sobre o --env-file). Assim
+# `down` continua funcionando com o stack/.env.example, ou com um stack/.env quebrado ou incompleto.
+ARTIGO2MD_DATA_DIR=/var/empty
+export ARTIGO2MD_DATA_DIR
+
 say() { printf '%s\n' "$*"; }
 fail() { code=$1; shift; printf '%s\n' "$*" >&2; exit "$code"; }
 

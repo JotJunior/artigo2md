@@ -10,7 +10,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .contract import ROUTING_KEYS, TYPE_ERROR, TYPE_PROGRESS, TYPE_RESULT
+from .schema import ROUTING_KEYS, TYPE_ERROR, TYPE_PROGRESS, TYPE_RESULT
 
 PRECONDITION_FAILED = 406  # código AMQP de pré-condição (`pika.spec.PRECONDITION_FAILED`)
 

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Sobe a infraestrutura local do artigo2md (Postgres, RabbitMQ com painel e API base).
+# Sobe a infraestrutura local do artigo2md (Postgres, RabbitMQ com painel e API do app).
 #
 # Uso:  sh stack/up.sh [--atualizar-imagens]
 #
@@ -121,6 +121,22 @@ for name in ARTIGO2MD_POSTGRES_PORT ARTIGO2MD_RABBITMQ_PORT ARTIGO2MD_RABBITMQ_M
     esac
     { [ "$port" -ge 1 ] && [ "$port" -le 65535 ]; } 2>/dev/null || fail 2 "$name precisa ser um número de 1 a 65535 em stack/.env."
 done
+
+# ── passo 3b: pasta de dados do app (ARTIGO2MD_DATA_DIR) ─────────────────────────
+# Precisa ser um caminho absoluto, de uma pasta existente e já em forma canônica (igual a `pwd -P`):
+# a API compara este caminho com o que os workers gravam, e uma diferença quebraria essa comparação.
+DATA_DIR=$(get_var ARTIGO2MD_DATA_DIR)
+[ -n "$DATA_DIR" ] || fail 2 "ARTIGO2MD_DATA_DIR está vazia ou ausente: preencha no stack/.env com o caminho absoluto da pasta de dados do app (o mesmo de 'artigo2md worker --data-dir')."
+case $DATA_DIR in
+    /*) ;;
+    *) fail 2 "ARTIGO2MD_DATA_DIR precisa ser um caminho absoluto (começando por /) em stack/.env." ;;
+esac
+[ -e "$DATA_DIR" ] || fail 2 "ARTIGO2MD_DATA_DIR aponta para uma pasta que não existe: crie a pasta ou corrija o caminho em stack/.env."
+[ -d "$DATA_DIR" ] || fail 2 "ARTIGO2MD_DATA_DIR precisa ser uma pasta, mas o caminho em stack/.env é de outro tipo de arquivo."
+CANONICAL_DATA_DIR=$(CDPATH= cd -- "$DATA_DIR" 2>/dev/null && pwd -P) \
+    || fail 2 "ARTIGO2MD_DATA_DIR não pôde ser aberta (permissão negada?): corrija o caminho em stack/.env."
+[ "$CANONICAL_DATA_DIR" = "$DATA_DIR" ] \
+    || fail 2 "ARTIGO2MD_DATA_DIR não está em forma canônica (tem link simbólico, '..', '.', barra repetida ou final). Use o caminho real: $CANONICAL_DATA_DIR"
 
 # ── passo 4: Docker e Docker Compose ─────────────────────────────────────────────
 # A saída de erro original destes comandos é descartada e trocada por mensagem em português.

@@ -80,7 +80,7 @@ def _event_row(event_type="project_created"):
 
 def _job_row(status="pending"):
     return {"id": 5, "project_id": 1, "document_id": 3, "requested_engine": "auto", "status": status,
-            "requested_at": NOW, "started_at": None, "finished_at": None, "error_summary": None}
+            "requested_at": NOW, "started_at": None, "finished_at": None, "error_summary": None, "published_at": None}
 
 
 # --- name_key -------------------------------------------------------------------------------------------
@@ -122,6 +122,19 @@ _INVALID_CALLS = {
     "limit zero": lambda s: s.list_events(project_id=1, limit=0),
     "limit 501": lambda s: s.list_events(project_id=1, limit=501),
     "offset negativo": lambda s: s.list_events(project_id=1, offset=-1),
+    "rename nome vazio": lambda s: s.rename_project(1, "  "),
+    "rename nome nao texto": lambda s: s.rename_project(1, 7),
+    "rename id invalido": lambda s: s.rename_project(0, "Novo"),
+    "get_source id invalido": lambda s: s.get_source(-3),
+    "list_sources id invalido": lambda s: s.list_sources(True),
+    "get_document id invalido": lambda s: s.get_document(0),
+    "get_job id invalido": lambda s: s.get_job("1"),
+    "list_project_job_ids id invalido": lambda s: s.list_project_job_ids(None),
+    "list_open_jobs id invalido": lambda s: s.list_open_jobs(0),
+    "mark_job_published id invalido": lambda s: s.mark_job_published(False),
+    "list_unpublished limit zero": lambda s: s.list_unpublished_jobs(limit=0),
+    "list_unpublished limit bool": lambda s: s.list_unpublished_jobs(limit=True),
+    "list_unpublished limit enorme": lambda s: s.list_unpublished_jobs(limit=repository.MAX_UNPUBLISHED_PAGE + 1),
 }
 
 
@@ -241,7 +254,7 @@ def test_transitions_use_one_conditional_update_with_the_allowed_origin_states()
     assert "status = ANY($2::text[])" in sql and args[1] == ["pending", "running"]
     session, db = _session(("fetchrow", _job_row("failed")), ("fetchrow", _event_row("job_failed")))
     _run(session.fail_job(5, "motor falhou", "falhou"))
-    assert db.calls[0][2] == (5, ["running"], "motor falhou")
+    assert db.calls[0][2] == (5, ["pending", "running"], "motor falhou")  # pending -> failed (0002)
 
 
 def test_complete_job_writes_state_result_and_event_in_that_order():
@@ -529,3 +542,70 @@ def test_no_exception_in_the_package_is_raised_with_raw_driver_text():
                     assert node.cause is not None or isinstance(node.exc, ast.Name), (
                         f"{module}:{node.lineno}: raise dentro de except sem `from None`"
                     )
+
+
+# --- Operações da project-api (migração 0002) -------------------------------------------------------------
+
+
+def test_rename_project_locks_trims_updates_and_emits_the_event():
+    session, db = _session(
+        ("fetchrow", _project_row()), ("fetchrow", _project_row(name="Novo nome")),
+        ("fetchrow", _event_row("project_renamed")),
+    )
+    project = _run(session.rename_project(1, "  Novo nome  "))
+    assert project.name == "Novo nome"
+    assert "FOR UPDATE" in db.calls[0][1]
+    assert db.calls[1][2] == (1, "Novo nome", name_key("Novo nome"))
+    assert db.calls[2][2][3:5] == ("project_renamed", "Projeto renomeado.")
+
+
+def test_rename_project_unknown_project_is_not_found_and_emits_nothing():
+    session, db = _session(("fetchrow", None))
+    with pytest.raises(errors.ProjectNotFoundError):
+        _run(session.rename_project(1, "Novo"))
+    assert len(db.calls) == 1
+
+
+def test_get_source_not_found_uses_the_base_error_with_the_contract_message():
+    session, _ = _session(("fetchrow", None))
+    with pytest.raises(errors.StoreNotFoundError) as caught:
+        _run(session.get_source(4))
+    assert type(caught.value) is errors.StoreNotFoundError and str(caught.value) == "Fonte não encontrada."
+
+
+def test_empty_lists_check_whether_the_project_exists():
+    for method in ("list_sources", "list_project_job_ids"):
+        session, db = _session(("fetch", []), ("fetchval", None))
+        with pytest.raises(errors.ProjectNotFoundError):
+            _run(getattr(session, method)(1))
+        session, db = _session(("fetch", []), ("fetchval", 1))
+        assert _run(getattr(session, method)(1)) == []
+        assert "FROM projects" in db.calls[1][1]
+
+
+def test_mark_job_published_updates_only_when_null_and_otherwise_reads_the_job():
+    session, db = _session(("fetchrow", _job_row()))
+    _run(session.mark_job_published(5))
+    assert "published_at IS NULL" in db.calls[0][1] and len(db.calls) == 1
+    session, db = _session(("fetchrow", None), ("fetchrow", _job_row("cancelled")))
+    assert _run(session.mark_job_published(5)).status == "cancelled"
+    session, _ = _session(("fetchrow", None), ("fetchrow", None))
+    with pytest.raises(errors.JobNotFoundError):
+        _run(session.mark_job_published(5))
+
+
+def test_list_unpublished_jobs_filters_pending_without_published_at_ordered_by_id():
+    session, db = _session(("fetch", [_job_row()]))
+    jobs = _run(session.list_unpublished_jobs())
+    assert [j.id for j in jobs] == [5] and db.calls[0][2] == (1000,)
+    assert "status = 'pending'" in db.calls[0][1] and "published_at IS NULL" in db.calls[0][1]
+    assert "ORDER BY id" in db.calls[0][1]
+
+
+def test_fail_job_accepts_pending_and_running_origins():
+    assert repository._TRANSITIONS["failed"][0] == ("pending", "running")
+
+
+def test_job_exposes_published_at():
+    session, _ = _session(("fetchrow", {**_job_row(), "published_at": NOW}))
+    assert _run(session.mark_job_published(5)).published_at == NOW

@@ -111,7 +111,7 @@ def test_only_the_api_service_gets_the_extra_hardening(compose):
     api = compose["services"]["api"]
     assert api["user"] == "10001:10001"
     assert api["read_only"] is True
-    assert api["tmpfs"] == ["/tmp"]
+    assert api["tmpfs"] == ["/tmp:size=768m"]
     assert api["cap_drop"] == ["ALL"]
     # decisão do operador (block-004): Postgres e RabbitMQ só recebem no-new-privileges
     for name in ("postgres", "rabbitmq"):
@@ -143,7 +143,10 @@ def test_data_volumes_are_named_and_mounted_where_the_images_expect(compose):
     assert compose["services"]["postgres"]["volumes"] == ["pgdata:/var/lib/postgresql"]
     assert compose["services"]["rabbitmq"]["volumes"] == ["rabbitmqdata:/var/lib/rabbitmq"]
     assert compose["services"]["rabbitmq"]["hostname"] == "rabbitmq"
-    assert "volumes" not in compose["services"]["api"]
+    # único volume da API: a pasta de dados do app (bind mount obrigatório), montada em /data
+    assert compose["services"]["api"]["volumes"] == [
+        "${ARTIGO2MD_DATA_DIR:?defina ARTIGO2MD_DATA_DIR em stack/.env}:/data"
+    ]
 
 
 def test_api_image_is_built_locally_from_the_repo_root(compose):
@@ -204,8 +207,9 @@ def test_env_example_has_the_contract_variables_and_no_real_credential():
     assert set(pairs) == {
         "ARTIGO2MD_POSTGRES_PORT", "ARTIGO2MD_RABBITMQ_PORT", "ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT",
         "ARTIGO2MD_API_PORT", "POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB",
-        "RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS",
+        "RABBITMQ_DEFAULT_USER", "RABBITMQ_DEFAULT_PASS", "ARTIGO2MD_DATA_DIR",
     }
+    assert pairs["ARTIGO2MD_DATA_DIR"] == ""  # obrigatória: o up.sh recusa enquanto não for preenchida
     assert pairs["POSTGRES_PASSWORD"] == EXAMPLE_PASSWORD
     assert pairs["RABBITMQ_DEFAULT_PASS"] == EXAMPLE_PASSWORD
     assert "POSTGRES_HOST_AUTH_METHOD" not in pairs
@@ -232,6 +236,28 @@ def test_env_example_comments_are_in_portuguese_and_warn_about_the_rules():
     for fragment in ("12 ou mais caracteres", "`$`", "docker inspect", "PRIMEIRA inicialização",
                      "--apagar-dados", "127.0.0.1"):
         assert fragment in text, fragment
+
+
+def test_env_example_documents_the_optional_dev_origin_variable_commented_out():
+    text = ENV_EXAMPLE.read_text(encoding="utf-8")
+    assert "ARTIGO2MD_API_ALLOWED_ORIGINS" not in text  # variável removida (13.9): a lista de origens é fixa
+    assert "# ARTIGO2MD_API_ALLOW_DEV_ORIGIN=" in text
+    assert "artigo2md worker --data-dir" in text
+    assert "ARTIGO2MD_API_ALLOW_DEV_ORIGIN" not in _env_pairs()  # desligada por padrão
+
+
+def test_api_environment_matches_the_configuration_contract(compose):
+    env = compose["services"]["api"]["environment"]
+    assert env["ARTIGO2MD_DATA_DIR_MOUNT"] == "/data"
+    assert env["ARTIGO2MD_DATA_DIR_HOST"] == "${ARTIGO2MD_DATA_DIR}"
+    assert "ARTIGO2MD_API_ALLOWED_ORIGINS" not in env  # variável removida (13.9): a lista de origens é fixa
+    assert env["ARTIGO2MD_API_ALLOW_DEV_ORIGIN"] == "${ARTIGO2MD_API_ALLOW_DEV_ORIGIN:-}"
+    # portas e hosts de dentro da rede do Compose (não as publicadas no computador)
+    assert (env["ARTIGO2MD_POSTGRES_HOST"], env["ARTIGO2MD_POSTGRES_PORT"]) == ("postgres", "5432")
+    assert (env["ARTIGO2MD_RABBITMQ_HOST"], env["ARTIGO2MD_RABBITMQ_PORT"]) == ("rabbitmq", "5672")
+    for name in ("POSTGRES_USER", "POSTGRES_PASSWORD", "POSTGRES_DB", "RABBITMQ_DEFAULT_USER",
+                 "RABBITMQ_DEFAULT_PASS"):
+        assert env[name].startswith("${") and ":?" in env[name], name
 
 
 def test_stack_env_is_git_ignored():

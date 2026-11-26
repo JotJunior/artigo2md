@@ -256,9 +256,14 @@ def rabbit(tmp_path_factory):
     shutil.copytree(ROOT / "stack", work / "stack", ignore=shutil.ignore_patterns(".env"))
     ports = {var: _free_port() for var in PORT_VARS}
     password, user = secrets.token_urlsafe(24), "it_user"
+    # O compose exige ARTIGO2MD_DATA_DIR (volume da API) mesmo quando só o RabbitMQ sobe: a interpolação vale
+    # para o arquivo inteiro.
+    data_dir = work / "data"
+    data_dir.mkdir()
     env_text = "".join(f"{v}={p}\n" for v, p in ports.items()) + (
         f"POSTGRES_USER={user}\nPOSTGRES_PASSWORD={password}\nPOSTGRES_DB=it_db\n"
-        f"RABBITMQ_DEFAULT_USER={user}\nRABBITMQ_DEFAULT_PASS={password}\n")
+        f"RABBITMQ_DEFAULT_USER={user}\nRABBITMQ_DEFAULT_PASS={password}\n"
+        f"ARTIGO2MD_DATA_DIR={data_dir}\n")
     env_file = work / "stack" / ".env"
     env_file.write_text(env_text)
     env_file.chmod(0o600)

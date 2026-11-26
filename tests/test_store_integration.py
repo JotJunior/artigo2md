@@ -18,6 +18,11 @@ from store_db import requires_db
 
 from artigo2md.store import errors, migrator
 
+# Versões conhecidas do pacote (cresce com cada migração nova): os testes não fixam "só a 0001".
+ALL_VERSIONS = tuple(m.version for m in migrator.known_migrations())
+LATEST = ALL_VERSIONS[-1]
+BROKEN_VERSION = LATEST + 1
+
 pytestmark = requires_db
 
 
@@ -100,15 +105,15 @@ def test_empty_database_gets_all_migrations_then_second_call_changes_nothing(emp
     first, second, before, after, schema_before, schema_after, elapsed, tables, server_version = asyncio.run(
         scenario()
     )
-    assert first.applied == (1,) and first.current_version == 1
+    assert first.applied == ALL_VERSIONS and first.current_version == LATEST
     assert elapsed <= 10, f"migração em banco vazio levou {elapsed:.2f} s (SC-001: até 10 s)"
     # SC-001: o teste registra o ambiente medido (sistema, versão do Python e versão do servidor Postgres).
     print(
         f"SC-001: migração em banco vazio em {elapsed:.2f} s "
         f"(sistema {platform.platform()}, Python {sys.version.split()[0]}, Postgres {server_version})"
     )
-    assert second.applied == () and second.current_version == 1
-    assert before == after and len(before) == 1  # nenhum registro de histórico alterado
+    assert second.applied == () and second.current_version == LATEST
+    assert before == after and len(before) == LATEST  # nenhum registro de histórico alterado
     assert schema_before["columns"] and schema_before["constraints"] and schema_before["triggers"]
     assert schema_before == schema_after  # a segunda aplicação não altera o schema
     assert {
@@ -119,7 +124,7 @@ def test_empty_database_gets_all_migrations_then_second_call_changes_nothing(emp
 
 def test_apply_migrations_with_settings_works_on_an_empty_database(empty_database):
     report = asyncio.run(migrator.apply_migrations(empty_database))
-    assert report.applied == (1,)
+    assert report.applied == ALL_VERSIONS
 
 
 def test_concurrent_calls_both_succeed_and_each_version_is_recorded_once(empty_database):
@@ -136,8 +141,8 @@ def test_concurrent_calls_both_succeed_and_each_version_is_recorded_once(empty_d
                 await connection.close()
 
     reports, history = asyncio.run(scenario())
-    assert sorted(v for report in reports for v in report.applied) == [1]  # uma só aplicou
-    assert [row[0] for row in history] == [1]
+    assert sorted(v for report in reports for v in report.applied) == list(ALL_VERSIONS)  # cada versão aplicada uma só vez
+    assert [row[0] for row in history] == list(ALL_VERSIONS)
 
 
 def test_lock_held_by_another_session_times_out_without_applying(empty_database):
@@ -156,7 +161,7 @@ def test_lock_held_by_another_session_times_out_without_applying(empty_database)
 
     error, applied, history = asyncio.run(scenario())
     assert "há mais de" in str(error)
-    assert applied.applied == (1,) and len(history) == 1
+    assert applied.applied == ALL_VERSIONS and len(history) == LATEST
 
 
 def test_changed_checksum_newer_schema_and_diverging_history_are_refused(empty_database):
@@ -183,7 +188,7 @@ def test_changed_checksum_newer_schema_and_diverging_history_are_refused(empty_d
             await connection.execute("DELETE FROM schema_migrations WHERE version = 9999")
 
             # Histórico divergente: a versão 1 está aplicada, mas o "código" só conhece a 2.
-            only_two = [migrator.Migration(2, "0002_other.sql", "b" * 64, "SELECT 1")]
+            only_two = [migrator.Migration(LATEST, f"{LATEST:04d}_other.sql", "b" * 64, "SELECT 1")]
             with pytest.raises(errors.MigrationChecksumError) as diverged:
                 await migrator.apply_migrations_on(connection, only_two)
             outcomes["diverged"] = str(diverged.value)
@@ -196,13 +201,13 @@ def test_changed_checksum_newer_schema_and_diverging_history_are_refused(empty_d
     assert "0001_initial.sql foi alterada depois de aplicada" in outcomes["changed"]
     assert "versão 9999" in outcomes["newer"]
     assert "a migração 0001 foi aplicada mas não existe mais" in outcomes["diverged"]
-    assert [row[0] for row in outcomes["history"]] == [1]  # nada foi aplicado nem removido pelas recusas
+    assert [row[0] for row in outcomes["history"]] == list(ALL_VERSIONS)  # nada foi aplicado nem removido pelas recusas
 
 
 def test_failing_migration_in_the_middle_is_rolled_back_and_not_recorded(empty_database):
     broken = migrator.Migration(
-        version=2,
-        name="0002_broken.sql",
+        version=BROKEN_VERSION,
+        name=f"{BROKEN_VERSION:04d}_broken.sql",
         checksum="c" * 64,
         sql="CREATE TABLE partial_table (id integer); SELECT * FROM table_that_does_not_exist_zz;",
     )
@@ -218,11 +223,11 @@ def test_failing_migration_in_the_middle_is_rolled_back_and_not_recorded(empty_d
             await connection.close()
 
     error, partial, history = asyncio.run(scenario())
-    assert "0002_broken.sql" in str(error) and "foi desfeita" in str(error)
+    assert f"{BROKEN_VERSION:04d}_broken.sql" in str(error) and "foi desfeita" in str(error)
     assert "table_that_does_not_exist_zz" not in str(error)  # nada do texto bruto do servidor
     assert error.__cause__ is None
     assert partial is None  # nenhuma tabela parcial
-    assert [row[0] for row in history] == [1]  # a 0001 desta chamada permanece; a 0002 não foi registrada
+    assert [row[0] for row in history] == list(ALL_VERSIONS)  # as migrações válidas permanecem; a quebrada não
 
 
 # --- Esquema: regras que o próprio banco garante (data-model.md) ---------------------------------------
@@ -466,7 +471,10 @@ def test_schema_history_is_append_only_and_uses_write_time(migrated_database):
             "INSERT INTO history_events (project_id, event_type, message) VALUES ($1, 'source_added', 'b') RETURNING id",
             ids["project"],
         )
-        rows = await c.fetch("SELECT id, occurred_at FROM history_events ORDER BY occurred_at, id")
+        # Filtra pelo projeto do cenário: o banco da sessão é compartilhado, e outros módulos gravam eventos nele.
+        rows = await c.fetch(
+            "SELECT id, occurred_at FROM history_events WHERE project_id = $1 ORDER BY occurred_at, id", ids["project"]
+        )
         assert [r["id"] for r in rows] == [first, second]
         assert rows[0]["occurred_at"].tzinfo is not None
         assert rows[0]["occurred_at"] < rows[1]["occurred_at"]  # clock_timestamp: instantes crescentes na transação

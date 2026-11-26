@@ -32,6 +32,7 @@ EVENT_TYPES = (
     "job_succeeded",
     "job_failed",
     "job_cancelled",
+    "project_renamed",
 )
 NOT_PROCESSED = "not_processed"
 DOCUMENT_STATUSES = (NOT_PROCESSED,) + JOB_STATUSES
@@ -108,6 +109,8 @@ class Job:
     started_at: datetime | None
     finished_at: datetime | None
     error_summary: str | None
+    # Instante em que a API confirmou a publicação do job na fila (migração 0002); `None` = não publicado.
+    published_at: datetime | None = None
 
 
 @dataclass(frozen=True)

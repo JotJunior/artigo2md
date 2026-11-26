@@ -52,12 +52,31 @@ services:
       dockerfile: stack/api/Dockerfile
     user: "10001:10001"
     read_only: true
+    # O zip de exportação é gravado em /tmp; a soma de Markdown tem teto de 512 MiB e 768 MiB deixa folga.
+    # O tmpfs só ocupa memória enquanto houver arquivo.
     tmpfs:
-      - /tmp
+      - /tmp:size=768m
     cap_drop:
       - ALL
     security_opt:
       - "no-new-privileges:true"
+    # Único volume do serviço: a pasta de dados do app (onde os workers gravam o Markdown).
+    volumes:
+      - "${ARTIGO2MD_DATA_DIR:?defina ARTIGO2MD_DATA_DIR em stack/.env}:/data"
+    # Portas e hosts abaixo são os do lado de DENTRO da rede do Compose (não as publicadas no seu computador).
+    environment:
+      ARTIGO2MD_DATA_DIR_HOST: "${ARTIGO2MD_DATA_DIR}"
+      ARTIGO2MD_DATA_DIR_MOUNT: "/data"
+      ARTIGO2MD_API_ALLOW_DEV_ORIGIN: "${ARTIGO2MD_API_ALLOW_DEV_ORIGIN:-}"
+      ARTIGO2MD_POSTGRES_HOST: "postgres"
+      ARTIGO2MD_POSTGRES_PORT: "5432"
+      POSTGRES_USER: "${POSTGRES_USER:?defina POSTGRES_USER em stack/.env}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD em stack/.env}"
+      POSTGRES_DB: "${POSTGRES_DB:?defina POSTGRES_DB em stack/.env}"
+      ARTIGO2MD_RABBITMQ_HOST: "rabbitmq"
+      ARTIGO2MD_RABBITMQ_PORT: "5672"
+      RABBITMQ_DEFAULT_USER: "${RABBITMQ_DEFAULT_USER:?defina RABBITMQ_DEFAULT_USER em stack/.env}"
+      RABBITMQ_DEFAULT_PASS: "${RABBITMQ_DEFAULT_PASS:?defina RABBITMQ_DEFAULT_PASS em stack/.env}"
     ports:
       - "127.0.0.1:${ARTIGO2MD_API_PORT:?defina ARTIGO2MD_API_PORT em stack/.env}:8000"
     depends_on:
