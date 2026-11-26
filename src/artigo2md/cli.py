@@ -1,9 +1,11 @@
-"""Linha de comando: `artigo2md convert`, `artigo2md serve`, `artigo2md doctor`."""
+"""Linha de comando: `artigo2md convert`, `serve`, `doctor` e `worker` (fila de conversão)."""
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import platform
+import re
 import sys
 from pathlib import Path
 
@@ -132,7 +134,85 @@ def cmd_doctor(_args: argparse.Namespace) -> int:
         print(f"  {e['name']:<12} {e['license']:<9} {tag}")
     required_ok = all(e["installed"] for e in table if e["required"])
     print("Pronto para uso." if required_ok else "Faltam motores obrigatórios: rode `uv sync`.")
+    _print_infra_section()
     return 0 if required_ok else 1
+
+
+def _print_infra_section() -> None:
+    """Seção opcional de infraestrutura (versão desktop). Nunca altera o código de saída."""
+    from . import infra  # import local: `convert` nunca carrega este módulo
+
+    try:
+        for line in infra.format_section(infra.collect()):
+            print(line)
+    except Exception:  # defensivo: a infraestrutura é opcional e não pode quebrar o doctor
+        print("Infraestrutura (versão desktop, opcional): não foi possível verificar.")
+
+
+# ── worker da fila ──────────────────────────────────────────────────────────────────────────────
+MISSING_EXTRA = "O worker precisa das dependências da fila. Instale com: uv sync --extra queue"
+DATA_DIR_REQUIRED = "a opção --data-dir é obrigatória (pasta onde o worker grava o Markdown)"
+
+
+def _number_option(kind: type, label: str):
+    """Conversor de opção numérica com mensagem em português (o argparse só diz "invalid ... value")."""
+
+    def convert(text: str):
+        try:
+            return kind(text)
+        except ValueError:
+            noun = "um número inteiro" if kind is int else "um número"
+            raise argparse.ArgumentTypeError(f"valor inválido ({text!r}): deve ser {noun}.") from None
+
+    convert.__name__ = label
+    return convert
+
+
+def _worker_parser_error(parser: argparse.ArgumentParser, message: str):
+    """Erro de uso do subcomando `worker` em português (código de saída 2, como o argparse)."""
+    message = re.sub(r"^argument ", "argumento ", message)
+    parser.print_usage(sys.stderr)
+    print(f"{parser.prog}: erro: {message}", file=sys.stderr)
+    raise SystemExit(2)
+
+
+def cmd_worker(args: argparse.Namespace) -> int:
+    from .jobqueue import settings as queue_settings  # import local: só este ramo carrega a fila (FR-017)
+
+    def usage_error(message: str) -> int:
+        print(f"{args._parser.prog}: erro: {message}", file=sys.stderr)
+        return queue_settings.EXIT_USAGE
+
+    if not args.data_dir:
+        return usage_error(DATA_DIR_REQUIRED)
+    try:
+        import pika  # noqa: F401
+        import psutil  # noqa: F401
+    except ImportError:
+        print(MISSING_EXTRA, file=sys.stderr)
+        return queue_settings.EXIT_EXTRA_MISSING
+
+    try:
+        settings = queue_settings.load_settings(
+            data_dir=args.data_dir,
+            workers=queue_settings.DEFAULT_WORKERS if args.workers is None else args.workers,
+            min_free_memory_mb=(queue_settings.DEFAULT_MIN_FREE_MEMORY_MB
+                                if args.min_free_memory is None else args.min_free_memory),
+            retry_delay=args.retry_delay,
+            max_attempts=args.max_attempts,
+            idle_timeout=args.idle_timeout,
+            shutdown_timeout=args.shutdown_timeout,
+            conversion_timeout=args.conversion_timeout,
+        )
+    except queue_settings.ConfigError as exc:
+        print(exc.message, file=sys.stderr)
+        return exc.exit_code
+
+    from .jobqueue.service import Service
+
+    print(f"artigo2md {__version__} — worker com {settings.workers} conversor(es); "
+          f"RabbitMQ em {settings.host}:{settings.port}; Markdown em {settings.data_dir}", file=sys.stderr)
+    return Service(settings).run()
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -160,6 +240,31 @@ def main(argv: list[str] | None = None) -> int:
 
     d = sub.add_parser("doctor", help="verifica a instalação e os motores disponíveis")
     d.set_defaults(func=cmd_doctor)
+
+    w = sub.add_parser("worker", help="consome jobs de conversão do RabbitMQ local (fila)",
+                       description="Consome jobs do RabbitMQ local (127.0.0.1), converte cada PDF e grava o "
+                                   "Markdown em --data-dir/<job_id>/. Requer o extra `queue` "
+                                   "(uv sync --extra queue) e a infraestrutura da stack no ar.")
+    w.add_argument("--data-dir", metavar="PASTA",
+                   help="pasta onde o worker grava o Markdown (obrigatória)")
+    w.add_argument("--workers", type=_number_option(int, "--workers"), metavar="N",
+                   help="conversões simultâneas (padrão: 4, o maior pool medido; ver "
+                        "docs/specs/conversion-queue/ram-measurement.md)")
+    w.add_argument("--min-free-memory", type=_number_option(int, "--min-free-memory"), metavar="MB",
+                   help="memória livre mínima, em MB, para iniciar um conversor "
+                        "(padrão: 4822, derivado da medição em docs/specs/conversion-queue/ram-measurement.md)")
+    w.add_argument("--retry-delay", type=_number_option(float, "--retry-delay"), default=30.0, metavar="SEG",
+                   help="espera antes de uma nova tentativa (padrão: 30)")
+    w.add_argument("--max-attempts", type=_number_option(int, "--max-attempts"), default=3, metavar="N",
+                   help="tentativas por job, a primeira incluída (padrão: 3; 1 = sem nova tentativa)")
+    w.add_argument("--idle-timeout", type=_number_option(float, "--idle-timeout"), default=300.0, metavar="SEG",
+                   help="encerra o conversor após SEG segundos sem uso (padrão: 300; 0 = nunca)")
+    w.add_argument("--shutdown-timeout", type=_number_option(float, "--shutdown-timeout"), default=30.0,
+                   metavar="SEG", help="prazo para o job em andamento ao receber SIGINT/SIGTERM (padrão: 30)")
+    w.add_argument("--conversion-timeout", type=_number_option(float, "--conversion-timeout"), default=0.0,
+                   metavar="SEG", help="limite de tempo por conversão (padrão: 0 = sem limite; se usar, abaixo de 1800 s, o prazo do broker)")
+    w.error = functools.partial(_worker_parser_error, w)
+    w.set_defaults(func=cmd_worker, _parser=w)
 
     args = parser.parse_args(argv)
     return args.func(args)

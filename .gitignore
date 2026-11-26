@@ -8,6 +8,7 @@ artigo2md-dados/
 *.pdf
 !tests/fixtures/*.pdf
 .DS_Store
+stack/.env
 
 # desktop (Tauri 2 + Svelte 5)
 desktop/node_modules/
