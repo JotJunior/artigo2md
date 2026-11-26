@@ -33,6 +33,7 @@ from .errors import (
     ProjectNotFoundError,
     StoreDatabaseError,
     StoreError,
+    StoreNotFoundError,
     StoreValidationError,
 )
 from .models import (
@@ -55,6 +56,7 @@ from .models import (
 )
 
 MAX_EVENTS_PAGE = 500
+MAX_UNPUBLISHED_PAGE = 100_000
 
 _NAME_INDEX = "projects_active_name_key"
 _ACTIVE_JOB_INDEX = "jobs_one_active_per_document"
@@ -64,7 +66,8 @@ _ACTIVE_JOB_INDEX = "jobs_one_active_per_document"
 _TRANSITIONS: dict[str, tuple[tuple[str, ...], str]] = {
     "running": (("pending",), "started_at = now()"),
     "succeeded": (("running",), "finished_at = now()"),
-    "failed": (("running",), "finished_at = now(), error_summary = $3"),
+    # `pending -> failed` (migração 0002): job cuja publicação na fila não foi confirmada nunca chegou a um worker.
+    "failed": (("pending", "running"), "finished_at = now(), error_summary = $3"),
     "cancelled": (("pending", "running"), "finished_at = now()"),
 }
 
@@ -177,6 +180,7 @@ def _row_to_job(row: Any) -> Job:
         id=row["id"], project_id=row["project_id"], document_id=row["document_id"],
         requested_engine=row["requested_engine"], status=row["status"], requested_at=row["requested_at"],
         started_at=row["started_at"], finished_at=row["finished_at"], error_summary=row["error_summary"],
+        published_at=row["published_at"],
     )
 
 
@@ -303,6 +307,11 @@ class StoreSession:
             raise ProjectNotFoundError("Projeto não encontrado.")
         return row
 
+    async def _require_project(self, project_id: int) -> None:
+        """Só no caso de resultado vazio: distingue "sem registros" de "projeto inexistente"."""
+        if await self._db.fetchval("SELECT 1 FROM projects WHERE id = $1", project_id) is None:
+            raise ProjectNotFoundError("Projeto não encontrado.")
+
     async def _cancel_open_jobs(self, project_id: int) -> list[tuple[int, int]]:
         """Cancela jobs pendentes/em andamento do projeto; devolve `(job_id, document_id)` em ordem de id."""
         rows = await self._db.fetch(
@@ -340,6 +349,22 @@ class StoreSession:
         await self._emit(project_id, "project_unarchived", "Projeto desarquivado.")
         return _row_to_project(row)
 
+    async def rename_project(self, project_id: int, name: str) -> Project:
+        """Renomeia o projeto (nome sem espaços nas pontas); emite `project_renamed` (FR-002).
+
+        Mesmo `name_key` do próprio projeto só atualiza a grafia; chave em uso por OUTRO projeto ativo é
+        recusada pelo índice `projects_active_name_key` (`ProjectNameTakenError`).
+        """
+        project_id = _id(project_id, "project_id")
+        clean = _text(name, "name").strip()
+        await self._lock_project(project_id)
+        row = await self._db.fetchrow(
+            "UPDATE projects SET name = $2, name_key = $3, updated_at = now() WHERE id = $1 RETURNING *",
+            project_id, clean, name_key(clean),
+        )
+        await self._emit(project_id, "project_renamed", "Projeto renomeado.")
+        return _row_to_project(row)
+
     async def delete_project(self, project_id: int) -> None:
         """Cancela jobs não finais e remove o projeto; a cascata remove o resto. Nenhum arquivo é tocado."""
         await self._lock_project(project_id)
@@ -362,6 +387,26 @@ class StoreSession:
         source = _row_to_source(row)
         await self._emit(project_id, "source_added", "Fonte adicionada.")
         return source
+
+    async def get_source(self, source_id: int) -> Source:
+        row = await self._db.fetchrow("SELECT * FROM sources WHERE id = $1", _id(source_id, "source_id"))
+        if row is None:
+            raise StoreNotFoundError("Fonte não encontrada.")
+        return _row_to_source(row)
+
+    async def list_sources(self, project_id: int) -> list[Source]:
+        """Fontes do projeto por `id`; projeto inexistente é `ProjectNotFoundError`."""
+        project_id = _id(project_id, "project_id")
+        rows = await self._db.fetch("SELECT * FROM sources WHERE project_id = $1 ORDER BY id", project_id)
+        if not rows:
+            await self._require_project(project_id)
+        return [_row_to_source(row) for row in rows]
+
+    async def get_document(self, document_id: int) -> Document:
+        row = await self._db.fetchrow("SELECT * FROM documents WHERE id = $1", _id(document_id, "document_id"))
+        if row is None:
+            raise DocumentNotFoundError("Documento não encontrado.")
+        return _row_to_document(row)
 
     async def add_document(self, project_id: int, source_id: int, path: str) -> tuple[Document, bool]:
         """Registra o documento; se o caminho já existe no projeto, devolve o existente (fonte original)."""
@@ -464,6 +509,60 @@ class StoreSession:
         )
         return job
 
+    async def get_job(self, job_id: int) -> Job:
+        row = await self._db.fetchrow("SELECT * FROM jobs WHERE id = $1", _id(job_id, "job_id"))
+        if row is None:
+            raise JobNotFoundError("Job não encontrado.")
+        return _row_to_job(row)
+
+    async def list_project_job_ids(self, project_id: int) -> list[int]:
+        """Ids de todos os jobs do projeto, de qualquer estado, em ordem (limpeza de `<data_dir>/<job_id>/`)."""
+        project_id = _id(project_id, "project_id")
+        rows = await self._db.fetch("SELECT id FROM jobs WHERE project_id = $1 ORDER BY id", project_id)
+        if not rows:
+            await self._require_project(project_id)
+        return [row["id"] for row in rows]
+
+    async def list_open_jobs(self, project_id: int) -> list[Job]:
+        """Jobs `pending|running` do projeto, em ordem de id; `ProjectNotFoundError` se o projeto não existe.
+
+        Trava a linha do projeto (`FOR UPDATE`) até o fim da transação: lida antes de `archive_project`/
+        `delete_project` na MESMA transação, a lista é exatamente o conjunto que essas operações cancelam, sem
+        corrida com um worker concluindo um job (fluxo ao vivo `job_state cancelled`, `live-events.md`).
+        """
+        project_id = _id(project_id, "project_id")
+        await self._lock_project(project_id)
+        rows = await self._db.fetch(
+            "SELECT * FROM jobs WHERE project_id = $1 AND status IN ('pending', 'running') ORDER BY id", project_id
+        )
+        return [_row_to_job(row) for row in rows]
+
+    async def mark_job_published(self, job_id: int) -> Job:
+        """Grava `published_at = now()` só se nulo (idempotente); devolve o job (FR-011).
+
+        Job que já chegou a estado final antes da marcação (worker mais rápido que a API) é devolvido sem
+        alteração: o gatilho do banco recusa qualquer UPDATE em job final, e só jobs `pending` são
+        candidatos a republicação (`list_unpublished_jobs`).
+        """
+        job_id = _id(job_id, "job_id")
+        row = await self._db.fetchrow(
+            "UPDATE jobs SET published_at = now() "
+            "WHERE id = $1 AND published_at IS NULL AND status IN ('pending', 'running') RETURNING *",
+            job_id,
+        )
+        if row is not None:
+            return _row_to_job(row)
+        return await self.get_job(job_id)
+
+    async def list_unpublished_jobs(self, limit: int = 1000) -> list[Job]:
+        """Jobs `pending` sem `published_at`, por `id` (republicação na partida da API, FR-011)."""
+        if isinstance(limit, bool) or not isinstance(limit, int) or not 1 <= limit <= MAX_UNPUBLISHED_PAGE:
+            raise StoreValidationError(f"O limite precisa estar entre 1 e {MAX_UNPUBLISHED_PAGE}.")
+        rows = await self._db.fetch(
+            "SELECT * FROM jobs WHERE status = 'pending' AND published_at IS NULL ORDER BY id LIMIT $1", limit
+        )
+        return [_row_to_job(row) for row in rows]
+
     async def _transition(self, job_id: int, new_status: str, error_summary: str | None = None) -> Job:
         """Transição atômica `UPDATE ... WHERE status = ANY(...)`; zero linhas distingue inexistente de inválido."""
         job_id = _id(job_id, "job_id")
@@ -555,7 +654,7 @@ class StoreSession:
         return job, _row_to_result(row), event
 
     async def fail_job(self, job_id: int, error_summary: str, message: str) -> tuple[Job, HistoryEvent]:
-        """`running -> failed` sem resultado; as tentativas já gravadas permanecem (FR-006)."""
+        """`pending|running -> failed` sem resultado; as tentativas já gravadas permanecem (FR-006, FR-011)."""
         _text(error_summary, "error_summary")
         _text(message, "message")
         job = await self._transition(job_id, "failed", error_summary)
@@ -662,6 +761,11 @@ _OPERATIONS = (
     "create_project", "get_project", "list_projects", "archive_project", "unarchive_project", "delete_project",
     "add_source", "add_document", "list_documents", "create_job", "start_job", "record_attempt", "complete_job",
     "fail_job", "cancel_job", "get_result", "list_attempts", "add_event", "list_events",
+    # project-api (migração 0002)
+    "rename_project", "get_source", "list_sources", "get_document", "get_job", "list_project_job_ids",
+    "mark_job_published", "list_unpublished_jobs",
+    # project-api (fluxo ao vivo)
+    "list_open_jobs",
 )
 
 

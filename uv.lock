@@ -177,6 +177,7 @@ api = [
     { name = "asyncpg" },
     { name = "fastapi", version = "0.162.5", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.11'" },
     { name = "fastapi", version = "0.165.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.11'" },
+    { name = "pika" },
     { name = "uvicorn" },
 ]
 
@@ -204,6 +205,7 @@ provides-extras = ["pymupdf", "queue", "dev"]
 api = [
     { name = "asyncpg", specifier = ">=0.32.0,<0.33" },
     { name = "fastapi", specifier = ">=0.115" },
+    { name = "pika", specifier = "==1.5.0" },
     { name = "uvicorn", specifier = ">=0.30" },
 ]
 

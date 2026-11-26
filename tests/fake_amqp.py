@@ -234,12 +234,27 @@ class FakeConnection:
         self.process_calls += 1
         self.last_time_limit = time_limit
         self.broker.dispatch()
+        delivered = False
         for ch in list(self.channels):
             while ch.pending and not self.closed and not ch.closed:
                 cons, method, props, body = ch.pending.popleft()
                 if cons in ch.cancelled:
                     continue
+                delivered = True
                 cons.callback(ch, method, props, body)
+        if not delivered and time_limit:
+            time.sleep(min(time_limit, 0.005))  # como o pika, espera um pouco quando não há nada a entregar
+
+    def sleep(self, duration: float) -> None:
+        """Como `BlockingConnection.sleep`: dorme mantendo o laço de eventos (as entregas chegam aos callbacks)."""
+        self._check()
+        end = time.monotonic() + duration
+        while True:
+            self.process_data_events(time_limit=0)
+            remaining = end - time.monotonic()
+            if remaining <= 0:
+                return
+            time.sleep(min(remaining, 0.005))
 
     def lose(self) -> None:
         """Perda abrupta de conexão: o que estava sem `ack` volta à fila como `redelivered`."""

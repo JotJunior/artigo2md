@@ -120,11 +120,12 @@ Por que essas restrições:
 
 Opcional: a conversão (`convert`) e a interface web continuam funcionando sem nada disto. Para a versão
 desktop, `stack/` traz uma infraestrutura local em containers (Docker): **Postgres**, **RabbitMQ** (com
-painel de gestão) e uma **API base** com `GET /health`. Tudo roda só na sua máquina: as portas são
+painel de gestão) e a **API do app** (`project-api`: projetos, fontes, documentos, conversões, eventos ao
+vivo, resultado e exportação, além do `GET /health`). Tudo roda só na sua máquina: as portas são
 publicadas apenas em `127.0.0.1` e nenhum serviço envia dados para fora.
 
 ```bash
-cp stack/.env.example stack/.env     # depois edite o stack/.env e troque as duas senhas
+cp stack/.env.example stack/.env     # edite o stack/.env: troque as duas senhas e defina ARTIGO2MD_DATA_DIR
 sh stack/up.sh                       # sobe tudo e espera ficar saudável (até 2 min)
 uv run artigo2md doctor              # a seção "Infraestrutura" mostra os três serviços
 sh stack/down.sh                     # derruba; os dados (volumes) são mantidos
@@ -136,6 +137,29 @@ sh stack/down.sh --apagar-dados      # derruba e APAGA os dados (pede que você 
   As credenciais só valem na primeira inicialização dos volumes; para trocá-las depois, use
   `--apagar-dados`. Em automação, `sh stack/down.sh --apagar-dados --sim` apaga sem perguntar (sem
   terminal interativo e sem `--sim`, nada é apagado).
+- **Pasta de dados (`ARTIGO2MD_DATA_DIR`, obrigatória)**: caminho absoluto de uma pasta que já existe, sem
+  link simbólico no caminho. O `up.sh` compara com o caminho real (`pwd -P`) e recusa, em português, se a
+  variável estiver ausente, vazia, relativa, inexistente, não for uma pasta ou diferir dele. É a **única**
+  pasta que a API enxerga (montada em `/data` no container) e onde os workers gravam o Markdown. **Use
+  exatamente o mesmo caminho em `artigo2md worker --data-dir`**: se divergirem, o caminho do Markdown informado
+  pelo worker cai fora da pasta da API e o job termina `failed` com a mensagem "O Markdown foi gravado fora da
+  pasta de dados da API. Confira se o --data-dir do worker é o mesmo caminho de ARTIGO2MD_DATA_DIR em
+  stack/.env."
+- **Já tinha um `stack/.env`?** Ele não tem `ARTIGO2MD_DATA_DIR`, então o `up.sh` recusa subir até você
+  acrescentar a linha (copie o bloco de `stack/.env.example`). Os volumes e as senhas continuam valendo, e o
+  `down.sh` não exige a variável.
+- **Origem do app (CORS)**: a API só aceita chamadas de navegador vindas de `tauri://localhost` (a origem do
+  app desktop); outra `Origin` recebe `403` e um `Host` que não seja `127.0.0.1` ou `localhost` recebe `400`.
+  Para desenvolver o app, defina `ARTIGO2MD_API_ALLOW_DEV_ORIGIN=1` (acrescenta a origem do servidor de
+  desenvolvimento `localhost:1420`). A lista é fixa: não há variável para trocá-la. Clientes sem `Origin`
+  (curl, o app nativo) não dependem disso.
+- **Risco aceito, sem login**: a API não tem autenticação (uso monousuário, só em `127.0.0.1`). **Qualquer
+  processo local** do seu computador pode chamá-la e ler ou apagar projetos; a política de origem só protege
+  contra páginas web. Não publique a porta fora do loopback.
+- **Contrato da API**: rotas, corpos, status e erros em `docs/specs/project-api/contracts/http-api.md` (fluxo
+  ao vivo em `live-events.md`). A documentação interativa (`/docs`, `/redoc`, `/openapi.json`) fica desligada.
+  `GET /v1/status` informa se a consumidora de eventos está conectada (o app avisa "consumidor parado");
+  `GET /health` só diz que o processo está vivo.
 - **Portas** (mude no `stack/.env` se alguma estiver ocupada; o `up.sh` avisa e sai com código 4):
   Postgres `5432`, RabbitMQ `5672`, painel do RabbitMQ `15672`, API `8778`. O `up.sh` mostra no final a
   URL do painel. O `doctor` lê as mesmas portas (variável de ambiente, depois o arquivo indicado em
@@ -146,6 +170,11 @@ sh stack/down.sh --apagar-dados      # derruba e APAGA os dados (pede que você 
 - **Códigos de saída do `up.sh`**: 0 ok, 2 parâmetros inválidos, 3 Docker indisponível, 4 porta
   ocupada, 5 serviço não ficou saudável.
 - **Licenças** dos componentes (serviços, imagens e dependências da API): `stack/THIRD_PARTY_LICENSES.md`.
+
+**Ordem de uso** (para `desktop-projects` e `desktop-processing`): 1) defina `ARTIGO2MD_DATA_DIR` e suba a
+stack (`sh stack/up.sh`); 2) suba o worker com o mesmo caminho (`uv run artigo2md worker --data-dir <mesmo
+caminho>`, seção "Fila de conversão"); 3) abra o app, que fala com a API em `127.0.0.1`, na porta
+`ARTIGO2MD_API_PORT` (padrão `8778`). Sem o worker, os jobs ficam na fila e a API continua respondendo.
 
 Riscos aceitos desta primeira versão (decisões registradas em `docs/specs/container-stack/research.md`):
 
@@ -192,6 +221,9 @@ sh stack/up.sh                       # a stack de cima tem de estar no ar
 mkdir -p ~/artigo2md-fila
 uv run artigo2md worker --data-dir ~/artigo2md-fila
 ```
+
+Com a API do app (`project-api`) no ar, `--data-dir` precisa ser o mesmo caminho absoluto de
+`ARTIGO2MD_DATA_DIR` no `stack/.env` (o caminho real, sem link simbólico, o mesmo que o `up.sh` aceitou).
 
 As credenciais do RabbitMQ vêm de `RABBITMQ_DEFAULT_USER` e `RABBITMQ_DEFAULT_PASS` no ambiente ou, na falta
 delas, de `ARTIGO2MD_STACK_ENV` e de `./stack/.env`; a porta segue a mesma ordem do `doctor`. Se o RabbitMQ

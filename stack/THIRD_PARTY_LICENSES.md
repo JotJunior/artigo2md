@@ -67,6 +67,19 @@ no block-005, dec-024 da execução feature-00c `job-store`).
 | asyncpg 0.32.0 | `artigo2md-api:local` | Apache-2.0 | permissiva | https://pypi.org/pypi/asyncpg/0.32.0/json | 2026-11-25 |
 | async-timeout (dependência do asyncpg só em Python < 3.11; fora da imagem 3.13 e do CI 3.12) | — | Apache 2 (classifier "License :: OSI Approved :: Apache Software License") | permissiva | https://pypi.org/pypi/async-timeout/json (versão 5.0.1 lida) | 2026-11-25 |
 
+## Cliente AMQP na imagem da API (feature `project-api`, task 3.2)
+
+O `pika` 1.5.0 entra também no grupo `api` (imagem `artigo2md-api:local`) para a API publicar jobs e consumir
+eventos da fila (feature `project-api`, research Decision 3). É a mesma versão e a mesma licença já verificadas
+para o worker (seção seguinte; `docs/specs/conversion-queue/research.md`, L15/L16: BSD-3-Clause, lida pelo operador
+no campo `license` da página oficial do PyPI e no LICENSE do repositório oficial, consulta dele em 2026-11-24).
+Nenhuma outra versão do `uv.lock` mudou (decisão 1.3.2 do operador). Nenhuma dependência de runtime nova: o pika
+1.5.0 não declara dependências obrigatórias.
+
+| Componente | Imagem | Licença (como na fonte) | Princípio II | Fonte oficial | Consultado em |
+|---|---|---|---|---|---|
+| pika 1.5.0 | `artigo2md-api:local` | BSD-3-Clause | permissiva | https://pypi.org/pypi/pika/json | 2026-11-24 |
+
 ## Dependências Python do worker nativo (extra `queue`)
 
 Dependências do extra opcional `queue` do `pyproject.toml` (feature `conversion-queue`, FR-020): só são

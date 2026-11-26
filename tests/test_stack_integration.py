@@ -19,6 +19,7 @@ Os testes rodam na ordem do arquivo e compartilham a mesma infraestrutura.
 from __future__ import annotations
 
 import base64
+import contextlib
 import http.client
 import json
 import os
@@ -65,6 +66,7 @@ class Stack:
     user: str
     password: str
     db: str
+    data_dir: Path | None = None
 
     # ── execução ────────────────────────────────────────────────────────────────
     def _scrub(self, text: str) -> str:
@@ -164,20 +166,29 @@ class Stack:
             conn.close()
 
 
-@pytest.fixture(scope="module")
-def stack(tmp_path_factory: pytest.TempPathFactory):
+@contextlib.contextmanager
+def launch_stack(tmp_path_factory: pytest.TempPathFactory, *, rebuild_api: bool = False):
+    """Projeto Compose descartável: cópia de `stack/` + código, `.env` de teste só na cópia, nome de projeto,
+    portas e senhas próprios; ao sair, `down --volumes` e conferência de que nada sobrou.
+
+    `rebuild_api=True` reconstrói a imagem da API a partir do código atual (as camadas em cache tornam isso rápido):
+    sem isso uma imagem `artigo2md-api:local` antiga de outra feature seria testada no lugar do código de agora.
+    """
     if shutil.which("docker") is None or subprocess.run(
         ["docker", "info"], capture_output=True, stdin=subprocess.DEVNULL
     ).returncode != 0:
         pytest.fail("ARTIGO2MD_STACK=1 exige o Docker instalado e em execução")
 
-    work = tmp_path_factory.mktemp("stack-it")
+    work = tmp_path_factory.mktemp("stack-it").resolve()
     shutil.copytree(ROOT / "stack", work / "stack", ignore=shutil.ignore_patterns(".env"))
     for name in ("pyproject.toml", "uv.lock", ".dockerignore"):
         shutil.copy2(ROOT / name, work / name)
     (work / "src").mkdir()
     shutil.copytree(ROOT / "src" / "artigo2md", work / "src" / "artigo2md",
                     ignore=shutil.ignore_patterns("__pycache__"))
+    # Pasta de dados do app (bind mount da API; o `--data-dir` do worker nativo dos testes de ponta a ponta).
+    data_dir = work / "data"
+    data_dir.mkdir()
 
     ports = {var: _free_port() for var in PORT_VARS}
     password = secrets.token_urlsafe(24)
@@ -185,6 +196,7 @@ def stack(tmp_path_factory: pytest.TempPathFactory):
     env_text = "".join(f"{var}={port}\n" for var, port in ports.items()) + (
         f"POSTGRES_USER={user}\nPOSTGRES_PASSWORD={password}\nPOSTGRES_DB={db}\n"
         f"RABBITMQ_DEFAULT_USER={user}\nRABBITMQ_DEFAULT_PASS={password}\n"
+        f"ARTIGO2MD_DATA_DIR={data_dir}\n"
     )
     env_file = work / "stack" / ".env"
     env_file.write_text(env_text)
@@ -195,12 +207,12 @@ def stack(tmp_path_factory: pytest.TempPathFactory):
     for key in list(env):  # o ambiente do desenvolvedor não pode mudar portas nem credenciais do teste
         if key.startswith("ARTIGO2MD_") and key != "ARTIGO2MD_STACK":
             del env[key]
-    st = Stack(work, project, env, ports, user, password, db)
+    st = Stack(work, project, env, ports, user, password, db, data_dir)
 
     # Pré-requisito de SC-001: imagens oficiais baixadas e imagem da API construída ANTES da medição.
     pulled = st.dc("pull", "postgres", "rabbitmq")
     assert pulled.returncode == 0, st.show(pulled)
-    if st.run("docker", "image", "inspect", API_IMAGE).returncode != 0:
+    if rebuild_api or st.run("docker", "image", "inspect", API_IMAGE).returncode != 0:
         built = st.dc("build", "api")
         assert built.returncode == 0, st.show(built)
 
@@ -212,6 +224,12 @@ def stack(tmp_path_factory: pytest.TempPathFactory):
         shutil.rmtree(work, ignore_errors=True)
         assert not left_c, f"containers de teste órfãos: {left_c}"
         assert not left_v, f"volumes de teste órfãos: {left_v}"
+
+
+@pytest.fixture(scope="module")
+def stack(tmp_path_factory: pytest.TempPathFactory):
+    with launch_stack(tmp_path_factory) as st:
+        yield st
 
 
 # ── 6.1.2 ────────────────────────────────────────────────────────────────────────

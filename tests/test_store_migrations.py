@@ -21,6 +21,15 @@ from artigo2md.store import errors, migrator, models
 
 MIGRATIONS_DIR = Path(migrator.__file__).parent / "migrations"
 SQL_0001 = (MIGRATIONS_DIR / "0001_initial.sql").read_text(encoding="utf-8")
+SQL_0002 = (MIGRATIONS_DIR / "0002_project_api.sql").read_text(encoding="utf-8")
+
+
+def _current_check_lists() -> dict[str, tuple[str, ...]]:
+    """Listas dos CHECK vigentes depois de todas as migrações: uma redefinição (0002+) substitui a anterior."""
+    current: dict[str, tuple[str, ...]] = {}
+    for path in sorted(MIGRATIONS_DIR.glob("*.sql")):
+        current.update(_check_lists(path.read_text(encoding="utf-8")))
+    return current
 
 
 # --- known_migrations (3.2.6) -------------------------------------------------------------------------
@@ -61,12 +70,14 @@ def _check_lists(sql: str) -> dict[str, tuple[str, ...]]:
 
 
 def test_sql_enumerated_values_match_constants_and_router_engines():
-    lists = _check_lists(SQL_0001)
+    lists = _current_check_lists()
     assert lists["projects_status_check"] == models.PROJECT_STATUSES
     assert lists["sources_kind_check"] == models.SOURCE_KINDS
     assert lists["sources_mode_check"] == models.SOURCE_MODES
     assert lists["jobs_status_check"] == models.JOB_STATUSES
-    assert lists["history_events_event_type_check"] == models.EVENT_TYPES
+    assert lists["history_events_event_type_check"] == models.EVENT_TYPES  # CHECK vigente (0001 + 0002)
+    assert "project_renamed" in models.EVENT_TYPES
+    assert "project_renamed" not in _check_lists(SQL_0001)["history_events_event_type_check"]
     assert lists["jobs_requested_engine_check"] == tuple(router.ENGINES)
     assert tuple(router.ENGINES) == models.REQUESTED_ENGINES
 
@@ -100,13 +111,44 @@ def test_sql_declares_the_documented_objects():
 
 def test_sql_identifiers_are_ascii_snake_case_english_shape():
     """Quickstart, cenário 14.4 (FR-020): todo identificador declarado é ASCII `snake_case`."""
-    names = re.findall(
-        r"CREATE (?:UNIQUE )?(?:TABLE|INDEX|FUNCTION|TRIGGER|CONSTRAINT TRIGGER) (\w+)", SQL_0001
-    )
-    names += re.findall(r"CONSTRAINT (?!TRIGGER)(\w+)", SQL_0001)
+    names: list[str] = []
+    for sql in (SQL_0001, SQL_0002):
+        names += re.findall(
+            r"CREATE (?:OR REPLACE )?(?:UNIQUE )?(?:TABLE|INDEX|FUNCTION|TRIGGER|CONSTRAINT TRIGGER) (\w+)", sql
+        )
+        names += re.findall(r"CONSTRAINT (?!TRIGGER)(\w+)", sql)
+        names += re.findall(r"ADD COLUMN (\w+)", sql)
     assert names
     for name in names:
         assert re.fullmatch(r"[a-z][a-z0-9_]*", name), name
+
+
+def test_migration_0002_declares_the_project_api_objects():
+    """Contrato store-extensions.md: coluna, índice parcial, CHECK de eventos e função do gatilho."""
+    assert "ALTER TABLE jobs ADD COLUMN published_at timestamptz;" in SQL_0002
+    assert (
+        "CREATE INDEX jobs_unpublished_idx ON jobs (id) WHERE status = 'pending' AND published_at IS NULL;"
+        in SQL_0002
+    )
+    assert "DROP CONSTRAINT history_events_event_type_check" in SQL_0002
+    assert "CREATE OR REPLACE FUNCTION jobs_guard_transition()" in SQL_0002
+    assert "OLD.status = 'pending' AND NEW.status IN ('running', 'cancelled', 'failed')" in SQL_0002
+    assert "published_at" not in SQL_0001  # a 0001 não é alterada
+
+
+def test_migration_0002_trigger_function_keeps_every_other_rule_of_0001():
+    """A função nova difere da antiga só pela origem `pending` aceitar `failed`."""
+
+    def body(sql: str, marker: str) -> str:
+        start = sql.index(marker)
+        return sql[start : sql.index("$$;", sql.index("AS $$", start))]
+
+    old = body(SQL_0001, "CREATE FUNCTION jobs_guard_transition()")
+    new = body(SQL_0002, "CREATE OR REPLACE FUNCTION jobs_guard_transition()")
+    old_rule = "(OLD.status = 'pending' AND NEW.status IN ('running', 'cancelled'))"
+    new_rule = "(OLD.status = 'pending' AND NEW.status IN ('running', 'cancelled', 'failed'))"
+    assert old_rule in old and new_rule in new
+    assert new.replace("CREATE OR REPLACE", "CREATE").replace(new_rule, old_rule) == old
 
 
 STORE_DIR = Path(migrator.__file__).parent

@@ -232,20 +232,39 @@ def test_every_annotation_of_the_report_dataclasses_has_a_contract_kind():
 
 @pytest.mark.parametrize("mutate", [
     lambda r: r.pop("attempts"),
-    lambda r: r.update(markdown="# vazou"),
     lambda r: r["analysis"].pop("fully_scanned"),
     lambda r: r["analysis"].update(pages="2"),
-    lambda r: r["analysis"].update(invento=1),
     lambda r: r["attempts"][0]["quality"].update(score="alto"),
     lambda r: r["attempts"][0]["quality"].update(issues=[1]),
     lambda r: r["attempts"][1].update(error=3),
     lambda r: r.update(attempts={}),
 ])
-def test_report_with_invented_or_wrong_fields_is_rejected(mutate):
+def test_report_with_missing_or_wrong_typed_fields_is_rejected(mutate):
     report = _report()
     mutate(report)
     with pytest.raises(ContractError):
         contract.validate_report(report)
+
+
+@pytest.mark.parametrize("mutate", [
+    lambda r: r.update(campo_novo=1),
+    lambda r: r["analysis"].update(campo_novo="x"),
+    lambda r: r["attempts"][0].update(campo_novo=[1]),
+    lambda r: r["attempts"][0]["quality"].update(campo_novo={"a": 1}),
+])
+def test_report_with_unknown_fields_in_nested_objects_is_tolerated(mutate):
+    """FR-016: o consumidor de eventos ignora campos desconhecidos (evolução compatível), em qualquer nível."""
+    report = _report()
+    mutate(report)
+    contract.validate_report(report)
+    event = contract.build_result("j1", 1, "/d/j1/a.md", "docling", report)
+    assert contract.validate_event(event)["report"] is report
+
+
+def test_job_stays_strict_about_unknown_fields():
+    job = contract.build_job("j1", "/d/a.pdf", "auto", 1)
+    with pytest.raises(ContractError):
+        parse_job(json.dumps({**job, "campo_novo": 1}).encode())
 
 
 def test_result_event_with_bad_report_is_rejected():

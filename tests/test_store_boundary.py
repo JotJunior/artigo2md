@@ -83,15 +83,21 @@ def _imported_modules(path: Path) -> set[str]:
     return found
 
 
+API_PACKAGE = PACKAGE / "api"
+
+
 def test_only_the_store_package_imports_the_driver_or_the_store():
+    """O driver só entra no `store`. A API (`artigo2md.api`, feature `project-api`) é a única consumidora autorizada
+    do `store`; mesmo assim ela nunca importa o driver diretamente, e `artigo2md.api.app` (módulo de produto) segue
+    sem carregá-lo (`PRODUCT_MODULES`)."""
     offenders = []
     for path in sorted(PACKAGE.rglob("*.py")):
         if STORE in path.parents:
             continue
         for name in _imported_modules(path):
-            if name == "asyncpg" or name.startswith("asyncpg.") or name == "artigo2md.store" or name.startswith(
-                "artigo2md.store."
-            ):
+            is_driver = name == "asyncpg" or name.startswith("asyncpg.")
+            is_store = name == "artigo2md.store" or name.startswith("artigo2md.store.")
+            if is_driver or (is_store and API_PACKAGE not in path.parents):
                 offenders.append(f"{path.relative_to(ROOT)} importa {name}")
     assert offenders == []
 

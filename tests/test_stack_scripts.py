@@ -51,7 +51,9 @@ if [ "${1:-}" = "compose" ]; then
         up)
             echo "saida-original-do-compose: criando containers"
             exit "${FAKE_UP_RC:-0}" ;;
-        down) exit "${FAKE_DOWN_RC:-0}" ;;
+        down)
+            echo "env ARTIGO2MD_DATA_DIR=${ARTIGO2MD_DATA_DIR:-}" >> "$FAKE_LOG"
+            exit "${FAKE_DOWN_RC:-0}" ;;
     esac
 fi
 exit 0
@@ -84,6 +86,8 @@ class Stack:
         self.add_fake("nc", FAKE_NC)
         self.secret = "S3nha-" + secrets.token_hex(8)  # 18 caracteres, gerada em tempo de execução
         self.secret2 = "R4bbit-" + secrets.token_hex(8)
+        self.data_dir = (tmp / "dados").resolve()  # forma canônica (no macOS, /var -> /private/var)
+        self.data_dir.mkdir()
 
     def add_fake(self, name: str, body: str) -> None:
         path = self.bin / name
@@ -101,6 +105,7 @@ class Stack:
             "POSTGRES_DB": "artigo2md",
             "RABBITMQ_DEFAULT_USER": "artigo2md",
             "RABBITMQ_DEFAULT_PASS": self.secret2,
+            "ARTIGO2MD_DATA_DIR": str(self.data_dir),
         }
         for k, v in overrides.items():
             if v is None:
@@ -190,6 +195,72 @@ def test_up_invalid_env_exits_2_naming_only_the_variable(stack, overrides, extra
     assert stack.calls() == []
 
 
+# ── up.sh: pasta de dados do app (ARTIGO2MD_DATA_DIR) ────────────────────────────
+def _data_dir_cases(stack: Stack) -> list:
+    arquivo = stack.data_dir.parent / "arquivo.txt"
+    arquivo.write_text("x")
+    link = stack.data_dir.parent / "atalho"
+    link.symlink_to(stack.data_dir)
+    return [
+        ("ausente", None),
+        ("vazia", ""),
+        ("relativa", "dados"),
+        ("relativa-com-ponto", "./dados"),
+        ("inexistente", str(stack.data_dir.parent / "nao-existe")),
+        ("arquivo", str(arquivo)),
+        ("link-simbolico", str(link)),
+        ("barra-final", str(stack.data_dir) + "/"),
+        ("ponto-ponto", str(stack.data_dir / ".." / stack.data_dir.name)),
+    ]
+
+
+@pytest.mark.parametrize("case", ["ausente", "vazia", "relativa", "relativa-com-ponto", "inexistente",
+                                  "arquivo", "link-simbolico", "barra-final", "ponto-ponto"])
+def test_up_rejects_an_invalid_data_dir_in_portuguese_without_calling_docker(stack, case):
+    value = dict(_data_dir_cases(stack))[case]
+    stack.write_env(ARTIGO2MD_DATA_DIR=value)
+
+    proc = stack.run("up.sh")
+
+    assert proc.returncode == 2
+    assert "ARTIGO2MD_DATA_DIR" in proc.stderr
+    no_secret_leak(stack, proc)
+    assert stack.calls() == []
+
+
+def test_up_data_dir_error_is_checked_also_for_an_already_existing_env_file(stack):
+    stack.write_env()
+    (stack.stack / ".env").write_text(
+        (stack.stack / ".env").read_text().replace(f"ARTIGO2MD_DATA_DIR={stack.data_dir}\n", "")
+    )
+
+    proc = stack.run("up.sh")
+
+    assert proc.returncode == 2
+    assert "ARTIGO2MD_DATA_DIR" in proc.stderr and "pasta de dados" in proc.stderr
+    assert stack.calls() == []
+
+
+def test_up_accepts_a_canonical_data_dir_and_reaches_docker(stack):
+    stack.write_env()
+
+    proc = stack.run("up.sh")
+
+    assert proc.returncode == 0
+    assert any(" up " in c for c in stack.calls())
+
+
+def test_up_noncanonical_data_dir_message_suggests_the_real_path(stack):
+    link = stack.data_dir.parent / "atalho"
+    link.symlink_to(stack.data_dir)
+    stack.write_env(ARTIGO2MD_DATA_DIR=str(link))
+
+    proc = stack.run("up.sh")
+
+    assert proc.returncode == 2
+    assert str(stack.data_dir) in proc.stderr
+
+
 def test_up_normalizes_export_spaces_quotes_and_comments_like_compose(stack):
     stack.write_env()
     (stack.stack / ".env").write_text(
@@ -203,6 +274,7 @@ def test_up_normalizes_export_spaces_quotes_and_comments_like_compose(stack):
         "POSTGRES_DB=artigo2md\n"
         "RABBITMQ_DEFAULT_USER=artigo2md\n"
         f"export RABBITMQ_DEFAULT_PASS='{stack.secret2}'\n"
+        f'ARTIGO2MD_DATA_DIR = "{stack.data_dir}"\n'
     )
 
     proc = stack.run("up.sh")
@@ -438,6 +510,17 @@ def test_down_works_with_a_broken_env_file(stack):
     proc = stack.run("down.sh")
 
     assert proc.returncode == 0
+
+
+def test_down_does_not_need_the_data_dir_to_interpolate_the_compose_file(stack):
+    # o compose exige ARTIGO2MD_DATA_DIR (':?'); o down fornece um valor de preenchimento, sem exigir o .env
+    for env_text in (None, "POSTGRES_PASSWORD=curta\n"):
+        if env_text is not None:
+            (stack.stack / ".env").write_text(env_text)
+        proc = stack.run("down.sh", env={"ARTIGO2MD_DATA_DIR": ""})
+        assert proc.returncode == 0
+    envs = [line for line in stack.log.read_text().splitlines() if line.startswith("env ")]
+    assert envs and all(line != "env ARTIGO2MD_DATA_DIR=" for line in envs)
 
 
 def test_down_wipe_without_a_terminal_fails_closed(stack):

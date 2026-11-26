@@ -13,7 +13,7 @@ import stat
 import tempfile
 from pathlib import Path
 
-from .contract import JOB_ID_RE
+from .schema import JOB_ID_RE
 
 SUFFIX = ".md"
 _DEFAULT_NAME_MAX = 255  # NAME_MAX usual (APFS/ext4) quando `pathconf` não responde

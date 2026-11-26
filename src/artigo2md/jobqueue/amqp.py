@@ -12,7 +12,7 @@ from __future__ import annotations
 import warnings
 from typing import Any
 
-from .contract import CONTENT_TYPE
+from .schema import CONTENT_TYPE
 
 # O aviso é conhecido e aceito (decisão da tarefa 2.2): a versão do pika é fixada em 1.5.0 e o `tick` mantém
 # o heartbeat. Não deve poluir o log do worker.
