@@ -84,7 +84,9 @@ class Rabbit:
     def dc(self, *args: str, timeout: int = 300) -> subprocess.CompletedProcess[str]:
         return subprocess.run(
             ["docker", "compose", "--project-directory", str(self.work / "stack"),
-             "--env-file", str(self.work / "stack" / ".env"), "-f", str(self.work / "stack" / "compose.yaml"), *args],
+             "--env-file", str(self.work / "stack" / ".env"), "-f", str(self.work / "stack" / "compose.yaml"),
+             # opt-in do painel: estes testes usam a API HTTP do painel; fora de ARTIGO2MD_STACK=1 não é publicado
+             "-f", str(self.work / "stack" / "compose.management.yaml"), *args],
             env=self.env, cwd=self.work, capture_output=True, text=True, stdin=subprocess.DEVNULL, timeout=timeout)
 
     # ── AMQP ────────────────────────────────────────────────────────────────────

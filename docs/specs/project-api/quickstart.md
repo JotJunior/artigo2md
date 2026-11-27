@@ -53,7 +53,7 @@ operador, block-001/dec-023).
 
 ## Cenário 5: Evento duplicado e fora do contrato (US2-7, US2-8)
 
-1. Publicar manualmente em `artigo2md.events` (painel do RabbitMQ) o mesmo `result` duas vezes, um JSON inválido,
+1. Publicar manualmente em `artigo2md.events` (painel do RabbitMQ; exige subir a stack com `sh stack/up.sh --management-panel`, pois o painel não é publicado por padrão) o mesmo `result` duas vezes, um JSON inválido,
    um `schema_version: 2` e um `job_id` inexistente.
 
 **Expected**: um único resultado gravado; demais descartados com log em português (a duplicata em `INFO`, os outros

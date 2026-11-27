@@ -119,8 +119,8 @@ Por que essas restrições:
 ## Infraestrutura local (versão desktop)
 
 Opcional: a conversão (`convert`) e a interface web continuam funcionando sem nada disto. Para a versão
-desktop, `stack/` traz uma infraestrutura local em containers (Docker): **Postgres**, **RabbitMQ** (com
-painel de gestão) e a **API do app** (`project-api`: projetos, fontes, documentos, conversões, eventos ao
+desktop, `stack/` traz uma infraestrutura local em containers (Docker): **Postgres**, **RabbitMQ** (com o
+painel de gestão habilitado na imagem, mas não publicado por padrão) e a **API do app** (`project-api`: projetos, fontes, documentos, conversões, eventos ao
 vivo, resultado e exportação, além do `GET /health`). Tudo roda só na sua máquina: as portas são
 publicadas apenas em `127.0.0.1` e nenhum serviço envia dados para fora.
 
@@ -161,8 +161,9 @@ sh stack/down.sh --apagar-dados      # derruba e APAGA os dados (pede que você 
   `GET /v1/status` informa se a consumidora de eventos está conectada (o app avisa "consumidor parado");
   `GET /health` só diz que o processo está vivo.
 - **Portas** (mude no `stack/.env` se alguma estiver ocupada; o `up.sh` avisa e sai com código 4):
-  Postgres `5432`, RabbitMQ `5672`, painel do RabbitMQ `15672`, API `8778`. O `up.sh` mostra no final a
-  URL do painel. O `doctor` lê as mesmas portas (variável de ambiente, depois o arquivo indicado em
+  Postgres `5432`, RabbitMQ `5672`, API `8778`. O painel do RabbitMQ (`15672`) **não é publicado por
+  padrão**: para abri-lo pelo terminal, rode `sh stack/up.sh --management-panel` (só então o `up.sh`
+  mostra a URL do painel e a porta vem de `ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT` no `stack/.env`). O `doctor` lê as mesmas portas (variável de ambiente, depois o arquivo indicado em
   `ARTIGO2MD_STACK_ENV`, depois `./stack/.env`, depois o padrão).
 - **Imagens**: a primeira execução baixa as imagens oficiais e constrói `artigo2md-api:local`; depois
   nada é baixado nem reconstruído sem pedido explícito: `sh stack/up.sh --atualizar-imagens` (com a
@@ -180,17 +181,30 @@ Riscos aceitos desta primeira versão (decisões registradas em `docs/specs/cont
 
 - as credenciais ficam visíveis em `docker inspect` para quem já controla o Docker desta máquina
   (stack local de um só usuário);
-- as imagens são escolhidas por tag, sem fixar digest (as tags podem mudar entre atualizações);
-- o painel do RabbitMQ não tem proteção contra DNS rebinding (a API base tem; o responsável futuro é
-  `desktop-stack-control`);
+- as imagens são escolhidas por tag, sem fixar digest (as tags podem mudar entre atualizações; risco aceito M11 do plano de `desktop-stack-control`);
+- os modelos do Docling baixados pelo app desktop usam a revisão que o próprio Docling usa (`main` para o heron, `v2.3.0` para o TableFormer), que pode mudar no repositório de origem; fixar um SHA faria a conversão offline não achar `refs/main` no cache (risco aceito M12 do plano de `desktop-stack-control`);
+- o painel do RabbitMQ não tem proteção contra DNS rebinding (a API base tem). Por isso ele fica fora da
+  publicação padrão; o risco volta só com o opt-in `sh stack/up.sh --management-panel`. Um painel aberto
+  pelo terminal com a stack no ar fecha no próximo `sh stack/up.sh` sem a opção (o `up.sh` recria o
+  RabbitMQ sem ele) ou com `sh stack/down.sh` (que remove os containers, inclusive o iniciado com o opt-in, e
+  mantém os volumes); no app, "Parar infraestrutura" faz o mesmo que o `down.sh`. O app desktop nunca liga o
+  opt-in;
 - Postgres e RabbitMQ seguem os padrões das imagens oficiais, com `no-new-privileges` como único
   endurecimento adicional (a API roda sem privilégios, com sistema de arquivos somente leitura);
 - o `doctor` fecha a conexão logo após o handshake de protocolo, o que pode deixar uma linha de
   "conexão encerrada" nos registros do Postgres e do RabbitMQ.
 
+**Pelo app desktop**: a entrada "Infraestrutura" do app (`desktop/`, veja `desktop/README.md`) faz o mesmo sem
+terminal: diagnostica o Docker, inicia e para a infraestrutura, prepara imagens e modelos na primeira execução e
+inicia e para o pool de workers. Pré-requisitos: `uv`, Docker com o plugin `docker compose` e esta pasta do
+repositório indicada em Configurações. O app cria o `stack/.env` com senhas geradas e nunca publica o painel do
+RabbitMQ.
+
 Testes: `uv run pytest` roda sem Docker; com Docker disponível,
-`ARTIGO2MD_STACK=1 uv run pytest tests/test_stack_integration.py` sobe uma cópia isolada da stack (projeto
-Compose, portas e senhas próprios) e a derruba ao final.
+`ARTIGO2MD_STACK=1 uv run pytest tests/test_stack_integration.py tests/test_desktop_stack_integration.py` sobe uma
+cópia isolada da stack (projeto Compose, portas e senhas próprios) e a derruba ao final. O segundo arquivo cobre o
+ciclo do app (subir, worker, parar, subir de novo com os dados) e roda também o teste Rust de roundtrip com a API
+(precisa do `cargo`).
 
 ### Persistência (camada `artigo2md.store`)
 

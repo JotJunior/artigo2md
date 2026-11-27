@@ -6,6 +6,7 @@ use std::sync::Mutex;
 use crate::error::{AppError, AppResult, ErrorCode};
 use crate::log::Logger;
 use crate::settings::SettingsStore;
+use crate::stack::secret::Masked;
 
 pub struct AppState {
     /// Raiz canonizada da pasta aberta; `None` enquanto nenhuma pasta foi aberta.
@@ -39,7 +40,8 @@ impl AppState {
     /// Registra o texto técnico no log local e devolve o resultado inalterado.
     pub fn logged<T>(&self, result: AppResult<T>) -> AppResult<T> {
         if let Err(e) = &result {
-            self.log.error(e.code.as_str(), e.detail());
+            self.log
+                .error(e.code.as_str(), &Masked::non_secret(e.detail()));
         }
         result
     }

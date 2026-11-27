@@ -61,7 +61,7 @@ Broker fora do ar **não** é saída com erro: o worker avisa e tenta de novo (F
 | credenciais recusadas | `O RabbitMQ recusou as credenciais. Revise RABBITMQ_DEFAULT_USER e RABBITMQ_DEFAULT_PASS (origem: <ambiente\|arquivo>).` |
 | memória insuficiente | `Memória livre insuficiente para iniciar mais um conversor (<livre> MB livres, mínimo <min> MB). Nova verificação em 10 s.` |
 | pool acima da RAM | `Aviso: <N> conversores podem esgotar a memória deste computador; a proteção de RAM vai adiar conversores quando faltar memória.` |
-| topologia incompatível | `A fila/exchange <nome> já existe no RabbitMQ com configuração diferente. Nada foi alterado. Remova-a pelo painel ou alinhe a configuração.` |
+| topologia incompatível | `A fila/exchange <nome> já existe no RabbitMQ com configuração diferente. Nada foi alterado. Remova-a pelo painel (abra-o com 'sh stack/up.sh --management-panel'; ele fica sem proteção contra DNS rebinding até um 'sh stack/up.sh' sem a opção ou um 'sh stack/down.sh') ou pela linha de comando do broker, ou alinhe a configuração.` |
 | tempo de conversão excedido | `A conversão do job <job_id> excedeu o limite de <s> s e foi encerrada.` (código `conversion_timeout`, passageira) |
 | encerramento | `Encerrando: aguardando o job em andamento por até <s> s...` / `Job <job_id> devolvido à fila.` |
 

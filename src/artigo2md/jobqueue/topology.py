@@ -88,7 +88,9 @@ class TopologyMismatch(Exception):
         self.object_name = object_name
         self.message = (
             f"A fila/exchange {object_name} já existe no RabbitMQ com configuração diferente. "
-            "Nada foi alterado. Remova-a pelo painel ou alinhe a configuração."
+            "Nada foi alterado. Remova-a pelo painel (abra-o com 'sh stack/up.sh --management-panel'; "
+            "ele fica sem proteção contra DNS rebinding até um 'sh stack/up.sh' sem a opção ou um 'sh stack/down.sh') ou pela "
+            "linha de comando do broker, ou alinhe a configuração."
         )
         super().__init__(self.message)
 

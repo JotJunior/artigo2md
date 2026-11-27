@@ -1,0 +1,12 @@
+# Opt-in: publica o painel de gestão do RabbitMQ (plugin já presente na imagem) em 127.0.0.1.
+#
+# NÃO faz parte da publicação padrão: o painel fica fora do ar por causa do risco de DNS rebinding
+# (um site aberto no navegador poderia alcançar um painel local). Só entra com
+# `sh stack/up.sh --management-panel`, que acrescenta este arquivo ao compose.yaml. O app desktop nunca
+# usa esta opção.
+#
+# O endereço de publicação é o literal 127.0.0.1 e não é configurável (FR-006 da container-stack).
+services:
+  rabbitmq:
+    ports:
+      - "127.0.0.1:${ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT:?defina ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT em stack/.env}:15672"

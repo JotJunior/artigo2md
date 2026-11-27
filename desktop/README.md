@@ -2,8 +2,10 @@
 
 App desktop macOS (Apple Silicon) do artigo2md: janela com barra lateral, árvore somente leitura de uma pasta
 escolhida, visualizador de Markdown (tabelas GFM, fórmulas LaTeX, imagens locais) e configurações. Feita com
-Tauri 2 (núcleo Rust) e Svelte 5 + TypeScript. **Nenhuma conexão de rede**: sem backend, sem serviços externos e
-sem recursos remotos (CSP restrita a `'self'` e `blob:`). Spec, plano e decisões: `docs/specs/desktop-shell/`.
+Tauri 2 (núcleo Rust) e Svelte 5 + TypeScript. **Sem serviços externos**: nenhuma conexão sai da máquina, exceto os
+downloads de imagens Docker e de modelos que você confirma na primeira execução da tela "Infraestrutura"; a CSP da
+interface fica restrita a `'self'` e `blob:` e o núcleo Rust só fala com `127.0.0.1`. Specs, planos e decisões:
+`docs/specs/desktop-shell/` (o app em si) e `docs/specs/desktop-stack-control/` (a tela "Infraestrutura").
 
 A CLI, a interface web e a suíte Python (`src/artigo2md/`, `tests/`) não são alteradas por esta pasta.
 
@@ -13,6 +15,24 @@ A CLI, a interface web e a suíte Python (`src/artigo2md/`, `tests/`) não são 
 - Rust 1.90 ou mais novo (testado com `rustc` 1.100.0), instalado pelo `rustup`; depois `. "$HOME/.cargo/env"`.
 - Node.js e npm (testado com Node 24.22.2 e npm 11.19.1; `vite` 8 pede Node `^20.19.0 || >=22.12.0`).
 - Instalar as dependências do front, sempre com o lockfile: `npm ci` (em `desktop/`).
+
+## Infraestrutura (tela "Infraestrutura")
+
+A entrada "Infraestrutura" da barra lateral controla, sem terminal, a infraestrutura local do repositório
+(`stack/`: Postgres, RabbitMQ e API do app) e o pool de workers de conversão (`artigo2md worker`). Ela:
+
+- diagnostica o runtime Docker (Docker Desktop, OrbStack ou colima, com o Docker Compose) e, se faltar, mostra o
+  guia de instalação;
+- inicia e para a infraestrutura (`stack/up.sh` e `stack/down.sh`; os dados nos volumes são mantidos) e mostra o
+  estado de cada serviço;
+- na primeira execução, lista o que será baixado (imagens e modelos de conversão) e só baixa depois da sua
+  confirmação; cria o `stack/.env` com senhas geradas (as senhas nunca aparecem na tela nem no registro do app);
+- inicia e para o pool de workers e encerra os workers ao fechar o app.
+
+Pré-requisitos desta tela, além dos do app: o repositório do artigo2md clonado (indique a pasta em
+**Configurações > Pasta do repositório**), `uv` (https://docs.astral.sh/uv/) e Docker com o plugin `docker compose`.
+O painel de gestão do RabbitMQ não é publicado; só o terminal (`sh stack/up.sh --management-panel`) o abre. Detalhes
+da infraestrutura: seção "Infraestrutura local (versão desktop)" do `README.md` da raiz.
 
 ## Comandos (em `desktop/`)
 

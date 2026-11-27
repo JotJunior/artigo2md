@@ -78,7 +78,10 @@ def test_incompatible_existing_object_becomes_a_portuguese_message_and_nothing_c
         topology.declare(broker.connection().channel())
     assert info.value.object_name == name
     assert info.value.message == (f"A fila/exchange {name} já existe no RabbitMQ com configuração diferente. "
-                                  "Nada foi alterado. Remova-a pelo painel ou alinhe a configuração.")
+                                  "Nada foi alterado. Remova-a pelo painel (abra-o com "
+                                  "'sh stack/up.sh --management-panel'; ele fica sem proteção contra DNS "
+                                  "rebinding até um 'sh stack/up.sh' sem a opção ou um 'sh stack/down.sh') ou pela linha de comando "
+                                  "do broker, ou alinhe a configuração.")
     # nada apagado nem sobrescrito: os objetos que já existiam continuam exatamente como estavam
     for n, e in exchanges_before.items():
         assert broker.exchanges[n] == e

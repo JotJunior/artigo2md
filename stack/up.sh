@@ -1,7 +1,11 @@
 #!/bin/sh
-# Sobe a infraestrutura local do artigo2md (Postgres, RabbitMQ com painel e API do app).
+# Sobe a infraestrutura local do artigo2md (Postgres, RabbitMQ e API do app).
 #
-# Uso:  sh stack/up.sh [--atualizar-imagens]
+# Uso:  sh stack/up.sh [--atualizar-imagens] [--management-panel]
+#
+# O painel de gestão do RabbitMQ NÃO é publicado por padrão (risco de DNS rebinding). Só com
+# --management-panel o script acrescenta stack/compose.management.yaml e publica o painel em 127.0.0.1.
+# Rodar `sh stack/up.sh` sem a opção sobre uma stack com o painel publicado recria o RabbitMQ sem ele.
 #
 # Roda de qualquer diretório. Valida o stack/.env ANTES de chamar o Docker e nunca imprime o valor
 # de nenhuma credencial: as mensagens citam só o nome da variável.
@@ -14,6 +18,7 @@ set -u
 STACK_DIR=$(CDPATH= cd -- "$(dirname -- "$0")" && pwd) || exit 1
 ENV_FILE="$STACK_DIR/.env"
 COMPOSE_FILE="$STACK_DIR/compose.yaml"
+MANAGEMENT_FILE="$STACK_DIR/compose.management.yaml"
 EXAMPLE_PASSWORD="troque-esta-senha"
 API_IMAGE="artigo2md-api:local"
 SERVICES="postgres rabbitmq api"
@@ -21,8 +26,14 @@ SERVICES="postgres rabbitmq api"
 say() { printf '%s\n' "$*"; }
 fail() { code=$1; shift; printf '%s\n' "$*" >&2; exit "$code"; }
 
+MANAGEMENT_PANEL=0
+
 dc() {
-    docker compose --project-directory "$STACK_DIR" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+    if [ "$MANAGEMENT_PANEL" = 1 ]; then
+        docker compose --project-directory "$STACK_DIR" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" -f "$MANAGEMENT_FILE" "$@"
+    else
+        docker compose --project-directory "$STACK_DIR" --env-file "$ENV_FILE" -f "$COMPOSE_FILE" "$@"
+    fi
 }
 
 # ── opções ───────────────────────────────────────────────────────────────────────
@@ -30,7 +41,8 @@ UPDATE_IMAGES=0
 for arg in "$@"; do
     case $arg in
         --atualizar-imagens) UPDATE_IMAGES=1 ;;
-        *) fail 2 "Opção não reconhecida. Uso: sh stack/up.sh [--atualizar-imagens]" ;;
+        --management-panel) MANAGEMENT_PANEL=1 ;;
+        *) fail 2 "Opção não reconhecida. Uso: sh stack/up.sh [--atualizar-imagens] [--management-panel]" ;;
     esac
 done
 
@@ -114,7 +126,10 @@ for name in POSTGRES_PASSWORD RABBITMQ_DEFAULT_PASS; do
 done
 
 # ── passo 3: portas ──────────────────────────────────────────────────────────────
-for name in ARTIGO2MD_POSTGRES_PORT ARTIGO2MD_RABBITMQ_PORT ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT ARTIGO2MD_API_PORT; do
+# A porta do painel só é exigida com --management-panel; sem a opção nada dela é validado.
+PORT_VARS="ARTIGO2MD_POSTGRES_PORT ARTIGO2MD_RABBITMQ_PORT ARTIGO2MD_API_PORT"
+[ "$MANAGEMENT_PANEL" = 1 ] && PORT_VARS="$PORT_VARS ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT"
+for name in $PORT_VARS; do
     port=$(get_var "$name")
     case $port in
         "" | *[!0-9]*) fail 2 "$name precisa ser um número de 1 a 65535 em stack/.env." ;;
@@ -163,15 +178,38 @@ fi
 
 PANEL_URL="http://127.0.0.1:$(get_var ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT)/"
 
-# Tudo já rodando: nada a fazer (FR-015).
+# O painel está publicado agora? (consulta o Compose; qualquer falha ou porta 0 conta como "não publicado")
+panel_published() {
+    out=$(dc port rabbitmq 15672 2>/dev/null) || return 1
+    num=${out##*:}
+    case $num in
+        "" | *[!0-9]*) return 1 ;;
+    esac
+    [ "$num" -gt 0 ]
+}
+
+print_panel_status() {
+    if [ "$MANAGEMENT_PANEL" = 1 ]; then
+        say "Painel do RabbitMQ: $PANEL_URL"
+        say "Atenção: com o painel publicado, ele fica sem proteção contra DNS rebinding. Para fechá-lo, rode 'sh stack/up.sh' sem --management-panel ou 'sh stack/down.sh'."
+    else
+        say "Painel do RabbitMQ: não publicado (use --management-panel)"
+    fi
+}
+
+# Tudo já rodando: nada a fazer (FR-015), mas só quando a publicação atual do painel bate com o modo
+# pedido: sem a opção, um painel publicado não pode ficar aberto (o `up` recria o RabbitMQ sem ele).
 ALL_RUNNING=1
 for svc in $SERVICES; do
     is_running "$svc" || ALL_RUNNING=0
 done
 if [ "$ALL_RUNNING" = 1 ]; then
-    say "A infraestrutura já estava no ar."
-    say "Painel do RabbitMQ: $PANEL_URL"
-    exit 0
+    if panel_published; then PANEL_NOW=1; else PANEL_NOW=0; fi
+    if [ "$PANEL_NOW" = "$MANAGEMENT_PANEL" ]; then
+        say "A infraestrutura já estava no ar."
+        print_panel_status
+        exit 0
+    fi
 fi
 
 # ── passo 5: porta ocupada (só para serviços que ainda não estão rodando) ────────
@@ -193,7 +231,14 @@ check_ports() {
 
 if command -v nc >/dev/null 2>&1; then
     check_ports postgres ARTIGO2MD_POSTGRES_PORT
-    check_ports rabbitmq ARTIGO2MD_RABBITMQ_PORT ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT
+    check_ports rabbitmq ARTIGO2MD_RABBITMQ_PORT
+    # Porta do painel: só com --management-panel e só se o painel ainda não está publicado por nós.
+    if [ "$MANAGEMENT_PANEL" = 1 ] && ! panel_published; then
+        mport=$(get_var ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT)
+        if port_busy "$mport"; then
+            fail 4 "A porta $mport já está em uso (serviço rabbitmq, painel de gestão). Troque ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT em stack/.env ou libere a porta."
+        fi
+    fi
     check_ports api ARTIGO2MD_API_PORT
 else
     say "Aviso: o comando 'nc' não foi encontrado; a verificação de portas ocupadas foi pulada."
@@ -237,5 +282,5 @@ say "Infraestrutura no ar:"
 for svc in $SERVICES; do
     say "  $svc: saudável"
 done
-say "Painel do RabbitMQ: $PANEL_URL"
+print_panel_status
 exit 0

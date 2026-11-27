@@ -1,0 +1,9 @@
+{"id":"Image alpine:3.20","status":"Working","text":"Pulling"}
+{"id":"3f26bc2dec0b","parent_id":"Image alpine:3.20","status":"Working","text":"Pulling fs layer","details":"0B"}
+{"id":"3f26bc2dec0b","parent_id":"Image alpine:3.20","status":"Working","text":"Downloading","details":"2.097MB","current":2097152,"total":4092319,"percent":51}
+{"id":"3f26bc2dec0b","parent_id":"Image alpine:3.20","status":"Done","text":"Download complete","details":"0B","percent":100}
+{"id":"cee42a41056b","parent_id":"Image alpine:3.20","status":"Done","text":"Download complete","details":"0B","percent":100}
+{"id":"3f26bc2dec0b","parent_id":"Image alpine:3.20","status":"Working","text":"Extracting","details":"1B","current":1}
+{"id":"3f26bc2dec0b","parent_id":"Image alpine:3.20","status":"Done","text":"Pull complete","details":"0B","percent":100}
+{"id":"8b093306b817","parent_id":"Image alpine:3.20","status":"Done","text":"Download complete","details":"0B","percent":100}
+{"id":"Image alpine:3.20","status":"Done","text":"Pulled"}

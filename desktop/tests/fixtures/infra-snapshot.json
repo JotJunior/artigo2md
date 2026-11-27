@@ -1,0 +1,120 @@
+{
+  "readOnly": false,
+  "runtime": {
+    "runtimes": [
+      {
+        "kind": "dockerDesktop",
+        "state": "running",
+        "context": "desktop-linux"
+      },
+      {
+        "kind": "orbstack",
+        "state": "notInstalled",
+        "context": null
+      },
+      {
+        "kind": "colima",
+        "state": "notInstalled",
+        "context": null
+      }
+    ],
+    "inUse": "dockerDesktop",
+    "overall": "ready",
+    "dockerPath": "/Users/x/.docker/bin/docker",
+    "checkedAt": "2026-11-26T12:00:00Z"
+  },
+  "repo": {
+    "status": "modelsUnsupported",
+    "uvPath": "/opt/homebrew/bin/uv",
+    "missing": [
+      "uv.lock"
+    ]
+  },
+  "dataDir": {
+    "path": "/Users/x/artigo2md-dados",
+    "status": "ok",
+    "canonicalPath": "/Users/x/artigo2md-dados"
+  },
+  "services": [
+    {
+      "service": "postgres",
+      "state": "healthy",
+      "address": "127.0.0.1:1",
+      "checkedAt": "2026-11-26T12:00:00Z"
+    },
+    {
+      "service": "rabbitmq",
+      "state": "unhealthy",
+      "address": "127.0.0.1:1",
+      "checkedAt": "2026-11-26T12:00:00Z"
+    },
+    {
+      "service": "api",
+      "state": "starting",
+      "address": "127.0.0.1:1",
+      "checkedAt": "2026-11-26T12:00:00Z"
+    }
+  ],
+  "pool": {
+    "state": "crashed",
+    "workers": 4,
+    "minFreeMemoryMb": 4822,
+    "exitCode": 4,
+    "reason": "credentials",
+    "lines": [
+      "linha do worker"
+    ],
+    "memoryWarning": true,
+    "adopted": false
+  },
+  "firstRun": [
+    {
+      "step": "images",
+      "state": "failed",
+      "downloadedBytes": null,
+      "totalBytes": null,
+      "itemsDone": 0,
+      "itemsTotal": 3,
+      "updatedAt": "2026-11-26T11:59:00Z",
+      "failure": "noNetwork",
+      "approxSize": "cerca de 1,5 GB",
+      "location": "disco do runtime Docker"
+    },
+    {
+      "step": "models",
+      "state": "downloading",
+      "downloadedBytes": 1200000000,
+      "totalBytes": null,
+      "itemsDone": 1,
+      "itemsTotal": 2,
+      "updatedAt": "2026-11-26T12:00:05Z",
+      "failure": null,
+      "approxSize": "cerca de 3 GB livres",
+      "location": "cache do Hugging Face"
+    }
+  ],
+  "operations": [
+    {
+      "kind": "startStack",
+      "stage": "runningUp",
+      "startedAt": "2026-11-26T12:00:00Z",
+      "result": {
+        "ok": false,
+        "code": "portInUse",
+        "service": "postgres",
+        "port": 5432,
+        "failure": null,
+        "shortfallBytes": null,
+        "alreadyInState": null
+      }
+    },
+    {
+      "kind": "prepareModels",
+      "stage": "downloadingModels",
+      "startedAt": "2026-11-26T12:00:01Z",
+      "result": null
+    }
+  ],
+  "summary": "partial",
+  "consumerConnected": false
+}

@@ -6,7 +6,7 @@ Cenários que validam a implementação ponta a ponta. Os cenários com Docker c
 
 1. `cp stack/.env.example stack/.env` e trocar as duas senhas `troque-esta-senha`
 2. `sh stack/up.sh`
-3. **Expected**: exit 0 em até 2 min (SC-001); três linhas `saudável`; linha com `http://127.0.0.1:15672/`
+3. **Expected**: exit 0 em até 2 min (SC-001); três linhas `saudável`; linha `Painel do RabbitMQ: não publicado (use --management-panel)` e nenhuma URL do painel. Com `sh stack/up.sh --management-panel`: linha com `http://127.0.0.1:15672/` (opt-in, block-004/dec-023/dec-025)
 4. `curl -s http://127.0.0.1:8778/health`
 5. **Expected**: `{"status":"ok","service":"artigo2md-api","version":"0.1.0"}`; `curl -s -o /dev/null -w '%{http_code}' http://127.0.0.1:8778/docs` → `404`
 
@@ -24,9 +24,10 @@ Cenários que validam a implementação ponta a ponta. Os cenários com Docker c
 
 ## Scenario 4: Só loopback (US2, SC-002)
 
-1. `docker compose -p artigo2md port postgres 5432` (e equivalentes para 5672, 15672, 8000)
+1. `docker compose -p artigo2md port postgres 5432` (e equivalentes para 5672 e 8000)
 2. **Expected**: todas começam com `127.0.0.1:`
-3. Teste estático (sem Docker): toda entrada `ports` de `stack/compose.yaml` começa com `"127.0.0.1:`
+3. `docker compose -p artigo2md port rabbitmq 15672` sem o opt-in → **Expected**: sem endereço publicado (a porta não é publicada); depois de `sh stack/up.sh --management-panel` → começa com `127.0.0.1:`
+4. Teste estático (sem Docker): toda entrada `ports` de `stack/compose.yaml` e de `stack/compose.management.yaml` começa com `"127.0.0.1:`
 
 ## Scenario 5: Erros de pré-condição (sem Docker)
 

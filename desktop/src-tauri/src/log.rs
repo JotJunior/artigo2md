@@ -10,6 +10,7 @@ use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 use crate::limits::MAX_LOG_BYTES;
+use crate::stack::secret::Masked;
 
 const LOG_NAME: &str = "artigo2md.log";
 const ROTATED_NAME: &str = "artigo2md.log.1";
@@ -28,10 +29,11 @@ impl Logger {
         Self { dir, max_bytes }
     }
 
-    /// Registra uma linha. Falhas ao gravar são ignoradas de propósito: o log nunca derruba um
-    /// comando nem vira mensagem para a interface.
-    pub fn error(&self, code: &str, detail: &str) {
-        let _ = self.try_write(code, detail);
+    /// Registra uma linha. Só recebe texto já mascarado (`Masked`, plan.md M10): quem produz
+    /// saída de processo externo passa por `Masker::mask` antes. Falhas ao gravar são ignoradas
+    /// de propósito: o log nunca derruba um comando nem vira mensagem para a interface.
+    pub fn error(&self, code: &str, detail: &Masked) {
+        let _ = self.try_write(code, detail.as_str());
     }
 
     fn try_write(&self, code: &str, detail: &str) -> std::io::Result<()> {
@@ -66,8 +68,11 @@ mod tests {
     fn writes_one_line_per_event_with_private_permissions() {
         let tmp = tempfile::tempdir().unwrap();
         let log = Logger::new(tmp.path().join("logs"));
-        log.error("notFound", "linha1\nlinha2 /Users/x/segredo.md");
-        log.error("io", "outra");
+        log.error(
+            "notFound",
+            &Masked::non_secret("linha1\nlinha2 /Users/x/segredo.md"),
+        );
+        log.error("io", &Masked::non_secret("outra"));
         let text = fs::read_to_string(tmp.path().join("logs/artigo2md.log")).unwrap();
         let lines: Vec<&str> = text.lines().collect();
         assert_eq!(lines.len(), 2);
@@ -84,7 +89,10 @@ mod tests {
         let tmp = tempfile::tempdir().unwrap();
         let log = Logger::with_max_bytes(tmp.path().to_path_buf(), 100);
         for i in 0..40 {
-            log.error("io", &format!("evento {i} com texto para encher o arquivo"));
+            log.error(
+                "io",
+                &Masked::non_secret(&format!("evento {i} com texto para encher o arquivo")),
+            );
         }
         let names: Vec<String> = fs::read_dir(tmp.path())
             .unwrap()
@@ -96,11 +104,27 @@ mod tests {
     }
 
     #[test]
+    fn masked_line_never_carries_the_known_secret() {
+        use crate::stack::secret::{Masker, Secret};
+        let tmp = tempfile::tempdir().unwrap();
+        let log = Logger::new(tmp.path().join("logs"));
+        let mut masker = Masker::new();
+        masker.register(&Secret::new("senha-super-secreta-42"));
+        log.error(
+            "scriptFailed",
+            &masker.mask("conexão amqp://app:senha-super-secreta-42@127.0.0.1 recusada"),
+        );
+        let text = fs::read_to_string(tmp.path().join("logs/artigo2md.log")).unwrap();
+        assert!(!text.contains("senha-super-secreta-42"));
+        assert!(text.contains("amqp://app:***@127.0.0.1"));
+    }
+
+    #[test]
     fn failure_to_write_is_ignored() {
         let tmp = tempfile::tempdir().unwrap();
         let blocker = tmp.path().join("arquivo");
         fs::write(&blocker, "x").unwrap();
         // O "diretório" de log é um arquivo comum: criar a pasta falha, e isso não pode panicar.
-        Logger::new(blocker.join("logs")).error("io", "x");
+        Logger::new(blocker.join("logs")).error("io", &Masked::non_secret("x"));
     }
 }
