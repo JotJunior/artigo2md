@@ -1,4 +1,5 @@
-# Infraestrutura local do artigo2md (versão desktop): Postgres, RabbitMQ (com painel) e API base.
+# Infraestrutura local do artigo2md (versão desktop): Postgres, RabbitMQ e API base. A imagem do RabbitMQ
+# inclui o painel de gestão, mas este arquivo não publica a 15672: só `stack/compose.management.yaml`, por opt-in.
 #
 # Use os scripts `stack/up.sh` e `stack/down.sh`; eles validam o `stack/.env` e chamam este arquivo.
 # Todas as portas são publicadas SOMENTE em 127.0.0.1 (o endereço é texto fixo aqui, não parametrizável).
@@ -33,7 +34,6 @@ services:
       RABBITMQ_DEFAULT_PASS: ${RABBITMQ_DEFAULT_PASS:?defina RABBITMQ_DEFAULT_PASS em stack/.env}
     ports:
       - "127.0.0.1:${ARTIGO2MD_RABBITMQ_PORT:?defina ARTIGO2MD_RABBITMQ_PORT em stack/.env}:5672"
-      - "127.0.0.1:${ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT:?defina ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT em stack/.env}:15672"
     volumes:
       - rabbitmqdata:/var/lib/rabbitmq
     security_opt:

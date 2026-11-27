@@ -15,6 +15,7 @@ import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
 COMPOSE = ROOT / "stack" / "compose.yaml"
+MANAGEMENT_COMPOSE = ROOT / "stack" / "compose.management.yaml"
 ENV_EXAMPLE = ROOT / "stack" / ".env.example"
 DOCKERFILE = ROOT / "stack" / "api" / "Dockerfile"
 EXAMPLE_PASSWORD = "troque-esta-senha"
@@ -74,6 +75,19 @@ def compose() -> dict:
     return yaml.safe_load(COMPOSE.read_text(encoding="utf-8"))
 
 
+@pytest.fixture(scope="module")
+def management() -> dict:
+    return yaml.safe_load(MANAGEMENT_COMPOSE.read_text(encoding="utf-8"))
+
+
+def with_management(base: dict, extra: dict) -> dict:
+    """Configuração efetiva de `up.sh --management-panel`: as listas `ports` são concatenadas (Compose)."""
+    merged = {"services": {n: dict(s) for n, s in base["services"].items()}}
+    for name, svc in (extra.get("services") or {}).items():
+        merged["services"][name]["ports"] = list(merged["services"][name].get("ports", [])) + list(svc.get("ports", []))
+    return merged
+
+
 # ── compose.yaml real ────────────────────────────────────────────────────────────
 def test_compose_has_the_three_services_and_a_fixed_project_name(compose):
     assert compose["name"] == "artigo2md"
@@ -81,10 +95,14 @@ def test_compose_has_the_three_services_and_a_fixed_project_name(compose):
     assert set(compose["volumes"]) == {"pgdata", "rabbitmqdata"}
 
 
-def test_every_published_port_is_bound_to_loopback_only(compose):
+def test_every_published_port_is_bound_to_loopback_only(compose, management):
     published = [p for svc in compose["services"].values() for p in svc.get("ports", [])]
-    assert len(published) == 4  # postgres, amqp, painel, api
+    assert len(published) == 3  # postgres, amqp, api: o painel de gestão não é publicado por padrão
     assert port_violations(compose) == []
+    # a regra de loopback vale também para a configuração com o opt-in do painel
+    opt_in = with_management(compose, management)
+    assert sum(len(s.get("ports", [])) for s in opt_in["services"].values()) == 4
+    assert port_violations(opt_in) == []
 
 
 def test_port_numbers_come_from_required_variables(compose):
@@ -94,9 +112,27 @@ def test_port_numbers_come_from_required_variables(compose):
             assert PORT_ENTRY.fullmatch(entry), entry
 
 
-def test_erlang_distribution_and_epmd_ports_are_not_published(compose):
+def test_erlang_distribution_and_epmd_ports_are_not_published(compose, management):
     targets = {entry.rsplit(":", 1)[1] for entry in compose["services"]["rabbitmq"]["ports"]}
-    assert targets == {"5672", "15672"}
+    assert targets == {"5672"}  # sem o painel de gestão (15672) por padrão
+    opt_in = with_management(compose, management)
+    opt_in_targets = {entry.rsplit(":", 1)[1] for entry in opt_in["services"]["rabbitmq"]["ports"]}
+    assert opt_in_targets == {"5672", "15672"}
+
+
+def test_management_compose_publishes_only_the_panel_on_loopback_with_a_required_variable(management):
+    assert set(management) == {"services"}  # só o opt-in: nada de nome, volumes ou outros serviços
+    assert set(management["services"]) == {"rabbitmq"}
+    assert set(management["services"]["rabbitmq"]) == {"ports"}
+    entries = management["services"]["rabbitmq"]["ports"]
+    assert len(entries) == 1
+    entry = entries[0]
+    assert entry.startswith("127.0.0.1:")  # IP literal fixo
+    assert entry.endswith(":15672")
+    assert "${ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT:?" in entry  # variável obrigatória
+    assert PORT_ENTRY.fullmatch(entry), entry
+    assert port_violations(management) == []
+    assert "host_ip" not in MANAGEMENT_COMPOSE.read_text(encoding="utf-8")
 
 
 def test_no_service_is_privileged_or_exposes_the_docker_socket(compose):
@@ -229,6 +265,8 @@ def test_no_variable_controls_the_publication_address():
         assert not any(word in key for word in suspicious if key != "POSTGRES_HOST_AUTH_METHOD"), key
     text = COMPOSE.read_text(encoding="utf-8")
     assert "host_ip" not in text and "${HOST" not in text and "${BIND" not in text
+    management_text = MANAGEMENT_COMPOSE.read_text(encoding="utf-8")
+    assert "${HOST" not in management_text and "${BIND" not in management_text
 
 
 def test_env_example_comments_are_in_portuguese_and_warn_about_the_rules():

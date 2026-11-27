@@ -1,7 +1,7 @@
 <script lang="ts">
-  import { messages } from "../lib/messages";
+  import { messages, summaryAriaLabel, summaryText } from "../lib/messages";
   import { sidebarKeyWidth } from "../lib/tree-nav";
-  import { SIDEBAR_WIDTH_MAX, SIDEBAR_WIDTH_MIN, type View } from "../lib/types";
+  import { SIDEBAR_WIDTH_MAX, SIDEBAR_WIDTH_MIN, type Summary, type View } from "../lib/types";
 
   interface Props {
     view: View;
@@ -10,9 +10,15 @@
     onSelect: (view: View) => void;
     onToggle: () => void;
     onResize: (width: number) => void;
+    /** Indicador resumido da infraestrutura (FR-025); `null` até a primeira leitura. */
+    summary?: Summary | null;
   }
 
-  let { view, collapsed, width, onSelect, onToggle, onResize }: Props = $props();
+  let { view, collapsed, width, onSelect, onToggle, onResize, summary = null }: Props = $props();
+
+  // Glifos diferentes por estado: o estado nunca é expresso só por cor (FR-042 c).
+  const GLYPHS: Record<Summary | "checking", string> = { healthy: "●", partial: "◐", stopped: "○", checking: "…" };
+  let glyph = $derived(GLYPHS[summary ?? "checking"]);
 
   let draft = $state<number | null>(null);
   let shownWidth = $derived(draft ?? width);
@@ -67,6 +73,20 @@
     <span aria-hidden="true">{collapsed ? "»" : "«"}</span>
   </button>
 
+  {#if collapsed}
+    <!-- Recolhida, o indicador continua visível e operável (FR-025: visível em qualquer tela). -->
+    <button
+      type="button"
+      class="infra-collapsed"
+      data-summary={summary ?? "checking"}
+      aria-label={summaryAriaLabel(summary)}
+      title={summaryAriaLabel(summary)}
+      onclick={() => onSelect("infra")}
+    >
+      <span class="infra-glyph" aria-hidden="true">{glyph}</span>
+    </button>
+  {/if}
+
   {#if !collapsed}
     <nav class="sidebar-nav">
       <button
@@ -77,6 +97,20 @@
         onclick={() => onSelect("files")}
       >
         {messages.navFiles}
+      </button>
+      <button
+        type="button"
+        class="nav-item nav-infra"
+        class:active={view === "infra"}
+        aria-current={view === "infra" ? "page" : undefined}
+        aria-label={`${messages.navInfra}: ${summaryText(summary)}`}
+        onclick={() => onSelect("infra")}
+      >
+        <span>{messages.navInfra}</span>
+        <span class="infra-badge" data-summary={summary ?? "checking"}>
+          <span class="infra-glyph" aria-hidden="true">{glyph}</span>
+          <span class="infra-badge-text">{summaryText(summary)}</span>
+        </span>
       </button>
       <button
         type="button"

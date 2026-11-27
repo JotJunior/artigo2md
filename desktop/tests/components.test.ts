@@ -13,6 +13,24 @@ const api = vi.hoisted(() => ({
   resolveLink: vi.fn(),
   saveSettings: vi.fn(),
   resetSettings: vi.fn(),
+  // Infraestrutura (desktop-stack-control): nenhum IPC real.
+  getInfraSnapshot: vi.fn(),
+  refreshInfra: vi.fn(),
+  startStack: vi.fn(),
+  stopStack: vi.fn(),
+  startWorkers: vi.fn(),
+  stopWorkers: vi.fn(),
+  resolvePreviousPool: vi.fn(),
+  prepareImages: vi.fn(),
+  prepareModels: vi.fn(),
+  getStackSettings: vi.fn(),
+  saveStackSettings: vi.fn(),
+  pickRepoFolder: vi.fn(),
+  pickDataDir: vi.fn(),
+  saveGuideProgress: vi.fn(),
+  getOperationLog: vi.fn(),
+  setGuideOpen: vi.fn(),
+  getMacosVersion: vi.fn(),
 }));
 vi.mock("../src/lib/api", () => api);
 
@@ -100,18 +118,23 @@ describe("Sidebar (FR-002, FR-039)", () => {
     ...over,
   });
 
-  it("mostra Arquivos e Configurações e destaca a entrada atual", () => {
+  it("mostra Arquivos, Infraestrutura e Configurações e destaca a entrada atual", () => {
     render(Sidebar, props({ view: "settings" }));
     const buttons = Array.from(target.querySelectorAll<HTMLButtonElement>(".nav-item"));
-    expect(buttons.map((b) => b.textContent!.trim())).toEqual(["Arquivos", "Configurações"]);
-    expect(buttons[1]!.getAttribute("aria-current")).toBe("page");
+    expect(buttons.map((b) => b.querySelector(".infra-badge") === null ? b.textContent!.trim() : "Infraestrutura")).toEqual([
+      "Arquivos",
+      "Infraestrutura",
+      "Configurações",
+    ]);
+    expect(buttons[2]!.getAttribute("aria-current")).toBe("page");
     expect(buttons[0]!.hasAttribute("aria-current")).toBe(false);
+    expect(buttons[1]!.hasAttribute("aria-current")).toBe(false);
   });
 
   it("clicar numa entrada pede a troca de tela", () => {
     const p = props();
     render(Sidebar, p);
-    target.querySelectorAll<HTMLButtonElement>(".nav-item")[1]!.click();
+    target.querySelectorAll<HTMLButtonElement>(".nav-item")[2]!.click();
     expect(p.onSelect).toHaveBeenCalledWith("settings");
   });
 
@@ -555,7 +578,7 @@ describe("App (FR-001, FR-007, FR-023, FR-028)", () => {
     render(App, {});
     await tick();
     expect(target.querySelectorAll('[role="treeitem"]')).toHaveLength(1);
-    target.querySelectorAll<HTMLButtonElement>(".nav-item")[1]!.click();
+    target.querySelectorAll<HTMLButtonElement>(".nav-item")[2]!.click();
     await tick();
     expect(target.querySelector(".settings-view")).not.toBeNull();
     expect(target.querySelector(".files-view")!.closest("[hidden]")).not.toBeNull();

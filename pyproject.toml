@@ -13,6 +13,9 @@ dependencies = [
     "uvicorn>=0.30",
     "python-multipart>=0.0.9",
     "ocrmac>=1.0; sys_platform == 'darwin'",
+    # Subcomando `artigo2md models` (cache dos modelos do Docling). Já vinha como dependência do Docling; fica direta
+    # porque o app importa `huggingface_hub` (Apache-2.0) diretamente (feature desktop-stack-control, FR-040).
+    "huggingface-hub>=1.33,<2",
 ]
 
 [project.optional-dependencies]

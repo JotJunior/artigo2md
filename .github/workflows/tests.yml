@@ -25,6 +25,6 @@ jobs:
         with:
           python-version: "3.12"
       - name: Instala as dependências
-        run: uv sync --locked --extra dev --extra pymupdf
+        run: uv sync --locked --extra dev --extra queue --extra pymupdf
       - name: Roda os testes
         run: uv run pytest

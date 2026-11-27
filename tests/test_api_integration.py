@@ -263,7 +263,8 @@ def synthetic_result(job_id: int, markdown_path: str, attempt: int = 1) -> str:
 # ── fixtures ────────────────────────────────────────────────────────────────────
 @pytest.fixture(scope="module")
 def stack(tmp_path_factory: pytest.TempPathFactory):
-    with launch_stack(tmp_path_factory, rebuild_api=True) as st:
+    # com o opt-in do painel: os testes abaixo publicam/consultam pela API HTTP do painel do RabbitMQ
+    with launch_stack(tmp_path_factory, rebuild_api=True, management_panel=True) as st:
         res = st.script("up.sh")
         assert res.returncode == 0, st.show(res)
         yield st

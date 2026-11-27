@@ -67,6 +67,9 @@ class Stack:
     password: str
     db: str
     data_dir: Path | None = None
+    # opt-in do painel de gestão (`up.sh --management-panel` + stack/compose.management.yaml): sem ele a 15672
+    # não é publicada (block-004/dec-025)
+    management_panel: bool = False
 
     # ── execução ────────────────────────────────────────────────────────────────
     def _scrub(self, text: str) -> str:
@@ -80,13 +83,17 @@ class Stack:
         )
 
     def script(self, name: str, *args: str) -> subprocess.CompletedProcess[str]:
+        if name == "up.sh" and self.management_panel and "--management-panel" not in args:
+            args = (*args, "--management-panel")
         return self.run("sh", str(self.work / "stack" / name), *args)
 
     def dc(self, *args: str, timeout: int = 600) -> subprocess.CompletedProcess[str]:
+        files = ["-f", str(self.work / "stack" / "compose.yaml")]
+        if self.management_panel:
+            files += ["-f", str(self.work / "stack" / "compose.management.yaml")]
         return self.run(
             "docker", "compose", "--project-directory", str(self.work / "stack"),
-            "--env-file", str(self.work / "stack" / ".env"),
-            "-f", str(self.work / "stack" / "compose.yaml"), *args, timeout=timeout,
+            "--env-file", str(self.work / "stack" / ".env"), *files, *args, timeout=timeout,
         )
 
     def show(self, result: subprocess.CompletedProcess[str]) -> str:
@@ -167,9 +174,14 @@ class Stack:
 
 
 @contextlib.contextmanager
-def launch_stack(tmp_path_factory: pytest.TempPathFactory, *, rebuild_api: bool = False):
+def launch_stack(tmp_path_factory: pytest.TempPathFactory, *, rebuild_api: bool = False,
+                 management_panel: bool = False):
     """Projeto Compose descartável: cópia de `stack/` + código, `.env` de teste só na cópia, nome de projeto,
     portas e senhas próprios; ao sair, `down --volumes` e conferência de que nada sobrou.
+
+    `management_panel=True` sobe com o opt-in do painel de gestão do RabbitMQ (necessário aos testes que usam a API
+    HTTP do painel); por padrão a 15672 NÃO é publicada. Em ambos os modos o `down` do teardown cobre todos os containers
+    do projeto (conferido ao sair).
 
     `rebuild_api=True` reconstrói a imagem da API a partir do código atual (as camadas em cache tornam isso rápido):
     sem isso uma imagem `artigo2md-api:local` antiga de outra feature seria testada no lugar do código de agora.
@@ -207,10 +219,11 @@ def launch_stack(tmp_path_factory: pytest.TempPathFactory, *, rebuild_api: bool 
     for key in list(env):  # o ambiente do desenvolvedor não pode mudar portas nem credenciais do teste
         if key.startswith("ARTIGO2MD_") and key != "ARTIGO2MD_STACK":
             del env[key]
-    st = Stack(work, project, env, ports, user, password, db, data_dir)
+    st = Stack(work, project, env, ports, user, password, db, data_dir, management_panel)
 
     # Pré-requisito de SC-001: imagens oficiais baixadas e imagem da API construída ANTES da medição.
-    pulled = st.dc("pull", "postgres", "rabbitmq")
+    # `--policy missing`: só baixa o que falta; nunca atualiza uma imagem que já está no cache local
+    pulled = st.dc("pull", "--policy", "missing", "postgres", "rabbitmq")
     assert pulled.returncode == 0, st.show(pulled)
     if rebuild_api or st.run("docker", "image", "inspect", API_IMAGE).returncode != 0:
         built = st.dc("build", "api")
@@ -228,7 +241,8 @@ def launch_stack(tmp_path_factory: pytest.TempPathFactory, *, rebuild_api: bool 
 
 @pytest.fixture(scope="module")
 def stack(tmp_path_factory: pytest.TempPathFactory):
-    with launch_stack(tmp_path_factory) as st:
+    # com o opt-in: os testes abaixo usam a API HTTP do painel e conferem a porta de gestão em loopback
+    with launch_stack(tmp_path_factory, management_panel=True) as st:
         yield st
 
 
@@ -253,6 +267,67 @@ def test_up_from_scratch_all_services_healthy(stack: Stack):
     for svc, ident in stack.container_ids().items():
         opts = stack.inspect(ident, "{{json .HostConfig.SecurityOpt}}")
         assert "no-new-privileges:true" in opts, f"{svc}: {opts}"
+
+
+# ── painel de gestão fora da publicação padrão (block-004, dec-023, dec-025) ────────
+def test_management_panel_is_not_published_by_default(tmp_path_factory: pytest.TempPathFactory):
+    with launch_stack(tmp_path_factory) as st:  # padrão: sem --management-panel
+        res = st.script("up.sh")
+        assert res.returncode == 0, st.show(res)
+        mgmt_port = st.ports["ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT"]
+        assert "Painel do RabbitMQ: não publicado (use --management-panel)" in res.stdout, st.show(res)
+        assert f"http://127.0.0.1:{mgmt_port}" not in res.stdout
+
+        amqp = st.dc("port", "rabbitmq", "5672")
+        assert amqp.returncode == 0, st.show(amqp)
+        assert amqp.stdout.strip() == f"127.0.0.1:{st.ports['ARTIGO2MD_RABBITMQ_PORT']}"
+        # forma real observada em 11.4 (Docker Compose v5.6.1): porta não publicada => exit 1, stdout vazio e uma
+        # linha em stderr "no port 15672/tcp for container <nome>: ..."; o atalho `panel_published` do up.sh
+        # trata qualquer falha ou saída sem número como "não publicado"
+        panel = st.dc("port", "rabbitmq", "15672")
+        assert panel.returncode != 0, st.show(panel)
+        assert panel.stdout.strip() == "", st.show(panel)
+        assert "no port 15672/tcp" in panel.stderr, st.show(panel)
+        with socket.socket() as probe:
+            probe.settimeout(2)
+            assert probe.connect_ex(("127.0.0.1", mgmt_port)) != 0, "a porta do painel aceitou conexão sem o opt-in"
+
+
+# ── 11.4: recriação pelo `up` sem a opção e remoção pelo `down` (Docker real) ────────
+def test_panel_opt_out_recreates_rabbitmq_and_down_removes_it(tmp_path_factory: pytest.TempPathFactory):
+    with launch_stack(tmp_path_factory, management_panel=True) as st:
+        res = st.script("up.sh")  # com --management-panel
+        assert res.returncode == 0, st.show(res)
+        published = st.dc("port", "rabbitmq", "15672")
+        assert published.returncode == 0, st.show(published)
+        assert published.stdout.strip() == f"127.0.0.1:{st.ports['ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT']}"
+        before = st.container_ids()["rabbitmq"]
+
+        # `up.sh` sem a opção sobre uma stack com o painel publicado recria SÓ o RabbitMQ, sem a porta
+        st.management_panel = False
+        res = st.script("up.sh")
+        assert res.returncode == 0, st.show(res)
+        assert "Painel do RabbitMQ: não publicado (use --management-panel)" in res.stdout, st.show(res)
+        after = st.container_ids()["rabbitmq"]
+        assert after != before, "o RabbitMQ não foi recriado sem a porta do painel"
+        assert st.dc("port", "rabbitmq", "15672").returncode != 0
+        assert st.service_table() == {svc: ("running", "healthy") for svc in SERVICES}
+
+        # chamado de novo sem a opção: nada a fazer (FR-015)
+        again = st.script("up.sh")
+        assert again.returncode == 0 and "A infraestrutura já estava no ar." in again.stdout, st.show(again)
+        assert st.container_ids()["rabbitmq"] == after
+
+        # container criado COM o arquivo adicional é removido pelo `down.sh`, que não o recebe
+        st.management_panel = True
+        res = st.script("up.sh")
+        assert res.returncode == 0, st.show(res)
+        assert st.container_ids()["rabbitmq"] != after  # recriado com a porta de novo
+        assert st.dc("port", "rabbitmq", "15672").returncode == 0
+        down = st.script("down.sh")
+        assert down.returncode == 0, st.show(down)
+        assert st.project_containers() == [], "o down.sh deixou containers do projeto"
+        assert st.project_volumes(), "o down.sh sem --apagar-dados não pode apagar os volumes"
 
 
 # ── 6.1.3 ────────────────────────────────────────────────────────────────────────

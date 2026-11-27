@@ -1,6 +1,7 @@
 <script lang="ts">
   import { appearanceLabels, fontSizeLabels, messages } from "../lib/messages";
   import type { SettingsStore } from "../lib/settings.svelte";
+  import StackSettings from "./StackSettings.svelte";
   import { APPEARANCES, FONT_SIZES, type Appearance, type FontSize } from "../lib/types";
 
   interface Props {
@@ -52,4 +53,6 @@
   <button type="button" class="button" onclick={() => void store.restoreDefaults()}>
     {messages.restoreDefaults}
   </button>
+
+  <StackSettings />
 </section>

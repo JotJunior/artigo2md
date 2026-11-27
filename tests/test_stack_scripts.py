@@ -42,6 +42,12 @@ if [ "${1:-}" = "compose" ]; then
         version)
             [ "${FAKE_COMPOSE_RC:-0}" = 0 ] || echo "ORIGINAL-COMPOSE-ERROR" >&2
             exit "${FAKE_COMPOSE_RC:-0}" ;;
+        port)
+            # `compose port rabbitmq 15672`: com FAKE_PANEL_ADDR o painel está publicado; sem ele, falha
+            # (a forma real da saída sem publicação é validada contra o Docker real em 11.4)
+            [ -n "${FAKE_PANEL_ADDR:-}" ] || exit 1
+            printf '%s\n' "$FAKE_PANEL_ADDR"
+            exit 0 ;;
         ps)
             case " $* " in
                 *" --services "*) [ -z "${FAKE_RUNNING:-}" ] || printf '%s\n' $FAKE_RUNNING ;;
@@ -76,7 +82,7 @@ class Stack:
         self.root = tmp / "repo"
         self.stack = self.root / "stack"
         self.stack.mkdir(parents=True)
-        for name in ("up.sh", "down.sh", "compose.yaml", ".env.example"):
+        for name in ("up.sh", "down.sh", "compose.yaml", "compose.management.yaml", ".env.example"):
             shutil.copy(STACK_SRC / name, self.stack / name)
         self.bin = tmp / "bin"
         self.bin.mkdir()
@@ -176,7 +182,6 @@ def test_up_rejects_unknown_option_and_lists_the_valid_one(stack):
         ({"ARTIGO2MD_API_PORT": "abc"}, "", "ARTIGO2MD_API_PORT"),
         ({"ARTIGO2MD_POSTGRES_PORT": "0"}, "", "ARTIGO2MD_POSTGRES_PORT"),
         ({"ARTIGO2MD_RABBITMQ_PORT": "65536"}, "", "ARTIGO2MD_RABBITMQ_PORT"),
-        ({"ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT": "-5"}, "", "ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT"),
         ({"ARTIGO2MD_API_PORT": None}, "", "ARTIGO2MD_API_PORT"),
     ],
     ids=lambda v: v if isinstance(v, str) and v.isupper() else None,
@@ -342,8 +347,7 @@ def test_up_busy_port_exits_4_naming_the_port_and_the_variable(stack):
 
 @pytest.mark.parametrize(
     ("busy", "variable"),
-    [("5672", "ARTIGO2MD_RABBITMQ_PORT"), ("15672", "ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT"),
-     ("8778", "ARTIGO2MD_API_PORT")],
+    [("5672", "ARTIGO2MD_RABBITMQ_PORT"), ("8778", "ARTIGO2MD_API_PORT")],
 )
 def test_up_busy_port_check_covers_every_published_port(stack, busy, variable):
     stack.write_env()
@@ -352,6 +356,32 @@ def test_up_busy_port_check_covers_every_published_port(stack, busy, variable):
 
     assert proc.returncode == 4
     assert variable in proc.stderr
+
+
+def test_up_management_port_is_validated_only_with_the_management_panel_option(stack):
+    stack.write_env(ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT="-5")
+
+    with_option = stack.run("up.sh", "--management-panel")
+    without_option = stack.run("up.sh")
+
+    assert with_option.returncode == 2
+    assert "ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT" in with_option.stderr
+    assert without_option.returncode == 0, without_option.stderr  # sem a opção nada dessa porta é validado
+    no_secret_leak(stack, with_option)
+
+
+def test_up_management_port_busy_check_runs_only_with_the_management_panel_option(stack):
+    stack.write_env()
+
+    with_option = stack.run("up.sh", "--management-panel", env={"FAKE_BUSY_PORTS": "15672"})
+    without_option = stack.run("up.sh", env={"FAKE_BUSY_PORTS": "15672"})
+
+    assert with_option.returncode == 4
+    assert "ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT" in with_option.stderr and "15672" in with_option.stderr
+    assert without_option.returncode == 0, without_option.stderr
+    # sem a opção, `nc` nunca foi chamado para a 15672 (só o primeiro processo, com a opção, a testou)
+    nc_calls = [c for c in stack.log.read_text().splitlines() if c.startswith("nc ")]
+    assert sum(1 for c in nc_calls if c.endswith(" 15672")) == 1
 
 
 def test_up_ignores_busy_port_of_a_service_that_is_already_running(stack):
@@ -403,7 +433,7 @@ def test_up_failure_without_readable_status_points_to_every_service_logs(stack):
 
 
 # ── up.sh: caminho feliz, idempotência, imagens ──────────────────────────────────
-def test_up_success_reports_each_service_and_the_panel_url_and_shows_compose_output(stack):
+def test_up_success_reports_each_service_and_shows_compose_output_without_the_panel_by_default(stack):
     stack.write_env(ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT="15999")
 
     proc = stack.run("up.sh")
@@ -412,7 +442,24 @@ def test_up_success_reports_each_service_and_the_panel_url_and_shows_compose_out
     assert "saida-original-do-compose: criando containers" in proc.stdout
     for svc in ("postgres", "rabbitmq", "api"):
         assert f"{svc}: saudável" in proc.stdout
+    # sem --management-panel: nenhuma URL do painel e a linha "não publicado"
+    assert "http://127.0.0.1:15999" not in proc.stdout
+    assert "Painel do RabbitMQ: não publicado (use --management-panel)" in proc.stdout
+    assert "compose.management.yaml" not in " ".join(stack.calls())
+    no_secret_leak(stack, proc)
+
+
+def test_up_with_the_management_panel_option_adds_the_extra_file_and_shows_url_and_warning(stack):
+    stack.write_env(ARTIGO2MD_RABBITMQ_MANAGEMENT_PORT="15999")
+
+    proc = stack.run("up.sh", "--management-panel")
+
+    assert proc.returncode == 0, proc.stderr
     assert "Painel do RabbitMQ: http://127.0.0.1:15999/" in proc.stdout
+    assert "DNS rebinding" in proc.stdout
+    assert "não publicado" not in proc.stdout
+    up_call = next(c for c in stack.calls() if " up " in c)
+    assert f"-f {stack.stack}/compose.yaml -f {stack.stack}/compose.management.yaml" in up_call
     no_secret_leak(stack, proc)
 
 
@@ -429,6 +476,30 @@ def test_up_uses_the_documented_compose_invocation_from_any_directory(stack, tmp
     assert f"--env-file {stack.stack}/.env" in up_call
     assert f"-f {stack.stack}/compose.yaml" in up_call
     assert "--detach --wait --wait-timeout 120 --pull missing" in up_call
+
+
+@pytest.mark.parametrize(
+    ("option", "panel_addr", "calls_up"),
+    [
+        ((), None, False),                              # sem a opção, painel fechado: atalho
+        ((), "127.0.0.1:15672", True),                  # sem a opção, painel aberto: `up` o recria sem ele
+        (("--management-panel",), "127.0.0.1:15672", False),  # com a opção, painel aberto: atalho
+        (("--management-panel",), None, True),          # com a opção, painel fechado: `up` o publica
+    ],
+    ids=["default-closed", "default-open", "optin-open", "optin-closed"],
+)
+def test_up_already_running_shortcut_only_when_panel_publication_matches_the_mode(stack, option, panel_addr, calls_up):
+    stack.write_env()
+    env = {"FAKE_RUNNING": "postgres rabbitmq api"}
+    if panel_addr:
+        env["FAKE_PANEL_ADDR"] = panel_addr
+
+    proc = stack.run("up.sh", *option, env=env)
+
+    assert proc.returncode == 0, proc.stderr
+    assert any(" up " in c for c in stack.calls()) is calls_up
+    assert ("A infraestrutura já estava no ar." in proc.stdout) is (not calls_up)
+    no_secret_leak(stack, proc)
 
 
 def test_up_when_everything_is_running_does_not_call_up_again(stack):

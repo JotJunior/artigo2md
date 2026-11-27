@@ -1,4 +1,4 @@
-"""Linha de comando: `artigo2md convert`, `serve`, `doctor` e `worker` (fila de conversão)."""
+"""Linha de comando: `artigo2md convert`, `serve`, `doctor`, `worker` (fila de conversão) e `models`."""
 from __future__ import annotations
 
 import argparse
@@ -215,6 +215,13 @@ def cmd_worker(args: argparse.Namespace) -> int:
     return Service(settings).run()
 
 
+# ── modelos de conversão ────────────────────────────────────────────────────────────────────────
+def cmd_models(args: argparse.Namespace) -> int:
+    from . import modelcache  # import local: só este ramo carrega o módulo (e nunca o docling) — FR-039
+
+    return modelcache.run(args.verb, as_json=args.json)
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="artigo2md", description="PDF → Markdown, local.")
     parser.add_argument("--version", action="version", version=__version__)
@@ -265,6 +272,14 @@ def main(argv: list[str] | None = None) -> int:
                    metavar="SEG", help="limite de tempo por conversão (padrão: 0 = sem limite; se usar, abaixo de 1800 s, o prazo do broker)")
     w.error = functools.partial(_worker_parser_error, w)
     w.set_defaults(func=cmd_worker, _parser=w)
+
+    m = sub.add_parser("models", help="verifica ou baixa os modelos do Docling (macOS)",
+                       description="Verifica (status) ou baixa (download) os modelos que o Docling usa, no "
+                                   "cache padrão do Hugging Face. Com --json, escreve um evento JSON por linha.")
+    m.add_argument("verb", choices=["status", "download"], help="status: o que já está no computador; "
+                                                                 "download: baixa só o que falta")
+    m.add_argument("--json", action="store_true", help="eventos JSON Lines em stdout (uso do app desktop)")
+    m.set_defaults(func=cmd_models)
 
     args = parser.parse_args(argv)
     return args.func(args)
