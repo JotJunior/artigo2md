@@ -274,11 +274,23 @@ def test_connect_failures_are_retried_with_growing_backoff(broker, make):
             raise OSError("fake")
         return broker.connection()
 
-    publisher = started(make, connect=connect, backoff_start=0.05, backoff_max=0.5)  # base maior: imune a jitter
+    publisher = make(connect=connect, backoff_start=0.05, backoff_max=0.5)
+    # O recuo é conferido pela espera que a publicadora pede, não pela razão entre intervalos medidos no relógio:
+    # em máquina carregada cada espera atrasa dezenas de milissegundos e essa razão deixa de valer.
+    waits = []
+    real_wait = publisher._stop.wait
+
+    def recording_wait(timeout=None):
+        waits.append(timeout)
+        return real_wait(timeout)
+
+    publisher._stop.wait = recording_wait
+    publisher.start()
+    assert wait_for(lambda: publisher.connected)
     assert len(attempts) == 4
+    assert waits[:3] == [0.05, 0.1, 0.2]  # recuo exponencial
     gaps = [b - a for a, b in zip(attempts, attempts[1:])]
-    assert gaps[1] >= gaps[0] * 1.5 and gaps[2] >= gaps[1] * 1.5  # recuo exponencial
-    assert publisher.connected
+    assert all(gap >= wait * 0.9 for gap, wait in zip(gaps, waits))  # a espera pedida é de fato cumprida
 
 
 # ── entrada e encerramento ──────────────────────────────────────────────────────
